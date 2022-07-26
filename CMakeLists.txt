@@ -5,9 +5,9 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ## Define project
 ########################################################################################################################
 project(
-        CommonLibSSESamplePlugin
+        SimpleHotkeys
         VERSION 1.0.0
-        DESCRIPTION "A sample SKSE plugin built with CommonLibSSE."
+        DESCRIPTION "A SKSE plugin built with CommonLibSSE."
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,18 +21,18 @@ configure_file(
         @ONLY)
 
 set(headers
-        include/Sample/Sample.h)
+        include/header.h)
 
 set(sources
         src/Config.cpp
-        src/HitCounterManager.cpp
+        #src/HitCounterManager.cpp
         src/Main.cpp
-        src/Papyrus.cpp
+        #src/Papyrus.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 
-set(tests
-        test/HitCounterManager.cpp)
+#set(tests
+#        test/HitCounterManager.cpp)
 
 source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -45,7 +45,8 @@ source_group(
 ### Build options
 #########################################################################################################################
 message("Options:")
-option(BUILD_TESTS "Build unit tests." OFF)
+#option(BUILD_TESTS "Build unit tests." OFF)
+set(BUILD_TESTS false)
 message("\tTests: ${BUILD_TESTS}")
 
 ########################################################################################################################
@@ -77,7 +78,7 @@ target_precompile_headers(${PROJECT_NAME}
         PRIVATE
         src/PCH.h)
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/Sample"
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 install(TARGETS ${PROJECT_NAME}
@@ -140,7 +141,7 @@ set_property(TARGET ${PROJECT_NAME}
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_SCRIPTS}")
 
 # Automatic deployment to Mod Organizer 2 mod directory.
-foreach(DEPLOY_TARGET $ENV{CommonLibSSESamplePluginTargets})
+foreach(DEPLOY_TARGET $ENV{SimpleHotkeysTargets})
     message("Adding deployment target ${DEPLOY_TARGET}.")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/")
