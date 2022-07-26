@@ -1,12 +1,12 @@
-#include <Sample/HitCounterManager.h>
+//#include <Sample/HitCounterManager.h>
 
 #include "Config.h"
-#include "Papyrus.h"
+//#include "Papyrus.h"
 
 #include <stddef.h>
 
 using namespace RE::BSScript;
-using namespace Sample;
+using namespace SH;
 using namespace SKSE;
 using namespace SKSE::log;
 using namespace SKSE::stl;
@@ -39,7 +39,7 @@ namespace {
             log = std::make_shared<spdlog::logger>(
                 "Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
         }
-        const auto& debugConfig = Sample::Config::GetSingleton().GetDebug();
+        const auto& debugConfig = SH::Config::GetSingleton().GetDebug();
         log->set_level(debugConfig.GetLogLevel());
         log->flush_on(debugConfig.GetFlushLevel());
 
@@ -65,11 +65,11 @@ namespace {
      */
     void InitializeSerialization() {
         log::trace("Initializing cosave serialization...");
-        auto* serde = GetSerializationInterface();
-        serde->SetUniqueID(_byteswap_ulong('SMPL'));
-        serde->SetSaveCallback(Sample::HitCounterManager::OnGameSaved);
-        serde->SetRevertCallback(Sample::HitCounterManager::OnRevert);
-        serde->SetLoadCallback(Sample::HitCounterManager::OnGameLoaded);
+        //auto* serde = GetSerializationInterface();
+        //serde->SetUniqueID(_byteswap_ulong('SMPL'));
+        //serde->SetSaveCallback(Sample::HitCounterManager::OnGameSaved);
+        //serde->SetRevertCallback(Sample::HitCounterManager::OnRevert);
+        //serde->SetLoadCallback(Sample::HitCounterManager::OnGameLoaded);
         log::trace("Cosave serialization initialized.");
     }
 
@@ -89,11 +89,11 @@ namespace {
      */
     void InitializePapyrus() {
         log::trace("Initializing Papyrus binding...");
-        if (GetPapyrusInterface()->Register(Sample::RegisterHitCounter)) {
-            log::debug("Papyrus functions bound.");
-        } else {
-            stl::report_and_fail("Failure to register Papyrus bindings.");
-        }
+        //if (GetPapyrusInterface()->Register(Sample::RegisterHitCounter)) {
+        //    log::debug("Papyrus functions bound.");
+        //} else {
+        //    stl::report_and_fail("Failure to register Papyrus bindings.");
+        //}
     }
 
     /**
@@ -114,11 +114,11 @@ namespace {
      */
     void InitializeHooking() {
         log::trace("Initializing trampoline...");
-        auto& trampoline = GetTrampoline();
-        trampoline.create(64);
+        //auto& trampoline = GetTrampoline();
+        //trampoline.create(64);
         log::trace("Trampoline initialized.");
 
-        Sample::InitializeHook(trampoline);
+        //Sample::InitializeHook(trampoline);
     }
 
     /**
