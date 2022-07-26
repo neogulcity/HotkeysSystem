@@ -3,7 +3,7 @@
 #include <articuno/archives/ryml/ryml.h>
 
 using namespace articuno::ryml;
-using namespace Sample;
+using namespace SH;
 
 const Config& Config::GetSingleton() noexcept {
     static Config instance;
