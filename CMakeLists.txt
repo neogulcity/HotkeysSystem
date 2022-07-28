@@ -5,7 +5,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ## Define project
 ########################################################################################################################
 project(
-        SimpleHotkeys
+        HotkeysSystem
         VERSION 1.0.0
         DESCRIPTION "A SKSE plugin built with CommonLibSSE."
         LANGUAGES CXX)
@@ -25,14 +25,13 @@ set(headers
 
 set(sources
         src/Config.cpp
-        #src/HitCounterManager.cpp
         src/Main.cpp
-        #src/Papyrus.cpp
+        src/Papyrus.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 
 #set(tests
-#        test/HitCounterManager.cpp)
+#        test/)
 
 source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -141,7 +140,7 @@ set_property(TARGET ${PROJECT_NAME}
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${OUTPUT_SCRIPTS}")
 
 # Automatic deployment to Mod Organizer 2 mod directory.
-foreach(DEPLOY_TARGET $ENV{SimpleHotkeysTargets})
+foreach(DEPLOY_TARGET $ENV{HotkeysSystemTargets})
     message("Adding deployment target ${DEPLOY_TARGET}.")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${DEPLOY_TARGET}/SKSE/Plugins/")

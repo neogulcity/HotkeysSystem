@@ -1,9 +1,14 @@
 #pragma once
 
-#include <RE/Skyrim.h>
+using namespace RE;
+using namespace RE::BSScript;
+using namespace REL;
+using namespace SKSE;
 
-namespace Sample {
-    bool RegisterHitCounter(RE::BSScript::IVirtualMachine* vm);
+void Exec(StaticFunctionTag*);
+RE::BGSEquipSlot* GetRightHandSlot();
+void EquipItem(RE::TESForm*, RE::BGSEquipSlot*, bool, RE::ExtraDataList*, bool, bool);
 
-    void InitializeHook(SKSE::Trampoline& trampoline);
+namespace UIHS {
+    bool RegisterFuncs(IVirtualMachine* vm);
 }
