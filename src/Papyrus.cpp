@@ -1,102 +1,209 @@
 #include "Papyrus.h"
+#include "EquipsetManager.h"
+#include "ExtraData.h"
+#include "MCM.h"
 
-RE::BGSEquipSlot* GetRightHandSlot() {
-    using func_t = decltype(GetRightHandSlot);
-    REL::Relocation<func_t> func{REL::ID(23151)};
-    return func();
-}
+namespace Papyrus {
+    void Exec(RE::StaticFunctionTag*)
+    {
+        log::debug("Exec Function Start");
 
-void Exec(StaticFunctionTag*) {
-    log::debug("Exec Function Start");
+        //auto playerref = RE::PlayerCharacter::GetSingleton();
+        //if (!playerref) {
+        //    return;
+        //}
 
-    auto playerref = RE::PlayerCharacter::GetSingleton();
-    if (!playerref) return;
+        //std::vector<std::string> Name, EnchName, Health;
 
-    const auto xContainer = playerref ? playerref->extraList.GetByType<RE::ExtraContainerChanges>() : nullptr;
-    const auto invChanges = xContainer ? xContainer->changes : nullptr;
+        //auto inv = playerref->GetInventory();
+        //for (const auto& [item, data] : inv) {
+        //    const auto& [count, entry] = data;
+        //    if (count > 0) {
+        //        int extracount = 0;
+        //        auto extraLists = entry->extraLists;
+        //        if (Extra::IsEnchanted(item, extraLists)) {
+        //            auto enchantment = Extra::GetEnchantment(item, extraLists);
+        //            if (enchantment) {
+        //                Name.push_back(item->GetName());
+        //                EnchName.push_back(enchantment->GetName());
+        //                Health.push_back("None");
+        //                ++extracount;
+        //            }
+        //        }
+        //        if (Extra::IsTempered(extraLists)) {
+        //            auto health = Extra::GetHealth(extraLists);
+        //            Name.push_back(item->GetName());
+        //            EnchName.push_back("None");
+        //            Health.push_back(std::to_string(health));
+        //            ++extracount;
+        //        }
+        //        if (count - extracount != 0) {
+        //            Name.push_back(item->GetName());
+        //            EnchName.push_back("None");
+        //            Health.push_back("None");
+        //        }
+        //    }
+        //}
 
-    std::vector<std::string> Name, EnchName, Health;
+        //for (int i = 0; i < Name.size(); i++) {
+        //    log::debug("Item #{} : {} - {} - {}", i, Name[i], EnchName[i], Health[i]);
+        //}
 
-    if (invChanges) {
+        RE::BSTArray<RE::BSFixedString> result;
+        result.push_back(static_cast<RE::BSFixedString>((std::string) "$Nothing"));
+        result.push_back(static_cast<RE::BSFixedString>((std::string) "$Unequip"));
+
+        auto playerref = RE::PlayerCharacter::GetSingleton();
+        if (!playerref) {
+            return ;
+        }
+
+        auto setting = &MCM::Setting::GetSingleton();
+        if (!setting) {
+            return ;
+        }
+
         auto inv = playerref->GetInventory();
         for (const auto& [item, data] : inv) {
-            const auto& [count, entry] = data;
-            if (count > 0) {
-                int extracount = 0;
+            const auto& [numItem, entry] = data;
+            if (numItem > 0 && item->Is(RE::FormType::Weapon)) {
+                int numExtra = 0;
+                int numFavor = 0;
+                uint32_t favorSize = 0;
                 auto extraLists = entry->extraLists;
                 if (extraLists) {
+                    favorSize = Extra::GetNumFavorited(extraLists);
                     for (auto& xList : *extraLists) {
-                        if (xList && xList->HasType(RE::ExtraDataType::kEnchantment)) {
-                            auto xEnch = xList->GetByType<RE::ExtraEnchantment>();
-                            if (xEnch && xEnch->enchantment) {
-                                Name.push_back(item->GetName());
-                                EnchName.push_back(xEnch->enchantment->GetName());
-                                Health.push_back("None");
-                                ++extracount;
+                        if (Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                            if (!setting->mFavor || Extra::IsFavorited(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                result.push_back(name);
+                                ++numFavor;
                             }
-                        } else if (xList && xList->HasType(RE::ExtraDataType::kHealth)) {
-                            auto xEnch = xList->GetByType<RE::ExtraHealth>();
-                            if (xEnch) {
-                                Name.push_back(item->GetName());
-                                EnchName.push_back("None");
-                                Health.push_back(std::to_string(xEnch->health));
-                                ++extracount;
+                            ++numExtra;
+                        } else if (Extra::IsEnchanted(xList) && !Extra::IsTempered(xList)) {
+                            if (!setting->mFavor || Extra::IsFavorited(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                result.push_back(name);
+
+                                auto xSize = Extra::GetEnchantment(xList)->effects.size();
+                                log::debug("xSize: {}", xSize);
+
+                                ++numFavor;
                             }
+                            ++numExtra;
+                        } else if (!Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                            if (!setting->mFavor || Extra::IsFavorited(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                result.push_back(name);
+                                ++numFavor;
+                            }
+                            ++numExtra;
                         }
                     }
                 }
-                if (count - extracount != 0) {
-                    Name.push_back(item->GetName());
-                    EnchName.push_back("None");
-                    Health.push_back("None");
+                if (numItem - numExtra != 0) {
+                    if (!setting->mFavor || favorSize - numFavor != 0) {
+                        RE::BSFixedString name;
+                        name = item->GetName();
+                        result.push_back(name);
+                    }
                 }
             }
         }
-    }
 
-    for (int i = 0; i < Name.size(); i++) {
-        log::debug("Item #{} : {} - {} - {}", i, Name[i], EnchName[i], Health[i]);
-    }
-}
-
-void EquipItem(RE::TESForm* a_form, RE::BGSEquipSlot* a_slot, bool a_sound, RE::ExtraDataList* a_extralist, bool a_queue = true, bool a_force = false) {
-    if (!a_form) return;
-
-    RE::ActorEquipManager* equipManager = RE::ActorEquipManager::GetSingleton();
-    if (!equipManager) return;
-
-    auto playerref = RE::PlayerCharacter::GetSingleton();
-    if (!playerref) return;
-
-    // Check FormType Spell
-    if (a_form->Is(RE::FormType::Spell)) {
-        RE::SpellItem* a_spell = a_form->As<RE::SpellItem>();
-
-        equipManager->EquipSpell(playerref, a_spell, a_slot);
-
-     // Check FormType Shout
-    } else if (a_form->Is(RE::FormType::Shout)) {
-        RE::TESShout* a_shout = a_form->As<RE::TESShout>();
-
-        equipManager->EquipShout(playerref, a_shout);
-
-     // Items
-    } else {
-        if (a_form->GetFormType() == RE::FormType::Light) {
-            RE::TESBoundObject* a_object = a_form->As<RE::TESBoundObject>();
-
-            equipManager->EquipObject(playerref, a_object, nullptr, 1U, a_slot, a_queue, a_force, a_sound, false);
-        } else {
-            RE::TESBoundObject* a_object = a_form->As<RE::TESBoundObject>();
-
-            equipManager->EquipObject(playerref, a_object, a_extralist, 1U, a_slot, a_queue, a_force, a_sound, false);
+        for (int i = 0; i < result.size(); i++) {
+            log::debug("Items #{}: {}", i, static_cast<std::string>(result[i]));
         }
-    }
-}
 
-namespace UIHS {
-    bool RegisterFuncs(IVirtualMachine* vm) {
-        vm->RegisterFunction("Exec", "_SimpleHotkeys_MCM", Exec);
+        return;
+    }
+
+    void Exec2(RE::StaticFunctionTag*)
+    {
+        log::debug("Exec2 Function Start");
+
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        manager->Display();
+    }
+
+    RE::BSTArray<RE::BSFixedString> GetWeaponList(RE::StaticFunctionTag*)
+    {
+        log::debug("Papyrus::GetWeaponList function called.");
+
+        RE::BSTArray<RE::BSFixedString> result;
+        result.push_back(static_cast<RE::BSFixedString>((std::string) "$Nothing"));
+        result.push_back(static_cast<RE::BSFixedString>((std::string) "$Unequip"));
+
+        auto playerref = RE::PlayerCharacter::GetSingleton();
+        if (!playerref) {
+            return result;
+        }
+        
+        auto setting = &MCM::Setting::GetSingleton();
+        if (!setting) {
+            return result;
+        }
+
+        auto inv = playerref->GetInventory();
+        for (const auto& [item, data] : inv) {
+            const auto& [numItem, entry] = data;
+            if (numItem > 0 && item->Is(RE::FormType::Weapon)) {
+                int numExtra = 0;
+                int numFavor = 0;
+                uint32_t favorSize = 0;
+                auto extraLists = entry->extraLists;
+                if (extraLists) {
+                    favorSize = Extra::GetNumFavorited(extraLists);
+                    for (auto& xList : *extraLists) {
+                        if (Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                            if (!setting->mFavor || Extra::IsFavorited(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                result.push_back(name);
+                                ++numFavor;
+                            }
+                            ++numExtra;
+                        } else if (Extra::IsEnchanted(xList) && !Extra::IsTempered(xList)) {
+                            if (!setting->mFavor || Extra::IsFavorited(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                result.push_back(name);
+                                ++numFavor;
+                            }
+                            ++numExtra;
+                        } else if (!Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                            if (!setting->mFavor || Extra::IsFavorited(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                result.push_back(name);
+                                ++numFavor;
+                            }
+                            ++numExtra;
+                        }
+                    }
+                }
+                if (numItem - numExtra != 0) {
+                    if (!setting->mFavor || favorSize - numFavor != 0) {
+                        RE::BSFixedString name;
+                        name = item->GetName();
+                        result.push_back(name);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    bool RegisterFuncs(RE::BSScript::IVirtualMachine* vm)
+    {
+        vm->RegisterFunction("Exec", "_HotkeysSystem_MCM", Papyrus::Exec);
+        vm->RegisterFunction("Exec2", "_HotkeysSystem_MCM", Papyrus::Exec2);
+        vm->RegisterFunction("GetWeaponList", "_HotkeysSystem_MCM", Papyrus::GetWeaponList);
 
         return true;
     }

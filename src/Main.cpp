@@ -1,11 +1,7 @@
-#include "Config.h"
+#include "header.h"
 
 #include <stddef.h>
 
-#include "Papyrus.h"
-
-using namespace RE::BSScript;
-using namespace UIHS;
 using namespace SKSE;
 using namespace SKSE::log;
 using namespace SKSE::stl;
@@ -64,11 +60,11 @@ namespace {
      */
     void InitializeSerialization() {
         log::trace("Initializing cosave serialization...");
-        //auto* serde = GetSerializationInterface();
-        //serde->SetUniqueID(_byteswap_ulong('SMPL'));
-        //serde->SetSaveCallback(Sample::HitCounterManager::OnGameSaved);
-        //serde->SetRevertCallback(Sample::HitCounterManager::OnRevert);
-        //serde->SetLoadCallback(Sample::HitCounterManager::OnGameLoaded);
+        auto* serde = GetSerializationInterface();
+        serde->SetUniqueID(_byteswap_ulong('UIHS'));
+        serde->SetSaveCallback(UIHS::EquipsetManager::OnGameSaved);
+        serde->SetRevertCallback(UIHS::EquipsetManager::OnRevert);
+        serde->SetLoadCallback(UIHS::EquipsetManager::OnGameLoaded);
         log::trace("Cosave serialization initialized.");
     }
 
@@ -88,7 +84,7 @@ namespace {
      */
     void InitializePapyrus() {
         log::trace("Initializing Papyrus binding...");
-        if (GetPapyrusInterface()->Register(UIHS::RegisterFuncs)) {
+        if (GetPapyrusInterface()->Register(Papyrus::RegisterFuncs)) {
             log::debug("Papyrus functions bound.");
         } else {
             stl::report_and_fail("Failure to register Papyrus bindings.");
