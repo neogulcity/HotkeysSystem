@@ -3,8 +3,11 @@ Scriptname _HotkeysSystem_MCM extends SKI_ConfigBase
 ; Global Functions
 Function Exec() Global Native
 Function Exec2() Global Native
+string Function UIHS_GetNamePrefix() Global Native
 
 ; Properties
+bool bModActive
+bool bWidgetActive
 int CurPage
 int CurOpt
 
@@ -33,6 +36,25 @@ int optManaging_Left
 int optManaging_Right
 int optManaging_Shout
 
+; MCM Stored option variables
+string sManaging_Name
+int sManaging_Hotkey
+int sManaging_Modifier1
+int sManaging_Modifier2
+int sManaging_Modifier3
+bool sManaging_Sound
+bool sManaging_Toggle
+bool sManaging_Reequip
+int sManaging_Widget
+int sManaging_Hpos
+int sManaging_Vpos
+bool sManaging_DWidget
+bool sManaging_DName
+bool sManaging_DHotkey
+int sManaging_Left
+int sManaging_Right
+int[] sManaging_Items
+
 ; Enum List
 int ePage_Manaing = 1
 int ePage_Overview = 2
@@ -45,6 +67,9 @@ int eOpt_New = 1
 int eOpt_NewCycle = 2
 int eOpt_Edit = 3
 int eOpt_Remove = 4
+
+string eColor_Green = "#7257CA"
+string eColor_Red = "#7257CA"
 
 Event OnConfigInit()
 	ModName = "Hotkeys System"
@@ -95,48 +120,69 @@ EndFunction
 
 ; Start of writting MCM pages functions.
 
+Function Init_StoredOpt()
+	sManaging_Name = UIHS_GetNamePrefix();
+	sManaging_Hotkey = -1
+	sManaging_Modifier1 = -1
+	sManaging_Modifier2 = -1
+	sManaging_Modifier3 = -1
+	sManaging_Sound = true
+	sManaging_Toggle = false
+	sManaging_Reequip = false
+	sManaging_Widget = 0
+	sManaging_Hpos = 0
+	sManaging_Vpos = 0
+	sManaging_DWidget = false
+	sManaging_DName = false
+	sManaging_DHotkey = false
+	sManaging_Left = 0
+	sManaging_Right = 0
+	sManaging_Shout = 0
+EndFunction
+
 Function OnPage_Managing()
 	CurPage = ePage_Manaing;
 
 	SetCursorFillMode(TOP_TO_BOTTOM)
 
 	if CurOpt == eOpt_None
-		optManaging_New = 		AddTextOption("", "$Add New Equipset", OPTION_FLAG_NONE)
-		optManaging_NewCycle = 	AddTextOption("", "$Add New Cycle Equipset", OPTION_FLAG_NONE)
-		optManaging_Edit = 		AddTextOption("", "$Edit Equipset Settings", OPTION_FLAG_NONE)
-		optManaging_Remove = 	AddTextOption("", "$Remove Equipset", OPTION_FLAG_NONE)
+		optManaging_New		  = AddTextOption("", "$Add New Equipset", OPTION_FLAG_NONE)
+		optManaging_NewCycle  = AddTextOption("", "$Add New Cycle Equipset", OPTION_FLAG_NONE)
+		optManaging_Edit	  = AddTextOption("", "$Edit Equipset Settings", OPTION_FLAG_NONE)
+		optManaging_Remove	  = AddTextOption("", "$Remove Equipset", OPTION_FLAG_NONE)
 	elseif CurOpt == eOpt_New
-		optManaging_Name = 		AddInputOption("$Equipset Name:", Colorize("$Sample", "#7257CA"), OPTION_FLAG_NONE)
-		optManaging_Hotkey = 	AddKeyMapOption("$Hotkey", -1, OPTION_FLAG_WITH_UNMAP)
-		optManaging_Modifier1 = AddToggleOption("$Left Shift", false, OPTION_FLAG_NONE)
-		optManaging_Modifier2 = AddToggleOption("$Left Control", false, OPTION_FLAG_NONE)
-		optManaging_Modifier3 = AddToggleOption("$Left Alt", false, OPTION_FLAG_NONE)
+		Init_StoredOpt()
+		optManaging_Name	  = AddInputOption("$Equipset Name:", CString(sManaging_Name, eColor_Green), OPTION_FLAG_NONE)
+		optManaging_Hotkey	  = AddKeyMapOption("$Hotkey", sManaging_Hotkey, OPTION_FLAG_WITH_UNMAP)
+		optManaging_Modifier1 = AddToggleOption("$Left Shift", sManaging_Modifier1, OPTION_FLAG_NONE)
+		optManaging_Modifier2 = AddToggleOption("$Left Control", sManaging_Modifier2, OPTION_FLAG_NONE)
+		optManaging_Modifier3 = AddToggleOption("$Left Alt", sManaging_Modifier3, OPTION_FLAG_NONE)
 		AddHeaderOption("", OPTION_FLAG_NONE)
-		optManaging_Sound = 	AddToggleOption("$Equip Sound", false, OPTION_FLAG_NONE)
-		optManaging_Toggle = 	AddToggleOption("$Toggle Equip/Unequip", false, OPTION_FLAG_NONE)
-		optManaging_Reequip = 	AddToggleOption("$Re Equip", false, OPTION_FLAG_NONE)
+		optManaging_Sound	  = AddToggleOption("$Equip Sound", sManaging_Sound, OPTION_FLAG_NONE)
+		optManaging_Toggle	  = AddToggleOption("$Toggle Equip/Unequip", sManaging_Toggle, OPTION_FLAG_NONE)
+		optManaging_Reequip	  = AddToggleOption("$Re Equip", sManaging_Reequip, OPTION_FLAG_NONE)
 		AddHeaderOption("", OPTION_FLAG_NONE)
-		optManaging_Widget = 	AddMenuOption("$Widget Type", "", OPTION_FLAG_NONE)
-		optManaging_Hpos = 		AddSliderOption("$Horizontal Position", 1.0, "{0}", OPTION_FLAG_NONE)
-		optManaging_Vpos = 		AddSliderOption("$Vertical Position", 1.0, "{0}", OPTION_FLAG_NONE)
-		optManaging_DWidget = 	AddToggleOption("$Display Equipset Widget", false, OPTION_FLAG_NONE)
-		optManaging_DName = 	AddToggleOption("$Display Equipset Name", false, OPTION_FLAG_NONE)
-		optManaging_DHotkey = 	AddToggleOption("$Display Equipset Hotkey", false, OPTION_FLAG_NONE)
+		optManaging_Widget	  = AddMenuOption("$Widget Type", sManaging_Widget as string, OPTION_FLAG_NONE)
+		optManaging_Hpos	  = AddSliderOption("$Horizontal Position", sManaging_Hpos as float, "{0}", OPTION_FLAG_NONE)
+		optManaging_Vpos	  = AddSliderOption("$Vertical Position", sManaging_Vpos as float, "{0}", OPTION_FLAG_NONE)
+		optManaging_DWidget	  = AddToggleOption("$Display Equipset Widget", sManaging_DWidget, OPTION_FLAG_NONE)
+		optManaging_DName	  = AddToggleOption("$Display Equipset Name", sManaging_DName, OPTION_FLAG_NONE)
+		optManaging_DHotkey	  = AddToggleOption("$Display Equipset Hotkey", sManaging_DHotkey, OPTION_FLAG_NONE)
 		AddHeaderOption("", OPTION_FLAG_NONE)
-		optManaging_Confirm = 	AddTextOption("", "$Confirm Adding New Equipset", OPTION_FLAG_NONE)
-		optManaging_Cancel = 	AddTextOption("", "$Cancel and Back", OPTION_FLAG_NONE)
+		optManaging_Confirm	  = AddTextOption("", "$Confirm Adding New Equipset", OPTION_FLAG_NONE)
+		optManaging_Cancel	  = AddTextOption("", "$Cancel and Back", OPTION_FLAG_NONE)
 
 		SetCursorPosition(1)
 
 		AddHeaderOption("$Weapons", OPTION_FLAG_NONE)
-		optManaging_Left = AddTextOption("$Lefthand", "", OPTION_FLAG_NONE)
-		optManaging_Right = AddTextOption("$Righthand", "", OPTION_FLAG_NONE)
-		optManaging_Shout = AddTextOption("$Shout", "", OPTION_FLAG_NONE)
+		optManaging_Left	  = AddMenuOption("$Lefthand", sManaging_Left as string, OPTION_FLAG_NONE)
+		optManaging_Right	  = AddMenuOption("$Righthand", sManaging_Right as string, OPTION_FLAG_NONE)
+		optManaging_Shout	  = AddMenuOption("$Shout", sManaging_Shout as string, OPTION_FLAG_NONE)
 		AddEmptyOption()
 		AddHeaderOption("$Items", OPTION_FLAG_NONE)
 
 	elseif CurOpt == eOpt_NewCycle
-		AddInputOption("$Equipset Name:", Colorize("$Sample", "#7257CA"), OPTION_FLAG_NONE)
+		AddInputOption("$Equipset Name:", CString("$Sample", "#7257CA"), OPTION_FLAG_NONE)
 		AddKeyMapOption("$Hotkey", -1, OPTION_FLAG_WITH_UNMAP)
 		AddToggleOption("$Left Shift", false, OPTION_FLAG_NONE)
 		AddToggleOption("$Left Control", false, OPTION_FLAG_NONE)
@@ -174,7 +220,7 @@ Function OnPage_Overview()
 	SetCursorFillMode(TOP_TO_BOTTOM)
 	AddTextOption("$SampleName #1", "$Open", OPTION_FLAG_NONE)
 	AddTextOption("$SampleName #2", "$Open", OPTION_FLAG_NONE)
-	AddTextOption(Colorize("$SampleName #3", "#7257CA"), "", OPTION_FLAG_NONE)
+	AddTextOption(CString("$SampleName #3", "#7257CA"), "", OPTION_FLAG_NONE)
 	AddTextOption("$SampleName #4", "$Open", OPTION_FLAG_NONE)
 	AddTextOption("$SampleName #5", "$Open", OPTION_FLAG_NONE)
 	AddTextOption("$SampleName #6", "$Open", OPTION_FLAG_NONE)
@@ -188,9 +234,9 @@ Function OnPage_Overview()
 
 	SetCursorPosition(1)
 
-	AddHeaderOption(Colorize("$SampleName #3", "#7257CA"), OPTION_FLAG_NONE)
-	AddTextOption("$Righthand", "Iron sword", OPTION_FLAG_NONE)
+	AddHeaderOption(CString("$SampleName #3", "#7257CA"), OPTION_FLAG_NONE)
 	AddTextOption("$Lefthand", "Wooden staff", OPTION_FLAG_NONE)
+	AddTextOption("$Righthand", "Iron sword", OPTION_FLAG_NONE)
 	AddTextOption("$Shout", "$None", OPTION_FLAG_NONE)
 	AddEmptyOption()
 	AddHeaderOption("$Items", OPTION_FLAG_NONE)
@@ -274,9 +320,9 @@ Function OnPage_Maintenance()
 	AddHeaderOption("$Maintenance", OPTION_FLAG_NONE)
 	AddTextOption("$Reset Settings", "Go", OPTION_FLAG_NONE)
 	AddTextOption("$Reset Equipsets", "Go", OPTION_FLAG_NONE)
-	AddTextOption("$Mod Status", Colorize("$Activated", "#4FE0A7"), OPTION_FLAG_NONE)
-	AddTextOption("$Widget Status", Colorize("$Activated", "#4FE0A7"), OPTION_FLAG_NONE)
-	AddTextOption("$Equipped Widget Status", Colorize("$Activated", "#4FE0A7"), OPTION_FLAG_NONE)
+	AddTextOption("$Mod Status", CString("$Activated", "#4FE0A7"), OPTION_FLAG_NONE)
+	AddTextOption("$Widget Status", CString("$Activated", "#4FE0A7"), OPTION_FLAG_NONE)
+	AddTextOption("$Equipped Widget Status", CString("$Activated", "#4FE0A7"), OPTION_FLAG_NONE)
 EndFunction
 
 ; End of writting MCM pages functions.
@@ -293,16 +339,18 @@ EndFunction
 
 Function OnOptionSelect(Int _opt)
 	if CurPage == ePage_Manaing
-		if _opt == optManaging_New
-			CurOpt = eOpt_New
-		elseif _opt == optManaging_NewCycle
-			CurOpt = eOpt_NewCycle
-		elseif _opt == optManaging_Edit
-			CurOpt = eOpt_Edit
-		elseif _opt == optManaging_Remove
-			CurOpt = eOpt_Remove
+		if CurOpt == eOpt_None
+			if _opt == optManaging_New
+				CurOpt = eOpt_New
+			elseif _opt == optManaging_NewCycle
+				CurOpt = eOpt_NewCycle
+			elseif _opt == optManaging_Edit
+				CurOpt = eOpt_Edit
+			elseif _opt == optManaging_Remove
+				CurOpt = eOpt_Remove
+			endif
+			ForcePageReset()
 		endif
-		ForcePageReset()
 	endif
 EndFunction
 
@@ -312,6 +360,6 @@ Function ClearProperties()
 	CurOpt = eOpt_None
 EndFunction
 
-string Function Colorize(String _text, String _code)
+string Function CString(String _text, String _code)
 	return "<font color='" + _code + "''>" + _text + "</font>"
 EndFunction
