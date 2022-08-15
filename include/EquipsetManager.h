@@ -10,6 +10,8 @@ namespace UIHS {
 
         void NewEquipset(std::string _name, MCM::Hotkey* _hotkey, MCM::Option* _option, MCM::Widget* _widget, MCM::Equipment* _equipment);
         void Display();
+        RE::BSFixedString GetNamePrefix();
+
 
         /**
          * The serialization handler for reverting game state.

@@ -27,6 +27,7 @@
             "description": "Build the SKSE plugin.",
             "dependencies": [
                 "articuno",
+                "jsoncpp",
                 "commonlibsse-ng"
             ]
         },

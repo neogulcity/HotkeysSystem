@@ -104,6 +104,38 @@ void EquipsetManager::Display() {
     }
 }
 
+RE::BSFixedString EquipsetManager::GetNamePrefix()
+{
+    RE::BSFixedString result;
+
+    int size = mEquipset.size();
+    if (size == 0) {
+        result = "Equipset - 1";
+        return result;
+    }
+
+    int prefix = size + 1;
+    std::string name = "Equipset - ";
+    while (true) {
+        bool isConflict = false;
+        std::string strPrefix = std::to_string(prefix);
+        for (const auto& elem : mEquipset) {
+            if (elem->mName == name + strPrefix) {
+                isConflict = true;
+            }
+        }
+        
+        if (isConflict) {
+            ++prefix;
+        } else {
+            result = static_cast<RE::BSFixedString>(name + strPrefix);
+            return result;
+        }
+    }
+
+    return result;
+}
+
 void EquipsetManager::OnRevert(SerializationInterface*) {
     std::unique_lock lock(GetSingleton()._lock);
 }

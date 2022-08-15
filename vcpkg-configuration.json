@@ -6,6 +6,7 @@
             "baseline": "5a11d06fd1b2d7cd6339d6aea48d450309e89cc1",
             "packages": [
                 "articuno",
+                "jsoncpp",
                 "bethesda-skyrim-scripts",
                 "commonlibsse-ng",
                 "gluino",

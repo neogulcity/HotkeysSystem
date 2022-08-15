@@ -14,16 +14,23 @@ namespace MCM {
         NameDesc
     };
 
+    enum class eListType {
+        Widget,
+        Weapon,
+        Shout,
+        Items
+    };
+
     class Hotkey {
     public:
         Hotkey() : mKeyCode(-1) {
-            mModifier[0] = -1;
-            mModifier[1] = -1;
-            mModifier[2] = -1;
+            mModifier[0] = false;
+            mModifier[1] = false;
+            mModifier[2] = false;
         }
 
         int32_t mKeyCode;      // Hotkey keycode
-        int32_t mModifier[3];  // Modifier key
+        bool mModifier[3];  // Modifier key
     };
 
     class Option {
@@ -90,14 +97,33 @@ namespace MCM {
         std::vector<std::pair<RE::EnchantmentItem*, float>> mItemsExtra;  // first: Items enchantment, second: Items tempered value
     };
 
-    class Setting {
+    class DataHolder {
     public:
-        [[nodiscard]] static Setting& GetSingleton() noexcept;
+        [[nodiscard]] static DataHolder& GetSingleton() noexcept;
 
-        bool mFavor;        // Favorited only option
-        eSortType mSort;    // Equipset sorting type
+        struct Setting {
+            bool mFavor;           // Favorited only option
+            eSortType mSort;       // Equipset sorting type
+            int32_t mModifier[3];  // Modifier keycode
+        };
+
+        struct List {
+            std::vector<std::pair<std::string, std::string>> mWidgetList;  // first: Widget type, second: Widget path
+            std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> mWeaponList;   // first: Weapon name, second: Weapon form, third: Extradatalist
+            std::vector<std::pair<std::string, RE::TESForm*>> mShoutList;         // Shout list
+            std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> mItemsList;    // Items list
+        };
+
+        Setting setting;
+        List list;
 
     private:
-        Setting() = default;
+        DataHolder() = default;
     };
+
+    void Init_WidgetList();
+    void Init_WeaponList();
+    void Init_ShoutList();
+    void Init_ItemsList();
+    void ClearList();
 }

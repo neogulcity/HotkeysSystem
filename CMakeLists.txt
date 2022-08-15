@@ -31,6 +31,7 @@ set(sources
         src/EquipsetManager.cpp
         src/ExtraData.cpp
         src/MCM.cpp
+        src/Actor.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 
@@ -57,6 +58,7 @@ message("\tTests: ${BUILD_TESTS}")
 ########################################################################################################################
 find_package(CommonLibSSE CONFIG REQUIRED)
 find_package(ryml CONFIG REQUIRED)
+find_package(jsoncpp CONFIG REQUIRED)
 find_path(ARTICUNO_INCLUDE_DIRS "articuno/articuno.h")
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${headers} ${sources})
@@ -75,7 +77,8 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
-        ryml::ryml)
+        ryml::ryml
+        JsonCpp::JsonCpp)
 
 target_precompile_headers(${PROJECT_NAME}
         PRIVATE
