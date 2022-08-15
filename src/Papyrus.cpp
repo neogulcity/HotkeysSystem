@@ -150,7 +150,7 @@ namespace Papyrus {
         MCM::Init_WidgetList();
         MCM::Init_WeaponList();
         MCM::Init_ShoutList();
-        // MCM::Init_ItemsList();
+        MCM::Init_ItemsList();
     }
 
     void UIHS_Clear(RE::StaticFunctionTag*)
@@ -233,7 +233,8 @@ namespace Papyrus {
             case MCM::eListType::Widget:
                 size = dataHolder->list.mWidgetList.size();
                 for (int i = 0; i < size; i++) {
-                    result.push_back(static_cast<RE::BSFixedString>(dataHolder->list.mWidgetList[i].first));
+                    std::string name = dataHolder->list.mWidgetList[i].first;
+                    result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
@@ -249,6 +250,14 @@ namespace Papyrus {
                 size = dataHolder->list.mShoutList.size();
                 for (int i = 0; i < size; i++) {
                     std::string name = dataHolder->list.mShoutList[i].first;
+                    result.push_back(static_cast<RE::BSFixedString>(name));
+                }
+                break;
+
+            case MCM::eListType::Items:
+                size = dataHolder->list.mItemsList.size();
+                for (int i = 0; i < size; i++) {
+                    std::string name = std::get<0>(dataHolder->list.mItemsList[i]);
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
@@ -292,6 +301,14 @@ namespace Papyrus {
                 size = dataHolder->list.mShoutList.size();
                 if (_index < size) {
                     std::string name = dataHolder->list.mShoutList[_index].first;
+                    result = static_cast<RE::BSFixedString>(name);
+                }
+                break;
+
+            case MCM::eListType::Items:
+                size = dataHolder->list.mItemsList.size();
+                if (_index < size) {
+                    std::string name = std::get<0>(dataHolder->list.mItemsList[_index]);
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
