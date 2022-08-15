@@ -250,6 +250,94 @@ namespace MCM {
         }
     }
 
+    void Init_ItemsList()
+    {
+        std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> result;
+        
+        auto playerref = RE::PlayerCharacter::GetSingleton();
+        if (!playerref) {
+            return;
+        }
+
+        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        if (!dataHolder) {
+            return;
+        }
+
+        auto inv = playerref->GetInventory();
+        for (const auto& [item, data] : inv) {
+            if (item->Is(RE::FormType::LeveledItem, RE::FormType::Weapon)) {
+                continue;
+            }
+
+            const auto& [numItem, entry] = data;
+            if (numItem > 0) {
+                if (item->Is(RE::FormType::Armor)) {
+                    int numExtra = 0;
+                    int numFavor = 0;
+                    uint32_t favorSize = 0;
+                    auto extraLists = entry->extraLists;
+                    if (extraLists) {
+                        favorSize = Extra::GetNumFavorited(extraLists);
+                        for (auto& xList : *extraLists) {
+                            if (Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                                if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                                    RE::BSFixedString name;
+                                    name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                    std::string sName = static_cast<std::string>(name);
+                                    result.push_back(std::make_tuple(sName, item, xList));
+                                    ++numFavor;
+                                }
+                                ++numExtra;
+                            } else if (Extra::IsEnchanted(xList) && !Extra::IsTempered(xList)) {
+                                if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                                    RE::BSFixedString name;
+                                    name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                    std::string sName = static_cast<std::string>(name);
+                                    result.push_back(std::make_tuple(sName, item, xList));
+                                    ++numFavor;
+                                }
+                                ++numExtra;
+                            } else if (!Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                                if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                                    RE::BSFixedString name;
+                                    name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
+                                    std::string sName = static_cast<std::string>(name);
+                                    result.push_back(std::make_tuple(sName, item, xList));
+                                    ++numFavor;
+                                }
+                                ++numExtra;
+                            }
+                        }
+                    }
+                    if (numItem - numExtra != 0) {
+                        if (!dataHolder->setting.mFavor || favorSize - numFavor != 0) {
+                            RE::BSFixedString name;
+                            name = item->GetName();
+                            std::string sName = static_cast<std::string>(name);
+                            result.push_back(std::make_tuple(sName, item, nullptr));
+                        }
+                    }
+                }
+                else {
+                    if (!dataHolder->setting.mFavor || Extra::IsFavorited(entry->extraLists)) {
+                        RE::BSFixedString name;
+                        name = item->GetName();
+                        std::string sName = static_cast<std::string>(name);
+                        result.push_back(std::make_tuple(sName, item, nullptr));
+                    }
+                }
+            }
+        }
+
+        sort(result.begin(), result.end());
+        dataHolder->list.mWeaponList.push_back(std::make_tuple("$Nothing", nullptr, nullptr));
+
+        for (int i = 0; i < result.size(); i++) {
+            dataHolder->list.mItemsList.push_back(result[i]);
+        }
+    }
+
     void ClearList()
     {
         auto dataHolder = &MCM::DataHolder::GetSingleton();
