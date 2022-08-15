@@ -17,6 +17,7 @@ namespace Extra {
 	RE::BSFixedString GetDisplayName(RE::ExtraDataList* _xList);
 
 	bool IsFavorited(RE::ExtraDataList* _xList);
+    bool IsFavorited(RE::BSSimpleList<RE::ExtraDataList*> _extraList);
     bool IsMagicFavorited(RE::TESForm* _form);
     uint32_t GetNumFavorited(RE::BSSimpleList<RE::ExtraDataList*>* _extraLists);
 }
