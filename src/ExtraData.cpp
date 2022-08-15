@@ -147,6 +147,21 @@ namespace Extra {
         return false;
     }
 
+    bool IsFavorited(RE::BSSimpleList<RE::ExtraDataList*> _extraLists)
+    {
+        if (!_extraLists) {
+            return false;
+        }
+
+        for (const auto& xList : *_extraLists) {
+            if (_xList && _xList->HasType<RE::ExtraHotkey>()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     bool IsMagicFavorited(RE::TESForm* _form)
     {
         if (!_form) {
