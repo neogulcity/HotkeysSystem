@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Equipset.h"
+#include "MCM.h"
 
 namespace UIHS {
     class __declspec(dllexport) EquipsetManager {
@@ -8,9 +9,19 @@ namespace UIHS {
 
         [[nodiscard]] static EquipsetManager& GetSingleton() noexcept;
 
-        void NewEquipset(std::string _name, MCM::Hotkey* _hotkey, MCM::Option* _option, MCM::Widget* _widget, MCM::Equipment* _equipment);
+        void NewEquipset(std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment);
+        void NewCycleEquipset(std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, uint32_t _cycleIndex);
         void Display();
-        RE::BSFixedString GetNamePrefix();
+        void DisplayCycle();
+        Equipset* SearchEquipsetByName(std::string _name);
+        const RE::BSFixedString GetNamePrefix();
+        RE::BSFixedString GetKeyConflict(int32_t _key, std::vector<bool> _modifier, bool _beast);
+        std::vector<std::string> GetEquipsetList();
+        std::vector<std::string> GetAllEquipsetList();
+        std::vector<RE::BSFixedString> GetEquipsetData(RE::BSFixedString _name);
+        uint32_t GetIndexFromList(std::string _name, MCM::eListType _type);
+        uint32_t GetIndexFromList(RE::TESForm* _form, RE::ExtraDataList* _xList, MCM::eListType _type);
+        bool IsNameConflict(RE::BSFixedString _name);
 
 
         /**
@@ -21,7 +32,7 @@ namespace UIHS {
          * serialization handling on a new game or before a save game is loaded. It should be used to revert the state
          * of the plugin back to its default.
          * </p>
-         */
+        */
         static void OnRevert(SKSE::SerializationInterface*);
 
         /**
@@ -43,5 +54,6 @@ namespace UIHS {
 
         mutable std::mutex _lock;
         std::vector<Equipset*> mEquipset;
+        std::vector<CycleEquipset*> mCycleEquipset;
     };
 }

@@ -108,10 +108,10 @@ namespace {
      * </p>
      */
     void InitializeHooking() {
-        log::trace("Initializing trampoline...");
+        //log::trace("Initializing trampoline...");
         //auto& trampoline = GetTrampoline();
         //trampoline.create(64);
-        log::trace("Trampoline initialized.");
+        //log::trace("Trampoline initialized.");
 
         //Sample::InitializeHook(trampoline);
     }

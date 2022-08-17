@@ -1,9 +1,10 @@
 #include <fstream>
+#include "json/json.h"
 
 #include "Actor.h"
-#include "MCM.h"
+#include "EquipsetManager.h"
 #include "ExtraData.h"
-#include "json/json.h"
+#include "MCM.h"
 
 using namespace SKSE;
 
@@ -331,11 +332,35 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mWeaponList.push_back(std::make_tuple("$Nothing", nullptr, nullptr));
+        dataHolder->list.mItemsList.push_back(std::make_tuple("$Nothing", nullptr, nullptr));
 
         for (int i = 0; i < result.size(); i++) {
             dataHolder->list.mItemsList.push_back(result[i]);
         }
+    }
+
+    void Init_CycleItemsList() {
+        std::vector<std::string> result;
+
+        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        if (!dataHolder) {
+            return;
+        }
+
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        if (!manager) {
+            return;
+        }
+
+        result.push_back("$Nothing");
+
+        std::vector<std::string> nameList;
+        nameList = manager->GetEquipsetList();
+        for (const auto& elem : nameList) {
+            result.push_back(elem);
+        }
+
+        dataHolder->list.mCycleItemsList = result;
     }
 
     void ClearList()
@@ -349,10 +374,12 @@ namespace MCM {
         std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> weapon;
         std::vector<std::pair<std::string, RE::TESForm*>> shout;
         std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> items;
+        std::vector<std::string> CycleItems;
 
         dataHolder->list.mWidgetList = widget;
         dataHolder->list.mWeaponList = weapon;
         dataHolder->list.mShoutList = shout;
         dataHolder->list.mItemsList = items;
+        dataHolder->list.mCycleItemsList = CycleItems;
     }
 }

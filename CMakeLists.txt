@@ -27,11 +27,11 @@ set(sources
         src/Config.cpp
         src/Main.cpp
         src/Papyrus.cpp
-        src/Equipset.cpp
         src/EquipsetManager.cpp
         src/ExtraData.cpp
         src/MCM.cpp
         src/Actor.cpp
+        src/Serialize.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 

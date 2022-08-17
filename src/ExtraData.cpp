@@ -147,14 +147,14 @@ namespace Extra {
         return false;
     }
 
-    bool IsFavorited(RE::BSSimpleList<RE::ExtraDataList*> _extraLists)
+    bool IsFavorited(RE::BSSimpleList<RE::ExtraDataList*>* _extraLists)
     {
         if (!_extraLists) {
             return false;
         }
 
         for (const auto& xList : *_extraLists) {
-            if (_xList && _xList->HasType<RE::ExtraHotkey>()) {
+            if (xList && xList->HasType<RE::ExtraHotkey>()) {
                 return true;
             }
         }
@@ -191,6 +191,81 @@ namespace Extra {
             }
         }
 
+        return result;
+    }
+
+    RE::ExtraDataList* SearchExtraList(RE::TESForm* _form, uint32_t _numEnch, RE::EnchantmentItem* _ench, float _health)
+    {
+        RE::ExtraDataList* result = nullptr;
+
+        if (!_form) {
+            return result;
+        }
+
+        auto playerref = RE::PlayerCharacter::GetSingleton();
+        if (!playerref) {
+            return result;
+        }
+
+        auto inv = playerref->GetInventory();
+        for (const auto& [item, data] : inv) {
+            const auto& [numItem, entry] = data;
+            if (!item->Is(RE::FormType::Weapon, RE::FormType::Armor)) {
+                continue;
+            }
+
+            if (numItem > 0 && item->GetFormID() == _form->GetFormID()) {
+                RE::EnchantmentItem* formEnchantment = nullptr;
+
+                if (item->formType == RE::FormType::Weapon) {
+                    auto weapon = item->As<RE::TESObjectWEAP>();
+                    formEnchantment = weapon && weapon->formEnchanting ? weapon->formEnchanting : nullptr;
+                } else if (item->formType == RE::FormType::Armor) {
+                    auto armor = item->As<RE::TESObjectARMO>();
+                    formEnchantment = armor && armor->formEnchanting ? armor->formEnchanting : nullptr;
+                }
+
+                if (formEnchantment) {
+                    auto extraLists = entry->extraLists;
+                    if (extraLists) {
+                        for (auto& xList : *extraLists) {
+                            if (Extra::IsTempered(xList)) {
+                                if (!_ench && _health != 0.0f) {
+                                    bool bTemp = _health == Extra::GetHealth(xList) ? true : false;
+                                    result = bTemp ? xList : nullptr;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    auto extraLists = entry->extraLists;
+                    if (extraLists) {
+                        for (auto& xList : *extraLists) {
+                            if (Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                                if (_ench && _health != 0.0f) {
+                                    bool bNumEnch = _numEnch == Extra::GetNumEnchantment(xList) ? true : false;
+                                    bool bEnch = _ench == Extra::GetEnchantment(xList) ? true : false;
+                                    bool bTemp = _health == Extra::GetHealth(xList) ? true : false;
+                                    result = bNumEnch && bEnch && bTemp ? xList : nullptr;
+                                }
+                            } else if (Extra::IsEnchanted(xList) && !Extra::IsTempered(xList)) {
+                                if (_ench && _health == 0.0f) {
+                                    bool bNumEnch = _numEnch == Extra::GetNumEnchantment(xList) ? true : false;
+                                    bool bEnch = _ench == Extra::GetEnchantment(xList) ? true : false;
+                                    result = bNumEnch && bEnch ? xList : nullptr;
+                                }
+                            } else if (!Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
+                                if (!_ench && _health != 0.0f) {
+                                    bool bTemp = _health == Extra::GetHealth(xList) ? true : false;
+                                    result = bTemp ? xList : nullptr;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         return result;
     }
 }

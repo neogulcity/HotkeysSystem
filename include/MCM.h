@@ -18,83 +18,9 @@ namespace MCM {
         Widget,
         Weapon,
         Shout,
-        Items
-    };
-
-    class Hotkey {
-    public:
-        Hotkey() : mKeyCode(-1) {
-            mModifier[0] = false;
-            mModifier[1] = false;
-            mModifier[2] = false;
-        }
-
-        int32_t mKeyCode;      // Hotkey keycode
-        bool mModifier[3];  // Modifier key
-    };
-
-    class Option {
-    public:
-        Option()
-            : mSound(false),
-              mToggleEquip(false),
-              mReEquip(false) {}
-
-        bool mSound;        // Equip sound
-        bool mToggleEquip;  // Toggle equip/unequip
-        bool mReEquip;      // Re equip
-    };
-
-    class Widget {
-    public:
-        Widget()
-            : mIcon(""),
-              mHpos(0),
-              mVpos(0),
-              mDisplayIcon(false),
-              mDisplayName(false),
-              mDisplayHotkey(false) {}
-
-        std::string mIcon;    // Widget icon type
-        int32_t mHpos;        // Widget horizontal position
-        int32_t mVpos;        // Widget vertical position
-        bool mDisplayIcon;    // Enable widget equipset icon on hud
-        bool mDisplayName;    // Enable widget equipset name on hud
-        bool mDisplayHotkey;  // Enable widget equipset hotkey on hud
-    };
-
-    class Equipment {
-    public:
-        Equipment()
-            : mLeftOpt(0),
-              mRightOpt(0),
-              mShoutOpt(0),
-              mLefthand(nullptr),
-              mRighthand(nullptr),
-              mShout(nullptr),
-              mHasLeftExtra({false, false}),
-              mNumLeftEnch(0),
-              mLeftExtra({nullptr, 0.0f}),
-              mHasRightExtra({false, false}),
-              mNumRightEnch(0),
-              mRightExtra({nullptr, 0.0f}) {}
-
-        int32_t mLeftOpt;                                                 // Lefthand equip behavior option
-        int32_t mRightOpt;                                                // Righthand equip behavior option
-        int32_t mShoutOpt;                                                // Shout equip behavior option
-        uint32_t mNumLeftEnch;                                            // Number of lefthand enchantment
-        uint32_t mNumRightEnch;                                           // Number of righthand enchantment
-        RE::TESForm* mLefthand;                                           // Lighthand form
-        RE::TESForm* mRighthand;                                          // Righthand form
-        RE::TESForm* mShout;                                              // Shout/power form
-        std::pair<bool, bool> mHasLeftExtra;                              // first: Lefthand enchanted bool, second: Lefthand tempered bool
-        std::pair<bool, bool> mHasRightExtra;                             // first: Righthand enchanted bool, second: Righthand tempered bool
-        std::pair<RE::EnchantmentItem*, float> mLeftExtra;                // first: Lefthand enchantment, second: Lefthand tempered value
-        std::pair<RE::EnchantmentItem*, float> mRightExtra;               // first: Righthand enchantment, second: Righthand tempered value
-        std::vector<RE::TESForm*> mItems;                                 // Items form
-        std::vector<std::pair<bool, bool>> mHasItemsExtra;                // first: Items enchanted bool, second: Items tempered bool
-        std::vector<uint32_t> mNumItemsEnch;                              // Number of items enchantment
-        std::vector<std::pair<RE::EnchantmentItem*, float>> mItemsExtra;  // first: Items enchantment, second: Items tempered value
+        Items,
+        CycleItems,
+        Equipsets
     };
 
     class DataHolder {
@@ -112,6 +38,7 @@ namespace MCM {
             std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> mWeaponList;   // first: Weapon name, second: Weapon form, third: Extradatalist
             std::vector<std::pair<std::string, RE::TESForm*>> mShoutList;         // Shout list
             std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> mItemsList;    // Items list
+            std::vector<std::string> mCycleItemsList;  // CycleItems list
         };
 
         Setting setting;
@@ -125,5 +52,6 @@ namespace MCM {
     void Init_WeaponList();
     void Init_ShoutList();
     void Init_ItemsList();
+    void Init_CycleItemsList();
     void ClearList();
 }

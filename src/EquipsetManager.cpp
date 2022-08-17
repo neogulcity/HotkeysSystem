@@ -1,28 +1,268 @@
 #include "EquipsetManager.h"
-#include "MCM.h"
+#include "ExtraData.h"
 
-using namespace RE;
 using namespace UIHS;
-using namespace SKSE;
-
-namespace UIHS {
-    // These four-character record types, which store data in the SKSE cosave, are little-endian. That means they are
-    // reversed from the character order written here. Using the byteswap functions reverses them back to the order
-    // the characters are written in the source code.
-    inline const auto EquipsetRecord = _byteswap_ulong('HSER');
-    inline const auto CycleEquipsetRecord = _byteswap_ulong('HSCR');
-}
 
 EquipsetManager& EquipsetManager::GetSingleton() noexcept {
     static EquipsetManager instance;
     return instance;
 }
 
-void EquipsetManager::NewEquipset(std::string _name, MCM::Hotkey* _hotkey, MCM::Option* _option, MCM::Widget* _widget, MCM::Equipment* _equipment) {
+void EquipsetManager::NewEquipset(std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment)
+{
     mEquipset.push_back(new Equipset(_name, _hotkey, _option, _widget, _equipment));
 }
 
-void EquipsetManager::Display() {
+void EquipsetManager::NewCycleEquipset(std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, uint32_t _cycleIndex)
+{
+    mCycleEquipset.push_back(new CycleEquipset(_name, _hotkey, _option, _widget, _cycleItems, _cycleIndex));
+}
+
+std::vector<std::string> EquipsetManager::GetEquipsetList()
+{
+    std::vector<std::string> result;
+    for (const auto& elem : mEquipset) {
+        result.push_back(elem->mName);
+    }
+
+    return result;
+}
+
+std::vector<std::string> EquipsetManager::GetAllEquipsetList() {
+    std::vector<std::string> result;
+    for (const auto& elem : mEquipset) {
+        result.push_back(elem->mName);
+    }
+
+    for (const auto& elem : mCycleEquipset) {
+        result.push_back(elem->mName);
+    }
+
+    return result;
+}
+
+uint32_t EquipsetManager::GetIndexFromList(std::string _name, MCM::eListType _type)
+{
+    uint32_t result = 0;
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return result;
+    }
+
+    switch (_type) {
+        case MCM::eListType::Widget:
+            for (int i = 0; i < dataHolder->list.mWidgetList.size(); i++) {
+                if (_name == dataHolder->list.mWidgetList[i].second) {
+                    result = i;
+                }
+            }
+            break;
+
+        case MCM::eListType::Shout:
+            for (int i = 0; i < dataHolder->list.mShoutList.size(); i++) {
+                if (_name == dataHolder->list.mShoutList[i].first) {
+                    result = i;
+                }
+            }
+            break;
+
+        case MCM::eListType::CycleItems:
+            for (int i = 0; i < dataHolder->list.mCycleItemsList.size(); i++) {
+                if (_name == dataHolder->list.mCycleItemsList[i]) {
+                    result = i;
+                }
+            }
+            break;
+    }
+
+    return result;
+}
+
+
+uint32_t EquipsetManager::GetIndexFromList(RE::TESForm* _form, RE::ExtraDataList* _xList, MCM::eListType _type)
+{
+    uint32_t result = 0;
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return result;
+    }
+
+    if (_type == MCM::eListType::Weapon) {
+        for (int i = 0; i < dataHolder->list.mWeaponList.size(); i++) {
+            RE::FormID ID = 0, compareID = 0;
+            RE::TESForm* compareForm = std::get<1>(dataHolder->list.mWeaponList[i]);
+            if (_form) {
+                ID = _form->GetFormID();
+            }
+            if (compareForm) {
+                compareID = compareForm->GetFormID();
+            }
+            RE::ExtraDataList* comparexList = std::get<2>(dataHolder->list.mWeaponList[i]);
+            if (ID == compareID && _xList == comparexList) {
+                result = i;
+            }
+        }
+    }
+    else if (_type == MCM::eListType::Items) {
+        for (int i = 0; i < dataHolder->list.mItemsList.size(); i++) {
+            RE::FormID ID = 0, compareID = 0;
+            RE::TESForm* compareForm = std::get<1>(dataHolder->list.mItemsList[i]);
+            if (_form) {
+                ID = _form->GetFormID();
+            }
+            if (compareForm) {
+                compareID = compareForm->GetFormID();
+            }
+            RE::ExtraDataList* comparexList = std::get<2>(dataHolder->list.mItemsList[i]);
+            if (ID == compareID && _xList == comparexList) {
+                result = i;
+            }
+        }
+    }
+
+    return result;
+}
+
+std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedString _name)
+{
+    std::vector<std::string> result;
+    auto name = static_cast<std::string>(_name);
+    for (const auto& elem : mEquipset) {
+        if (elem->mName == name) {
+            result.push_back(std::to_string(false));
+            result.push_back(elem->mName);
+            result.push_back(std::to_string(elem->mHotkey->mKeyCode));
+            result.push_back(std::to_string(elem->mHotkey->mModifier[0]));
+            result.push_back(std::to_string(elem->mHotkey->mModifier[1]));
+            result.push_back(std::to_string(elem->mHotkey->mModifier[2]));
+            result.push_back(std::to_string(elem->mOption->mSound));
+            result.push_back(std::to_string(elem->mOption->mToggleEquip));
+            result.push_back(std::to_string(elem->mOption->mReEquip));
+            result.push_back(std::to_string(elem->mOption->mBeast));
+
+            uint32_t widgetIndex;
+            widgetIndex = GetIndexFromList(elem->mWidget->mWidget, MCM::eListType::Widget);
+            result.push_back(std::to_string(widgetIndex));
+            result.push_back(std::to_string(elem->mWidget->mHpos));
+            result.push_back(std::to_string(elem->mWidget->mVpos));
+            result.push_back(std::to_string(elem->mWidget->mDisplayWidget));
+            result.push_back(std::to_string(elem->mWidget->mDisplayName));
+            result.push_back(std::to_string(elem->mWidget->mDisplayHotkey));
+            
+            uint32_t leftIndex;
+            auto left = elem->mEquipment->mLeft;
+            MCM::eAction lAction = static_cast<MCM::eAction>(left.option);
+            switch (lAction) {
+                case MCM::eAction::Nothing:
+                    result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Nothing)));
+                    break;
+
+                case MCM::eAction::Unequip:
+                    result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Unequip)));
+                    break;
+
+                default:
+                    leftIndex = GetIndexFromList(left.form, left.xList, MCM::eListType::Weapon);
+                    result.push_back(std::to_string(leftIndex));
+                    break;
+            }
+
+            uint32_t rightIndex;
+            auto right = elem->mEquipment->mRight;
+            MCM::eAction rAction = static_cast<MCM::eAction>(right.option);
+            switch (rAction) {
+                case MCM::eAction::Nothing:
+                    result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Nothing)));
+                    break;
+
+                case MCM::eAction::Unequip:
+                    result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Unequip)));
+                    break;
+
+                default:
+                    rightIndex = GetIndexFromList(right.form, right.xList, MCM::eListType::Weapon);
+                    result.push_back(std::to_string(rightIndex));
+                    break;
+            }
+
+            uint32_t shoutIndex;
+            auto shout = elem->mEquipment->mShout;
+            MCM::eAction sAction = static_cast<MCM::eAction>(shout.option);
+            switch (sAction) {
+                case MCM::eAction::Nothing:
+                    result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Nothing)));
+                    break;
+
+                case MCM::eAction::Unequip:
+                    result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Unequip)));
+                    break;
+
+                default:
+                    auto form = elem->mEquipment->mShout.form;
+                    if (!form) {
+                        shoutIndex = GetIndexFromList(form->GetName(), MCM::eListType::Shout);
+                        result.push_back(std::to_string(shoutIndex));
+                    }
+                    break;
+            }
+
+            Equipment::Items items = elem->mEquipment->mItems;
+            result.push_back(std::to_string(items.numItems));
+            for (int i = 0; i < items.numItems; i++) {
+                uint32_t itemIndex;
+                itemIndex = GetIndexFromList(items.form[i], items.xList[i], MCM::eListType::Items);
+                result.push_back(std::to_string(itemIndex));
+            }
+        }
+    }
+
+    if (result.size() != 0) {
+        std::vector<RE::BSFixedString> strReturn;
+        for (const auto& elem : result) {
+            strReturn.push_back(static_cast<RE::BSFixedString>(elem));
+        }
+        return strReturn;
+    }
+
+    for (const auto& elem : mCycleEquipset) {
+        if (elem->mName == name) {
+            result.push_back(std::to_string(true));
+            result.push_back(elem->mName);
+            result.push_back(std::to_string(elem->mHotkey->mKeyCode));
+            result.push_back(std::to_string(elem->mHotkey->mModifier[0]));
+            result.push_back(std::to_string(elem->mHotkey->mModifier[1]));
+            result.push_back(std::to_string(elem->mHotkey->mModifier[2]));
+            result.push_back(std::to_string(elem->mOption->mPersist));
+            result.push_back(std::to_string(elem->mOption->mExpire));
+            result.push_back(std::to_string(elem->mOption->mReset));
+            result.push_back(std::to_string(elem->mOption->mBeast));
+            result.push_back(std::to_string(elem->mWidget->mHpos));
+            result.push_back(std::to_string(elem->mWidget->mVpos));
+            result.push_back(std::to_string(elem->mWidget->mDisplayWidget));
+            result.push_back(std::to_string(elem->mWidget->mDisplayName));
+            result.push_back(std::to_string(elem->mWidget->mDisplayHotkey));
+            result.push_back(std::to_string(elem->mCycleItems.size()));
+
+            for (int i = 0; i < elem->mCycleItems.size(); i++) {
+                uint32_t itemIndex;
+                itemIndex = GetIndexFromList(elem->mCycleItems[i], MCM::eListType::CycleItems);
+                result.push_back(std::to_string(itemIndex));
+            }
+
+        }
+    }
+
+    std::vector<RE::BSFixedString> strReturn;
+    for (const auto& elem : result) {
+        strReturn.push_back(static_cast<RE::BSFixedString>(elem));
+    }
+    return strReturn;
+}
+
+void EquipsetManager::Display()
+{
     auto equipsetSize = mEquipset.size();
 
     log::debug("equipsetSize: {}", mEquipset.size());
@@ -39,76 +279,135 @@ void EquipsetManager::Display() {
         log::debug("Equip Sound: {}", option->mSound);
         log::debug("Toggle Equip/Unequip: {}", option->mToggleEquip);
         log::debug("Re Equip: {}", option->mReEquip);
+        log::debug("Beast Hotkey: {}", option->mBeast);
 
         auto widget = equipset->mWidget;
-        log::debug("Icon Type: {}", widget->mIcon);
+        log::debug("Widget Type: {}", widget->mWidget);
         log::debug("H Pos: {}", widget->mHpos);
         log::debug("V Pos: {}", widget->mVpos);
-        log::debug("Display Icon: {}", widget->mDisplayIcon);
+        log::debug("Display Widget: {}", widget->mDisplayWidget);
         log::debug("Display Name: {}", widget->mDisplayName);
         log::debug("Display Hotkey: {}", widget->mDisplayHotkey);
 
         auto equipment = equipset->mEquipment;
-        log::debug("Lefthand Option: {}", equipment->mLeftOpt);
-        if (equipment->mLeftOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-            auto left = equipment->mLefthand;
-            bool IsEnchanted = equipment->mHasLeftExtra.first;
-            bool IsTempered = equipment->mHasLeftExtra.second;
+        auto left = equipment->mLeft;
+        log::debug("Lefthand Option: {}", left.option);
+        if (left.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+            auto leftForm = left.form;
+            bool IsEnchanted = left.hasExtra.first;
+            bool IsTempered = left.hasExtra.second;
+            auto name = Extra::HasDisplayName(left.xList) ? Extra::GetDisplayName(left.xList) : leftForm->GetName();
             if (IsEnchanted && IsTempered) {
-                log::debug("[Lefthand] {}({:X}) - {}: {} - {}", left->GetName(), left->formID, equipment->mNumLeftEnch, equipment->mLeftExtra.first->GetName(), equipment->mLeftExtra.second);
+                log::debug("[Lefthand] {}({:X}) - {}: {} - {}", name, leftForm->formID, left.numEnch, left.extraData.first->GetName(), left.extraData.second);
             } else if (!IsEnchanted && IsTempered) {
-                log::debug("[Lefthand] {}({:X}) - None - {}", left->GetName(), left->formID, equipment->mLeftExtra.second);
+                log::debug("[Lefthand] {}({:X}) - None - {}", name, leftForm->formID, left.extraData.second);
             } else if (IsEnchanted && !IsTempered) {
-                log::debug("[Lefthand] {}({:X}) - {}: {} - None", left->GetName(), left->formID, equipment->mNumLeftEnch, equipment->mLeftExtra.first->GetName());
+                log::debug("[Lefthand] {}({:X}) - {}: {} - None", name, leftForm->formID, left.numEnch, left.extraData.first->GetName());
             } else {
-                log::debug("[Lefthand] {}({:X}) - None - None", left->GetName(), left->formID);
+                log::debug("[Lefthand] {}({:X}) - None - None", name, leftForm->formID);
             }
         }
-        log::debug("Righthand Option: {}", equipment->mRightOpt);
-        if (equipment->mRightOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-            auto right = equipment->mRighthand;
-            bool IsEnchanted = equipment->mHasRightExtra.first;
-            bool IsTempered = equipment->mHasRightExtra.second;
+
+        auto right = equipment->mRight;
+        log::debug("Righthand Option: {}", right.option);
+        if (right.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+            auto rightForm = right.form;
+            bool IsEnchanted = right.hasExtra.first;
+            bool IsTempered = right.hasExtra.second;
+            auto name = Extra::HasDisplayName(right.xList) ? Extra::GetDisplayName(right.xList) : rightForm->GetName();
             if (IsEnchanted && IsTempered) {
-                log::debug("[Righthand] {}({:X}) - {}: {} - {}", right->GetName(), right->formID, equipment->mNumRightEnch, equipment->mRightExtra.first->GetName(), equipment->mRightExtra.second);
+                log::debug("[Righthand] {}({:X}) - {}: {} - {}", name, rightForm->formID, right.numEnch, right.extraData.first->GetName(), right.extraData.second);
             } else if (!IsEnchanted && IsTempered) {
-                log::debug("[Righthand] {}({:X}) - None - {}", right->GetName(), right->formID, equipment->mRightExtra.second);
+                log::debug("[Righthand] {}({:X}) - None - {}", name, rightForm->formID, right.extraData.second);
             } else if (IsEnchanted && !IsTempered) {
-                log::debug("[Righthand] {}({:X}) - {}: {} - None", right->GetName(), right->formID, equipment->mNumRightEnch, equipment->mRightExtra.first->GetName());
+                log::debug("[Righthand] {}({:X}) - {}: {} - None", name, rightForm->formID, right.numEnch, right.extraData.first->GetName());
             } else {
-                log::debug("[Righthand] {}({:X}) - None - None", right->GetName(), right->formID);
+                log::debug("[Righthand] {}({:X}) - None - None", name, rightForm->formID);
             }
         }
-        log::debug("Shout Option: {}", equipment->mShoutOpt);
-        if (equipment->mShoutOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-            log::debug("Shout: {}({:X})", equipment->mShout->GetName(), equipment->mShout->formID);
+
+        auto shout = equipment->mShout;
+        log::debug("Shout Option: {}", shout.option);
+        if (shout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+            log::debug("Shout: {}({:X})", shout.form->GetName(), shout.form->formID);
         }
 
         log::debug("Contained Items");
 
-        int size = equipment->mItems.size();
+        auto items = equipment->mItems;
+        uint32_t size = items.numItems;
+        log::debug("Items size: {}", size);
         for (int i = 0; i < size; i++) {
-            auto item = equipment->mItems[i];
-            bool IsEnchanted = equipment->mHasItemsExtra[i].first;
-            bool IsTempered = equipment->mHasItemsExtra[i].second;
+            auto itemsForm = items.form[i];
+            bool IsEnchanted = items.hasExtra[i].first;
+            bool IsTempered = items.hasExtra[i].second;
+            auto name = Extra::HasDisplayName(items.xList[i]) ? Extra::GetDisplayName(items.xList[i]) : itemsForm->GetName();
             if (IsEnchanted && IsTempered) {
-                log::debug("[Items] {}({:X}) - {}: {} - {}", item->GetName(), item->formID, equipment->mNumItemsEnch[i], equipment->mItemsExtra[i].first->GetName(), equipment->mItemsExtra[i].second);
+                log::debug("[Items] {}({:X}) - {}: {} - {}", name, itemsForm->formID, items.numEnch[i], items.extraData[i].first->GetName(), items.extraData[i].second);
             } else if (!IsEnchanted && IsTempered) {
-                log::debug("[Items] {}({:X}) - None - {}", item->GetName(), item->formID, equipment->mItemsExtra[i].second);
+                log::debug("[Items] {}({:X}) - None - {}", name, itemsForm->formID, items.extraData[i].second);
             } else if (IsEnchanted && !IsTempered) {
-                log::debug("[Items] {}({:X}) - {}: {} - None", item->GetName(), item->formID, equipment->mNumItemsEnch[i], equipment->mItemsExtra[i].first->GetName());
+                log::debug("[Items] {}({:X}) - {}: {} - None", name, itemsForm->formID, items.numEnch[i], items.extraData[i].first->GetName());
             } else {
-                log::debug("[Items] {}({:X}) - None - None", item->GetName(), item->formID);
+                log::debug("[Items] {}({:X}) - None - None", name, itemsForm->formID);
             }
         }
     }
 }
 
-RE::BSFixedString EquipsetManager::GetNamePrefix()
+void EquipsetManager::DisplayCycle()
+{
+    auto equipsetSize = mCycleEquipset.size();
+
+    log::debug("equipsetSize: {}", mCycleEquipset.size());
+    for (auto& equipset : mCycleEquipset) {
+        log::debug("Equipset Name: {}", equipset->mName);
+
+        auto hotkey = equipset->mHotkey;
+        log::debug("KeyCode: {}", hotkey->mKeyCode);
+        log::debug("Modifier Key 1: {}", hotkey->mModifier[0]);
+        log::debug("Modifier Key 2: {}", hotkey->mModifier[1]);
+        log::debug("Modifier Key 3: {}", hotkey->mModifier[2]);
+
+        auto option = equipset->mOption;
+        log::debug("Cycle Persist: {}", option->mPersist);
+        log::debug("Cycle Expire: {}sec", option->mExpire);
+        log::debug("Cycle Reset: {}sec", option->mReset);
+        log::debug("Beast Hotkey: {}", option->mBeast);
+
+        auto widget = equipset->mWidget;
+        log::debug("H Pos: {}", widget->mHpos);
+        log::debug("V Pos: {}", widget->mVpos);
+        log::debug("Display Widget: {}", widget->mDisplayWidget);
+        log::debug("Display Name: {}", widget->mDisplayName);
+        log::debug("Display Hotkey: {}", widget->mDisplayHotkey);
+
+        log::debug("Contained Equipsets");
+
+        uint32_t size = equipset->mCycleItems.size();
+        log::debug("Equipsets size: {}", size);
+        for (int i = 0; i < size; i++) {
+            log::debug("Equipset #{}: {}", i, equipset->mCycleItems[i]);
+        }
+    }
+}
+
+Equipset* EquipsetManager::SearchEquipsetByName(std::string _name)
+{
+    for (auto& elem : mEquipset) {
+        if (elem->mName == _name) {
+            return elem;
+        }
+    }
+
+    return nullptr;
+}
+
+const RE::BSFixedString EquipsetManager::GetNamePrefix()
 {
     RE::BSFixedString result;
 
-    int size = mEquipset.size();
+    int size = mEquipset.size() + mCycleEquipset.size();
     if (size == 0) {
         result = "Equipset - 1";
         return result;
@@ -124,6 +423,12 @@ RE::BSFixedString EquipsetManager::GetNamePrefix()
                 isConflict = true;
             }
         }
+
+        for (const auto& elem : mCycleEquipset) {
+            if (elem->mName == name + strPrefix) {
+                isConflict = true;
+            }
+        }
         
         if (isConflict) {
             ++prefix;
@@ -131,295 +436,64 @@ RE::BSFixedString EquipsetManager::GetNamePrefix()
             result = static_cast<RE::BSFixedString>(name + strPrefix);
             return result;
         }
-    }
+    }   
 
     return result;
 }
 
-void EquipsetManager::OnRevert(SerializationInterface*) {
-    std::unique_lock lock(GetSingleton()._lock);
+RE::BSFixedString EquipsetManager::GetKeyConflict(int32_t _key, std::vector<bool> _modifier, bool _beast)
+{
+    std::string result = "_NOTFOUND_";
+
+    for (const auto& elem : mEquipset) {
+        if (elem->mHotkey->mKeyCode != _key) {
+            continue;
+        }
+        if (elem->mHotkey->mModifier[0] != _modifier[0] ||
+            elem->mHotkey->mModifier[1] != _modifier[1] ||
+            elem->mHotkey->mModifier[2] != _modifier[2]) {
+            
+            continue;
+        }
+        if (elem->mOption->mBeast != _beast) {
+            continue;
+        }
+        result = elem->mName;
+        break;
+    }
+    for (const auto& elem : mCycleEquipset) {
+        if (elem->mHotkey->mKeyCode != _key) {
+            continue;
+        }
+        if (elem->mHotkey->mModifier[0] != _modifier[0] || elem->mHotkey->mModifier[1] != _modifier[1] ||
+            elem->mHotkey->mModifier[2] != _modifier[2]) {
+            continue;
+        }
+        if (elem->mOption->mBeast != _beast) {
+            continue;
+        }
+        result = elem->mName;
+        break;
+    }
+
+
+    return static_cast<RE::BSFixedString>(result);
 }
 
-void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
-    std::unique_lock lock(GetSingleton()._lock);
-    // To write data open a record with a given name. The name must be unique within your mod, and has a version number
-    // assigned (in this case 0). You can increase the version number if making breaking format change from a previous
-    // version of your mod, so that the load handler can know which version of the format is being used.
-    if (!serde->OpenRecord(EquipsetRecord, 0)) {
-        log::error("Unable to open record to write cosave data.");
-        return;
-    }
-    
-    auto manager = &GetSingleton();
-    if (!manager) {
-        log::error("Unable to get EquipsetManager");
-        return;
-    }
-    // First, write the number of items that will be written in this record. That way when we load the data, we know how
-    // many times to iterate reading in items.
-    auto equipsetSize = manager->mEquipset.size();
-    serde->WriteRecordData(&equipsetSize, sizeof(equipsetSize));
-    for (int i = 0; i < equipsetSize; i++) {
-        auto equipset = manager->mEquipset[i];
- 
-        // Equipset::mName
-        size_t nameSize = equipset->mName.length();                                                                     // Equipset::mName.length()
-        serde->WriteRecordData(&nameSize, sizeof(nameSize));
-        for (auto& elem : equipset->mName) {
-            serde->WriteRecordData(&elem, sizeof(elem));                                                                // Equipset::mName
-        }
+bool EquipsetManager::IsNameConflict(RE::BSFixedString _name)
+{
+    std::string name = static_cast<std::string>(_name);
 
-        // Equipset::MCM::Hotkey
-        auto hotkey = equipset->mHotkey;
-        serde->WriteRecordData(&hotkey->mKeyCode, sizeof(hotkey->mKeyCode));                                            // Equipset::MCM::Hotkey::mKeyCode
-        serde->WriteRecordData(&hotkey->mModifier[0], sizeof(hotkey->mModifier[0]));                                    // Equipset::MCM::Hotkey::mModifier[0]
-        serde->WriteRecordData(&hotkey->mModifier[1], sizeof(hotkey->mModifier[1]));                                    // Equipset::MCM::Hotkey::mModifier[1]
-        serde->WriteRecordData(&hotkey->mModifier[2], sizeof(hotkey->mModifier[2]));                                    // Equipset::MCM::Hotkey::mModifier[2]
-
-        // Equipset::MCM::Option
-        auto option = equipset->mOption;
-        serde->WriteRecordData(&option->mSound, sizeof(option->mSound));                                                // Equipset::MCM::Option::mSound
-        serde->WriteRecordData(&option->mToggleEquip, sizeof(option->mToggleEquip));                                    // Equipset::MCM::Option::mToggleEquip
-        serde->WriteRecordData(&option->mReEquip, sizeof(option->mReEquip));                                            // Equipset::MCM::Option::mReEquip
-
-        // Equipset::MCM::Widget
-        auto widget = equipset->mWidget;
-
-        // Equipset::MCM::Widget::mIcon
-        size_t iconSize = widget->mIcon.length();                                                                       // Equipset::MCM::Widget::mIcon.length()
-        serde->WriteRecordData(&iconSize, sizeof(iconSize));
-        for (auto& elem : widget->mIcon) {
-            serde->WriteRecordData(&elem, sizeof(elem));                                                                // Equipset::MCM::Widget::mIcon
-        }
-        serde->WriteRecordData(&widget->mHpos, sizeof(widget->mHpos));                                                  // Equipset::MCM::Widget::mHpos
-        serde->WriteRecordData(&widget->mVpos, sizeof(widget->mVpos));                                                  // Equipset::MCM::Widget::mVpos
-        serde->WriteRecordData(&widget->mDisplayIcon, sizeof(widget->mDisplayIcon));                                    // Equipset::MCM::Widget::mDisplayIcon
-        serde->WriteRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));                                    // Equipset::MCM::Widget::mDisplayName
-        serde->WriteRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));                                // Equipset::MCM::Widget::mDisplayHotkey
-
-        // Equipset::MCM::Equipment
-        auto equipment = equipset->mEquipment;
-        serde->WriteRecordData(&equipment->mLeftOpt, sizeof(equipment->mLeftOpt));                                      // Equipset::MCM::Equipment::mLeftOpt
-        if (equipment->mLeftOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-            serde->WriteRecordData(&equipment->mLefthand->formID, sizeof(equipment->mLefthand->formID));                // Equipset::MCM::Equipment::mLefthand
-            serde->WriteRecordData(&equipment->mHasLeftExtra.first, sizeof(equipment->mHasLeftExtra.first));            // Equipset::MCM::Equipment::mHasLeftExtra.first
-            if (equipment->mHasLeftExtra.first) {
-                serde->WriteRecordData(&equipment->mNumLeftEnch, sizeof(equipment->mNumLeftEnch));                      // Equipset::MCM::Equipment::mNumLeftEnch
-                RE::FormID ID = equipment->mLeftExtra.first->GetFormID();
-                serde->WriteRecordData(&ID, sizeof(ID));                                                                // Equipset::MCM::Equipment::mLeftExtra.first
-            }
-            serde->WriteRecordData(&equipment->mHasLeftExtra.second, sizeof(equipment->mHasLeftExtra.second));          // Equipset::MCM::Equipment::mHasLeftExtra.second
-            if (equipment->mHasLeftExtra.second) {
-                serde->WriteRecordData(&equipment->mLeftExtra.second, sizeof(equipment->mLeftExtra.second));            // Equipset::MCM::Equipment::mLeftExtra.second
-            }
-        }
-        serde->WriteRecordData(&equipment->mRightOpt, sizeof(equipment->mRightOpt));                                    // Equipset::MCM::Equipment::mRightOpt
-        if (equipment->mRightOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-            serde->WriteRecordData(&equipment->mRighthand->formID, sizeof(equipment->mRighthand->formID));              // Equipset::MCM::Equipment::mRighthand
-            serde->WriteRecordData(&equipment->mHasRightExtra.first, sizeof(equipment->mHasRightExtra.first));          // Equipset::MCM::Equipment::mHasRightExtra.first
-            if (equipment->mHasRightExtra.first) {
-                serde->WriteRecordData(&equipment->mNumRightEnch, sizeof(equipment->mNumRightEnch));                    // Equipset::MCM::Equipment::mNumRightEnch
-                RE::FormID ID = equipment->mRightExtra.first->GetFormID();
-                serde->WriteRecordData(&ID, sizeof(ID));                                                                // Equipset::MCM::Equipment::mRightExtra.first
-            }
-            serde->WriteRecordData(&equipment->mHasRightExtra.second, sizeof(equipment->mHasRightExtra.second));        // Equipset::MCM::Equipment::mHasRightExtra.second
-            if (equipment->mHasRightExtra.second) {
-                serde->WriteRecordData(&equipment->mRightExtra.second, sizeof(equipment->mRightExtra.second));          // Equipset::MCM::Equipment::mRightExtra.second
-            }
-        }
-        serde->WriteRecordData(&equipment->mShoutOpt, sizeof(equipment->mShoutOpt));                                    // Equipset::MCM::Equipment::mShoutOpt
-        if (equipment->mShoutOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-            serde->WriteRecordData(&equipment->mShout->formID, sizeof(equipment->mShout->formID));                      // Equipset::MCM::Equipment::mShout
-        }
-
-        size_t itemsSize = equipment->mItems.size();
-        serde->WriteRecordData(&itemsSize, sizeof(itemsSize));                                                          // Equipset::MCM::Equipment::mItems.size()
-        for (int j = 0; j < itemsSize; j++) {
-            serde->WriteRecordData(&equipment->mItems[j]->formID, sizeof(equipment->mItems[j]->formID));                // Equipset::MCM::Equipment::mItems
-            serde->WriteRecordData(&equipment->mHasItemsExtra[j].first, sizeof(equipment->mHasItemsExtra[j].first));    // Equipset::MCM::Equipment::mHasItemsExtra.first
-            if (equipment->mHasItemsExtra[j].first) {
-                serde->WriteRecordData(&equipment->mNumItemsEnch[j], sizeof(equipment->mNumItemsEnch[j]));              // Equipset::MCM::Equipment::mNumItemsEnch
-                RE::FormID ID = equipment->mItemsExtra[j].first->GetFormID();
-                serde->WriteRecordData(&ID, sizeof(ID));                                                                // Equipset::MCM::Equipment::mItemsExtra.first
-            }
-            serde->WriteRecordData(&equipment->mHasItemsExtra[j].second, sizeof(equipment->mHasItemsExtra[j].second));  // Equipset::MCM::Equipment::mHasItemsExtra.second
-            if (equipment->mHasItemsExtra[j].second) {
-                serde->WriteRecordData(&equipment->mItemsExtra[j].second, sizeof(equipment->mItemsExtra[j].second));    // Equipset::MCM::Equipment::mItemsExtra.second
-            }
+    for (const auto& elem : mEquipset) {
+        if (elem->mName == name) {
+            return true;
         }
     }
-    
-    //if (!serde->OpenRecord(CycleEquipsetRecord, 0)) {
-    //    log::error("Unable to open record to write cosave data.");
-    //    return;
-    //}
-    // Again, write the number of items so we know how many times to iterate when loading.
-    //auto trackedActorsCount = GetSingleton()._trackedActors.size();
-    //serde->WriteRecordData(&trackedActorsCount, sizeof(trackedActorsCount));
-    //for (auto* actor : GetSingleton()._trackedActors) {
-    //    serde->WriteRecordData(&actor->formID, sizeof(actor->formID));
-    //}
-}
-
-
-void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
-    std::uint32_t type;
-    std::uint32_t size;
-    std::uint32_t version;
-    // To load records from a cosave, use <code>GetNextRecordInfo</code> to iterate from one record to the next.
-    // You will be given records in the order they were written, but otherwise you do not look up a record by its name.
-    // Instead check the result of each iteration to find out which record it is and handle it appropriately.
-    //
-    // If you make breaking changes to your data format, you can increase the version number used when writing the data
-    // out and check that number here to handle previous versions.
-    while (serde->GetNextRecordInfo(type, version, size)) {
-        if (type == EquipsetRecord) {
-            // First read how many items follow in this record, so we know how many times to iterate.
-            size_t equipsetSize;
-            serde->ReadRecordData(&equipsetSize, sizeof(equipsetSize));
-            // Iterate over the remaining data in the record.
-            for (int i = 0; i < equipsetSize; i++) {
-                // Equipset::mName
-                std::string mName;
-                size_t nameSize;
-                serde->ReadRecordData(&nameSize, sizeof(nameSize));                                                          // Equipset::mName.length()
-                for (; nameSize > 0; --nameSize) {
-                    char name;
-                    serde->ReadRecordData(&name, sizeof(name));                                                              // Equipset::mName
-                    mName += name;
-                }
-
-                // Equipset::MCM::Hotkey
-                MCM::Hotkey hotkey;
-                serde->ReadRecordData(&hotkey.mKeyCode, sizeof(hotkey.mKeyCode));                                            // Equipset::MCM::Hotkey::mKeycode
-                serde->ReadRecordData(&hotkey.mModifier[0], sizeof(hotkey.mModifier[0]));                                    // Equipset::MCM::Hotkey::mModifier[0]
-                serde->ReadRecordData(&hotkey.mModifier[1], sizeof(hotkey.mModifier[1]));                                    // Equipset::MCM::Hotkey::mModifier[1]
-                serde->ReadRecordData(&hotkey.mModifier[2], sizeof(hotkey.mModifier[2]));                                    // Equipset::MCM::Hotkey::mModifier[2]
-
-                // Equipset::MCM::Option
-                MCM::Option option;
-                serde->ReadRecordData(&option.mSound, sizeof(option.mSound));                                                // Equipset::MCM::Option::mSound
-                serde->ReadRecordData(&option.mToggleEquip, sizeof(option.mToggleEquip));                                    // Equipset::MCM::Option::mToggleEquip
-                serde->ReadRecordData(&option.mReEquip, sizeof(option.mReEquip));                                            // Equipset::MCM::Option::mReEquip
-
-                // Equipset::MCM::Widget
-                MCM::Widget widget;
-
-                size_t IconSize;
-                serde->ReadRecordData(&IconSize, sizeof(IconSize));                                                          // Equipset::MCM::Widget::mIcon.length()
-                for (; IconSize > 0; --IconSize) {
-                    char name;
-                    serde->ReadRecordData(&name, sizeof(name));                                                              // Equipset::MCM::Widget::mIcon
-                    widget.mIcon += name;
-                }
-                serde->ReadRecordData(&widget.mHpos, sizeof(widget.mHpos));                                                  // Equipset::MCM::Widget::mHpos
-                serde->ReadRecordData(&widget.mVpos, sizeof(widget.mVpos));                                                  // Equipset::MCM::Widget::mVpos
-                serde->ReadRecordData(&widget.mDisplayIcon, sizeof(widget.mDisplayIcon));                                    // Equipset::MCM::Widget::mDisplayIcon
-                serde->ReadRecordData(&widget.mDisplayName, sizeof(widget.mDisplayName));                                    // Equipset::MCM::Widget::mDisplayName
-                serde->ReadRecordData(&widget.mDisplayHotkey, sizeof(widget.mDisplayHotkey));                                // Equipset::MCM::Widget::mDisplayHotkey
-
-                // Equipset::MCM::Equipment
-                MCM::Equipment equipment;
-                serde->ReadRecordData(&equipment.mLeftOpt, sizeof(equipment.mLeftOpt));                                      // Equipset::MCM::Equipment::mLeftOpt
-                if (equipment.mLeftOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-                    RE::FormID ID, newID;
-                    serde->ReadRecordData(&ID, sizeof(ID));                                                                  // Equipset::MCM::Equipment::mLefthand
-                    if (!serde->ResolveFormID(ID, newID)) {
-                        log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
-                    }
-                    equipment.mLefthand = RE::TESForm::LookupByID<RE::TESForm>(newID);
-                    serde->ReadRecordData(&equipment.mHasLeftExtra.first, sizeof(equipment.mHasLeftExtra.first));            // Equipset::MCM::Equipment::mHasLeftExtra.first
-                    if (equipment.mHasLeftExtra.first) {
-                        serde->ReadRecordData(&equipment.mNumLeftEnch, sizeof(equipment.mNumLeftEnch));                      // Equipset::MCM::Equipment::mNumLeftEnch
-                        RE::FormID ExtraID, newExtraID;
-                        serde->ReadRecordData(&ExtraID, sizeof(ExtraID));                                                    // Equipset::MCM::Equipment::mLeftExtra.first
-                        if (!serde->ResolveFormID(ExtraID, newExtraID)) {
-                            log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                            continue;
-                        }
-                        equipment.mLeftExtra.first = RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID);
-                    }
-                    serde->ReadRecordData(&equipment.mHasLeftExtra.second, sizeof(equipment.mHasLeftExtra.second));          // Equipset::MCM::Equipment::mHasLeftExtra.second
-                    if (equipment.mHasLeftExtra.second) {
-                        serde->ReadRecordData(&equipment.mLeftExtra.second, sizeof(equipment.mLeftExtra.second));            // Equipset::MCM::Equipment::mLeftExtra.second
-                    }
-                }
-                serde->ReadRecordData(&equipment.mRightOpt, sizeof(equipment.mRightOpt));                                    // Equipset::MCM::Equipment::mRightOpt
-                if (equipment.mRightOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-                    RE::FormID ID, newID;
-                    serde->ReadRecordData(&ID, sizeof(ID));                                                                  // Equipset::MCM::Equipment::mRighthand
-                    if (!serde->ResolveFormID(ID, newID)) {
-                        log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
-                    }
-                    equipment.mRighthand = RE::TESForm::LookupByID<RE::TESForm>(newID);
-                    serde->ReadRecordData(&equipment.mHasRightExtra.first, sizeof(equipment.mHasRightExtra.first));          // Equipset::MCM::Equipment::mHasRightExtra.first
-                    if (equipment.mHasRightExtra.first) {
-                        serde->ReadRecordData(&equipment.mNumRightEnch, sizeof(equipment.mNumRightEnch));                    // Equipset::MCM::Equipment::mNumRightEnch
-                        RE::FormID ExtraID, newExtraID;
-                        serde->ReadRecordData(&ExtraID, sizeof(ExtraID));                                                    // Equipset::MCM::Equipment::mRightExtra.first
-                        if (!serde->ResolveFormID(ExtraID, newExtraID)) {
-                            log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                            continue;
-                        }
-                        equipment.mRightExtra.first = RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID);
-                    }
-                    serde->ReadRecordData(&equipment.mHasRightExtra.second, sizeof(equipment.mHasRightExtra.second));        // Equipset::MCM::Equipment::mHasRightExtra.second
-                    if (equipment.mHasRightExtra.second) {
-                        serde->ReadRecordData(&equipment.mRightExtra.second, sizeof(equipment.mRightExtra.second));          // Equipset::MCM::Equipment::mRightExtra.second
-                    }
-                }
-                serde->ReadRecordData(&equipment.mShoutOpt, sizeof(equipment.mShoutOpt));                                    // Equipset::MCM::Equipment::mShoutOpt
-                if (equipment.mShoutOpt == static_cast<int32_t>(MCM::eAction::Equip)) {
-                    RE::FormID ID, newID;
-                    serde->ReadRecordData(&ID, sizeof(ID));                                                                  // Equipset::MCM::Equipment::mShout
-                    if (!serde->ResolveFormID(ID, newID)) {
-                        log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
-                    }
-                    equipment.mShout = RE::TESForm::LookupByID<RE::TESForm>(newID);
-                }
-
-                size_t itemsSize;
-                serde->ReadRecordData(&itemsSize, sizeof(itemsSize));                                                        // Equipset::MCM::Equipment::mItems.size()
-                for (int j = 0; j < itemsSize; j++) {
-                    RE::FormID ID, newID;
-                    serde->ReadRecordData(&ID, sizeof(ID));                                                                  // Equipset::MCM::Equipment::mItems
-                    if (!serde->ResolveFormID(ID, newID)) {
-                        log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
-                    }
-                    equipment.mItems[j] = RE::TESForm::LookupByID<RE::TESForm>(newID);
-                    serde->ReadRecordData(&equipment.mHasItemsExtra[j].first, sizeof(equipment.mHasItemsExtra[j].first));    // Equipset::MCM::Equipment::mHasItemsExtra.first
-                    if (equipment.mHasItemsExtra[j].first) {
-                        serde->ReadRecordData(&equipment.mNumItemsEnch[j], sizeof(equipment.mNumItemsEnch[j]));              // Equipset::MCM::Equipment::mNumItemsEnch
-                        RE::FormID ExtraID, newExtraID;
-                        serde->ReadRecordData(&ExtraID, sizeof(ExtraID));                                                    // Equipset::MCM::Equipment::mItemsExtra.first
-                        if (!serde->ResolveFormID(ExtraID, newExtraID)) {
-                            log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                            continue;
-                        }
-                        equipment.mItemsExtra[j].first = RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID);
-                    }
-                    serde->ReadRecordData(&equipment.mHasItemsExtra[j].second, sizeof(equipment.mHasItemsExtra[j].second));  // Equipset::MCM::Equipment::mHasItemsExtra.second
-                    if (equipment.mHasItemsExtra[j].second) {
-                        serde->ReadRecordData(&equipment.mItemsExtra[j].second, sizeof(equipment.mItemsExtra[j].second));    // Equipset::MCM::Equipment::mItemsExtra.second
-                    }
-                }
-
-                auto manager = &GetSingleton();
-                if (!manager) {
-                    log::error("Unable to get EquipsetManager");
-                    return;
-                }
-
-                manager->NewEquipset(mName, &hotkey, &option, &widget, &equipment);
-            }
-        }
-        else {
-            log::warn("Unknown record type in cosave.");
-            __assume(false);
+    for (const auto& elem : mCycleEquipset) {
+        if (elem->mName == name) {
+            return true;
         }
     }
+
+    return false;
 }
