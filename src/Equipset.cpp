@@ -5,7 +5,7 @@
 
 RE::TESForm* GetDummyDagger()
 {
-    RE::FormID ID = 0x55;
+    RE::FormID ID = 0x20163;
     return RE::TESForm::LookupByID<RE::TESForm>(ID);
 }
 
@@ -52,6 +52,10 @@ bool HasItem(RE::TESForm* _form)
 {
     if (!_form) {
         return false;
+    }
+
+    if (_form == GetDummyDagger()) {
+        return true;
     }
 
     auto playerref = RE::PlayerCharacter::GetSingleton();
@@ -260,7 +264,7 @@ void Equipset::Equip()
     }
 
     auto DummyDagger = GetDummyDagger();
-    auto DummyShout = GetDummyShout();
+    //auto DummyShout = GetDummyShout();
 
     if (UnequipRight) {
         if (DummyDagger) {
@@ -274,13 +278,14 @@ void Equipset::Equip()
             UnequipItem(DummyDagger, GetLeftHandSlot(), false, nullptr, false, true);
         }
     }
+    /*
     if (UnequipShout) {
         if (DummyShout) {
             EquipItem(DummyShout, nullptr, false, nullptr, false, true);
             UnequipItem(DummyShout, nullptr, false, nullptr, false, true);
         }
     }
-
+    */
     for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
         if (UnequipItems[i]) {
             UnequipItem(mEquipment->mItems.form[i], nullptr, mOption->mSound, mEquipment->mItems.xList[i]);

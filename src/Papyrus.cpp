@@ -52,8 +52,17 @@ namespace Papyrus {
     {
         log::debug("Exec2 Function Start");
 
-        auto manager = &UIHS::EquipsetManager::GetSingleton();
-        manager->DisplayCycle();
+        auto playerref = RE::PlayerCharacter::GetSingleton();
+        if (!playerref) {
+            return;
+        }
+        
+        auto right = playerref->GetEquippedObject(false);
+        if (!right) {
+            return;
+        }
+
+        log::warn("FormID: {:X}", right->GetFormID());
     }
 
     void UIHS_Init(RE::StaticFunctionTag*)
