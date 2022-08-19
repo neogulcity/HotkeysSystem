@@ -154,9 +154,16 @@ public:
           mOption(_option),
           mWidget(_widget),
           mCycleItems(_cycleItems),
-          mCycleIndex(_cycleIndex){}
+          mCycleIndex(_cycleIndex),
+          mCloseExpire(true),
+          mCloseReset(true),
+          mRemain(0.0f) {}
 
     void Equip();
+    void Expire_Function();
+    void Reset_Function();
+    void SetExpireTimer();
+    void SetResetTimer();
 
 private:
     uint32_t mOrder;
@@ -166,6 +173,10 @@ private:
     CycleOption* mOption;
     Widget* mWidget;
     std::pair<uint32_t, int32_t> mCycleIndex; // first: Current index to equip, second: Previous index
+
+    bool mCloseExpire;
+    bool mCloseReset;
+    float mRemain;
 };
 
 RE::TESForm* GetDummyDagger();

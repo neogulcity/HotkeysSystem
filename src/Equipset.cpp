@@ -408,6 +408,10 @@ void CycleEquipset::Equip()
                 prevEquipset->Equip();
                 mCycleIndex.second = mCycleIndex.first;
                 mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
+
+                if (mOption->mExpire != 0.0f) {
+                    SetExpireTimer();
+                }
                 return;
             }
         }
@@ -417,6 +421,10 @@ void CycleEquipset::Equip()
             equipset->Equip();
             mCycleIndex.second = mCycleIndex.first;
             mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
+
+            if (mOption->mExpire != 0.0f) {
+                SetExpireTimer();
+            }
             return;
         }
     }
@@ -425,6 +433,87 @@ void CycleEquipset::Equip()
         equipset->Equip();
         mCycleIndex.second = mCycleIndex.first;
         mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
+
+        if (mOption->mExpire != 0.0f) {
+            SetExpireTimer();
+        }
         return;
     }
+}
+
+void CycleEquipset::Expire_Function()
+{
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) {
+        return;
+    }
+
+    mCloseExpire = false;
+
+    mRemain = mOption->mExpire;
+    while (!mCloseExpire && mRemain > 0) {
+        mRemain = !UI->GameIsPaused() ? mRemain - 0.1f : mRemain;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    if (!mCloseExpire) {
+        mCycleIndex.first = 0;
+        mCycleIndex.second = -1;
+    }
+
+    mRemain = 0.0f;
+    mCloseExpire = true;
+}
+
+void CycleEquipset::SetExpireTimer()
+{
+    if (mOption->mExpire == 0.0f) {
+        return;
+    }
+
+    if (!mCloseExpire) {
+        mRemain = mOption->mExpire;
+        return;
+    }
+
+    std::thread expireThread = std::thread(&CycleEquipset::Expire_Function, this);
+    expireThread.detach();
+}
+
+void CycleEquipset::Reset_Function()
+{
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) {
+        return;
+    }
+
+    mCloseReset = false;
+
+    float num = mOption->mReset;
+    while (!mCloseReset && num > 0) {
+        num = !UI->GameIsPaused() ? num - 0.01f : num;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    if (!mCloseReset) {
+        mCycleIndex.first = 0;
+        mCycleIndex.second = -1;
+        Equip();
+    }
+
+    mCloseReset = true;
+}
+
+void CycleEquipset::SetResetTimer()
+{
+    if (mOption->mReset == 0.0f) {
+        return;
+    }
+
+    if (!mCloseReset) {
+        return;
+    }
+
+    std::thread resetThread = std::thread(&CycleEquipset::Reset_Function, this);
+    resetThread.detach();
 }

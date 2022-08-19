@@ -2,6 +2,7 @@
 
 namespace Papyrus {
     void UIHS_Exec(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3);
+    void UIHS_CalculateKeydown(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time);
     void Exec2(RE::StaticFunctionTag*);
     void UIHS_Init(RE::StaticFunctionTag*);
     void UIHS_Clear(RE::StaticFunctionTag*);

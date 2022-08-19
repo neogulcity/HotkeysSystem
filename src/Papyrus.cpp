@@ -5,17 +5,45 @@
 #include "Actor.h"
 #include "Utility.h"
 
+bool IsMenuOpen()
+{
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) {
+        return false;
+    }
+
+    return UI->GameIsPaused() || UI->IsMenuOpen("Crafting Menu") || UI->IsMenuOpen("LootMenu") || UI->IsMenuOpen("Dialogue Menu");
+}
+
 namespace Papyrus {
     void UIHS_Exec(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3)
     {
-        log::debug("Exec Function Start");
-        
         auto manager = &UIHS::EquipsetManager::GetSingleton();
         if (!manager) {
             return;
         }
 
+        if (IsMenuOpen()) {
+            return;
+        }
+
         manager->Exec(_code, _modifier1, _modifier2, _modifier3);
+
+        return;
+    }
+
+    void UIHS_CalculateKeydown(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time)
+    {
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        if (!manager) {
+            return;
+        }
+
+        if (IsMenuOpen()) {
+            return;
+        }
+
+        manager->CalculateKeydown(_code, _modifier1, _modifier2, _modifier3, _time);
 
         return;
     }
@@ -580,6 +608,7 @@ namespace Papyrus {
     bool RegisterFuncs(RE::BSScript::IVirtualMachine* vm)
     {
         vm->RegisterFunction("UIHS_Exec", "_HotkeysSystem_MCM", Papyrus::UIHS_Exec);
+        vm->RegisterFunction("UIHS_CalculateKeydown", "_HotkeysSystem_MCM", Papyrus::UIHS_CalculateKeydown);
         vm->RegisterFunction("Exec2", "_HotkeysSystem_MCM", Papyrus::Exec2);
         vm->RegisterFunction("UIHS_Init", "_HotkeysSystem_MCM", Papyrus::UIHS_Init);
         vm->RegisterFunction("UIHS_Clear", "_HotkeysSystem_MCM", Papyrus::UIHS_Clear);

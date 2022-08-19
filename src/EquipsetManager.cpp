@@ -175,6 +175,9 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
             elem->mWidget = widget;
             elem->mCycleItems = items;
             elem->mCycleIndex = std::make_pair(0, -1);
+            elem->mCloseExpire = true;
+            elem->mCloseReset = true;
+            elem->mRemain = 0.0f;
         }
     }
 }
@@ -859,7 +862,29 @@ void EquipsetManager::Exec(int32_t _code, bool _modifier1, bool _modifier2, bool
             hotkey->mModifier[1] == _modifier2 &&
             hotkey->mModifier[2] == _modifier3 &&
             elem->mOption->mBeast == IsPlayerBeast()) {
-            elem->Equip();
+            if (elem->mOption->mReset == 0.0f) {
+                elem->Equip();
+            }
+            else {
+                elem->SetResetTimer();
+            }
+        }
+    }
+}
+
+void EquipsetManager::CalculateKeydown(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time)
+{
+    for (const auto& elem : mCycleEquipset) {
+        auto hotkey = elem->mHotkey;
+        if (hotkey->mKeyCode == _code &&
+            hotkey->mModifier[0] == _modifier1 &&
+            hotkey->mModifier[1] == _modifier2 &&
+            hotkey->mModifier[2] == _modifier3 &&
+            elem->mOption->mBeast == IsPlayerBeast()) {
+            if (elem->mOption->mReset != 0.0f && _time < elem->mOption->mReset) {
+                elem->Equip();
+                elem->mCloseReset = true;
+            }
         }
     }
 }
