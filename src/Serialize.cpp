@@ -37,6 +37,9 @@ void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
     for (int i = 0; i < equipsetSize; i++) {
         auto equipset = manager->mEquipset[i];
  
+        // Equipset::mOrder
+        serde->WriteRecordData(&equipset->mOrder, sizeof(equipset->mOrder));                                            // Equipset::mOrder
+
         // Equipset::mName
         size_t nameSize = equipset->mName.length();                                                                     // Equipset::mName.length()
         serde->WriteRecordData(&nameSize, sizeof(nameSize));
@@ -75,7 +78,7 @@ void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
 
         // Equipset::Equipment
         auto equipment = equipset->mEquipment;
-        auto left = equipment->mLeft;
+        auto& left = equipment->mLeft;
         serde->WriteRecordData(&left.option, sizeof(left.option));                                                      // Equipset::Equipment::Left::option
         if (left.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             serde->WriteRecordData(&left.form->formID, sizeof(left.form->formID));                                      // Equipset::Equipment::Left::form
@@ -91,7 +94,7 @@ void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
             }
         }
 
-        auto right = equipment->mRight;
+        auto& right = equipment->mRight;
         serde->WriteRecordData(&right.option, sizeof(right.option));                                                    // Equipset::Equipment::Right::option
         if (right.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             serde->WriteRecordData(&right.form->formID, sizeof(right.form->formID));                                    // Equipset::Equipment::Right::form
@@ -107,13 +110,13 @@ void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
             }
         }
 
-        auto shout = equipment->mShout;
+        auto& shout = equipment->mShout;
         serde->WriteRecordData(&shout.option, sizeof(shout.option));                                                    // Equipset::Equipment::Shout::option
         if (shout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             serde->WriteRecordData(&shout.form->formID, sizeof(shout.form->formID));                                    // Equipset::Equipment::Shout::form
         }
 
-        Equipment::Items items = equipment->mItems;
+        auto& items = equipment->mItems;
         uint32_t itemsSize = items.numItems;
         serde->WriteRecordData(&itemsSize, sizeof(itemsSize));                                                          // Equipset::Equipment::Items::numItems
         for (int j = 0; j < itemsSize; j++) {
@@ -142,6 +145,9 @@ void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
     serde->WriteRecordData(&cycleEquipsetSize, sizeof(cycleEquipsetSize));
     for (int i = 0; i < cycleEquipsetSize; i++) {
         auto equipset = manager->mCycleEquipset[i];
+
+        // CycleEquipset::mOrder
+        serde->WriteRecordData(&equipset->mOrder, sizeof(equipset->mOrder));                                            // CycleEquipset::mOrder
  
         // CycleEquipset::mName
         size_t nameSize = equipset->mName.length();                                                                     // CycleEquipset::mName.length()
@@ -184,7 +190,8 @@ void EquipsetManager::OnGameSaved(SerializationInterface* serde) {
                 serde->WriteRecordData(&elem, sizeof(elem));                                                            // CycleEquipset::CycleItems[] name
             }
         }
-        serde->WriteRecordData(&equipset->mCycleIndex, sizeof(equipset->mCycleIndex));                                  // CycleEquipset::CycleIndex
+        serde->WriteRecordData(&equipset->mCycleIndex.first, sizeof(equipset->mCycleIndex.first));                      // CycleEquipset::CycleIndex.first
+        serde->WriteRecordData(&equipset->mCycleIndex.second, sizeof(equipset->mCycleIndex.second));                    // CycleEquipset::CycleIndex.second
     }
 }
 
@@ -206,13 +213,17 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
             serde->ReadRecordData(&equipsetSize, sizeof(equipsetSize));
             // Iterate over the remaining data in the record.
             for (int i = 0; i < equipsetSize; i++) {
+                // Equipset::mOrder
+                uint32_t order;
+                serde->ReadRecordData(&order, sizeof(order));                                                                  // Equipset::mOrder
+
                 // Equipset::mName
                 std::string mName;
                 size_t nameSize;
-                serde->ReadRecordData(&nameSize, sizeof(nameSize));                                                             // Equipset::mName.length()
+                serde->ReadRecordData(&nameSize, sizeof(nameSize));                                                            // Equipset::mName.length()
                 for (; nameSize > 0; --nameSize) {
                     char name;
-                    serde->ReadRecordData(&name, sizeof(name));                                                                 // Equipset::mName
+                    serde->ReadRecordData(&name, sizeof(name));                                                                // Equipset::mName
                     mName += name;
                 }
 
@@ -248,7 +259,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
 
                 // Equipset::Equipment
                 Equipment* equipment = new Equipment;
-                auto left = equipment->mLeft;
+                auto& left = equipment->mLeft;
                 serde->ReadRecordData(&left.option, sizeof(left.option));                                                      // Equipset::Equipment::Left::option
                 if (left.option == static_cast<int32_t>(MCM::eAction::Equip)) {
                     RE::FormID ID, newID;
@@ -278,7 +289,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     left.xList = xList;                                                                                        // Equipset::Equipment::Left::xList
                 }
 
-                auto right = equipment->mRight;
+                auto& right = equipment->mRight;
                 serde->ReadRecordData(&right.option, sizeof(right.option));                                                    // Equipset::Equipment::Right::option
                 if (right.option == static_cast<int32_t>(MCM::eAction::Equip)) {
                     RE::FormID ID, newID;
@@ -308,7 +319,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     right.xList = xList;                                                                                       // Equipset::Equipment::Right::xList
                 }
 
-                auto shout = equipment->mShout;
+                auto& shout = equipment->mShout;
                 serde->ReadRecordData(&shout.option, sizeof(shout.option));                                                    // Equipset::Equipment::Shout::option
                 if (shout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
                     RE::FormID ID, newID;
@@ -320,7 +331,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     shout.form = RE::TESForm::LookupByID<RE::TESForm>(newID);
                 }
 
-                Equipment::Items items = equipment->mItems;
+                auto& items = equipment->mItems;
                 uint32_t itemsSize;
                 serde->ReadRecordData(&itemsSize, sizeof(itemsSize));                                                          // Equipset::Equipment::Items::numItems
                 items.numItems = itemsSize;                
@@ -370,7 +381,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     return;
                 }
 
-                manager->NewEquipset(mName, hotkey, option, widget, equipment);
+                manager->NewEquipset(order, mName, hotkey, option, widget, equipment);
             }
         }
         if (type == CycleEquipsetRecord) {
@@ -379,6 +390,10 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
             serde->ReadRecordData(&equipsetSize, sizeof(equipsetSize));
             // Iterate over the remaining data in the record.
             for (int i = 0; i < equipsetSize; i++) {
+                // CycleEquipset::mOrder
+                uint32_t order;
+                serde->ReadRecordData(&order, sizeof(order));                                                                  // CycleEquipset::mOrder
+
                 // CycleEquipset::mName
                 std::string mName;
                 size_t nameSize;
@@ -427,7 +442,9 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     items.push_back(itemsName);
                 }
                 uint32_t index;
-                serde->ReadRecordData(&index, sizeof(index));                                                                  // CycleEquipset::CycleIndex
+                int32_t prevIndex;
+                serde->ReadRecordData(&index, sizeof(index));                                                                  // CycleEquipset::CycleIndex.first
+                serde->ReadRecordData(&prevIndex, sizeof(prevIndex));                                                          // CycleEquipset::CycleIndex.second
 
                 auto manager = &GetSingleton();
                 if (!manager) {
@@ -435,7 +452,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     return;
                 }
 
-                manager->NewCycleEquipset(mName, hotkey, option, widget, items, index);
+                manager->NewCycleEquipset(order, mName, hotkey, option, widget, items, std::make_pair(index, prevIndex));
             }
         }
         else {

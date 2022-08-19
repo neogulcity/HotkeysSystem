@@ -117,8 +117,9 @@ public:
     friend class CycleEquipset;
     friend class UIHS::EquipsetManager;
 
-    Equipset(std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment)
-        : mName(_name),
+    Equipset(uint32_t _order, std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment)
+        : mOrder(_order),
+          mName(_name),
           mHotkey(_hotkey),
           mOption(_option),
           mWidget(_widget),
@@ -131,7 +132,10 @@ public:
         delete mEquipment;
     }
 
+    void Equip();
+
 private:
+    uint32_t mOrder;
     std::string mName; // Equipset name
     Hotkey* mHotkey;
     Option* mOption;
@@ -143,19 +147,31 @@ class CycleEquipset {
 public:
     friend class UIHS::EquipsetManager;
 
-    CycleEquipset(std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, uint32_t _cycleIndex)
-        : mName(_name),
+    CycleEquipset(uint32_t _order, std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, std::pair<uint32_t, int32_t> _cycleIndex)
+        : mOrder(_order),
+          mName(_name),
           mHotkey(_hotkey),
           mOption(_option),
           mWidget(_widget),
           mCycleItems(_cycleItems),
           mCycleIndex(_cycleIndex){}
 
+    void Equip();
+
 private:
+    uint32_t mOrder;
     std::string mName;  // Equipset name
     std::vector<std::string> mCycleItems; // Conatined Equipsets name.
     Hotkey* mHotkey;
     CycleOption* mOption;
     Widget* mWidget;
-    uint32_t mCycleIndex;
+    std::pair<uint32_t, int32_t> mCycleIndex; // first: Current index to equip, second: Previous index
 };
+
+RE::TESForm* GetDummyDagger();
+RE::TESForm* GetDummyShout();
+RE::TESForm* GetEquippedShout(RE::Actor* _actor);
+std::vector<RE::TESForm*> GetAllEquippedItems();
+bool HasItem(RE::TESForm* _form);
+void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue, bool _force);
+void UnequipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue, bool _force);

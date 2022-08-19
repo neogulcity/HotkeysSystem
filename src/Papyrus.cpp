@@ -3,14 +3,19 @@
 #include "ExtraData.h"
 #include "MCM.h"
 #include "Actor.h"
+#include "Utility.h"
 
 namespace Papyrus {
-    void Exec(RE::StaticFunctionTag*)
+    void UIHS_Exec(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3)
     {
         log::debug("Exec Function Start");
-
+        
         auto manager = &UIHS::EquipsetManager::GetSingleton();
-        manager->Display();
+        if (!manager) {
+            return;
+        }
+
+        manager->Exec(_code, _modifier1, _modifier2, _modifier3);
 
         return;
     }
@@ -30,6 +35,7 @@ namespace Papyrus {
         MCM::Init_ShoutList();
         MCM::Init_ItemsList();
         MCM::Init_CycleItemsList();
+        MCM::Init_FontList();
     }
 
     void UIHS_Clear(RE::StaticFunctionTag*)
@@ -106,8 +112,8 @@ namespace Papyrus {
             return result;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
-        if (!dataHolder) {
+        auto holder = &MCM::DataHolder::GetSingleton();
+        if (!holder) {
             return result;
         }
 
@@ -116,50 +122,65 @@ namespace Papyrus {
         auto type = static_cast<MCM::eListType>(_type);
         switch (type) {
             case MCM::eListType::Widget:
-                size = dataHolder->list.mWidgetList.size();
+                size = holder->list.mWidgetList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = dataHolder->list.mWidgetList[i].first;
+                    std::string name = holder->list.mWidgetList[i].first;
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::Weapon:
-                size = dataHolder->list.mWeaponList.size();
+                size = holder->list.mWeaponList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = std::get<0>(dataHolder->list.mWeaponList[i]);
+                    std::string name = std::get<0>(holder->list.mWeaponList[i]);
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::Shout:
-                size = dataHolder->list.mShoutList.size();
+                size = holder->list.mShoutList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = dataHolder->list.mShoutList[i].first;
+                    std::string name = holder->list.mShoutList[i].first;
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::Items:
-                size = dataHolder->list.mItemsList.size();
+                size = holder->list.mItemsList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = std::get<0>(dataHolder->list.mItemsList[i]);
+                    std::string name = std::get<0>(holder->list.mItemsList[i]);
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::CycleItems:
-                size = dataHolder->list.mCycleItemsList.size();
+                size = holder->list.mCycleItemsList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = dataHolder->list.mCycleItemsList[i];
+                    std::string name = holder->list.mCycleItemsList[i];
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
-             case MCM::eListType::Equipsets:
+             case MCM::eListType::SelectList:
                 result.push_back(static_cast<RE::BSFixedString>("$cancel"));
-                equipsets = manager->GetAllEquipsetList();
+                equipsets = manager->GetAllSortedEquipsetList();
                 for (const auto& elem : equipsets) {
                     result.push_back(static_cast<RE::BSFixedString>(elem));
+                }
+                break;
+
+            case MCM::eListType::Equipset:
+                equipsets = manager->GetAllSortedEquipsetList();
+                for (const auto& elem : equipsets) {
+                    result.push_back(static_cast<RE::BSFixedString>(elem));
+                }
+                break;
+
+             case MCM::eListType::Font:
+                size = holder->list.mFontList.size();
+                for (int i = 0; i < size; i++) {
+                    std::string name = holder->list.mFontList[i];
+                    result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
@@ -179,8 +200,8 @@ namespace Papyrus {
             return result;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
-        if (!dataHolder) {
+        auto holder = &MCM::DataHolder::GetSingleton();
+        if (!holder) {
             return result;
         }
 
@@ -189,49 +210,65 @@ namespace Papyrus {
         auto type = static_cast<MCM::eListType>(_type);
         switch (type) {
             case MCM::eListType::Widget:
-                size = dataHolder->list.mWidgetList.size();
+                size = holder->list.mWidgetList.size();
                 if (_index < size) {
-                    std::string name = dataHolder->list.mWidgetList[_index].first;
+                    std::string name = holder->list.mWidgetList[_index].first;
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::Weapon:
-                size = dataHolder->list.mWeaponList.size();
+                size = holder->list.mWeaponList.size();
                 if (_index < size) {
-                    std::string name = std::get<0>(dataHolder->list.mWeaponList[_index]);
+                    std::string name = std::get<0>(holder->list.mWeaponList[_index]);
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::Shout:
-                size = dataHolder->list.mShoutList.size();
+                size = holder->list.mShoutList.size();
                 if (_index < size) {
-                    std::string name = dataHolder->list.mShoutList[_index].first;
+                    std::string name = holder->list.mShoutList[_index].first;
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::Items:
-                size = dataHolder->list.mItemsList.size();
+                size = holder->list.mItemsList.size();
                 if (_index < size) {
-                    std::string name = std::get<0>(dataHolder->list.mItemsList[_index]);
+                    std::string name = std::get<0>(holder->list.mItemsList[_index]);
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::CycleItems:
-                size = dataHolder->list.mCycleItemsList.size();
+                size = holder->list.mCycleItemsList.size();
                 if (_index < size) {
-                    std::string name = dataHolder->list.mCycleItemsList[_index];
+                    std::string name = holder->list.mCycleItemsList[_index];
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
-             case MCM::eListType::Equipsets:
-                equipsets = manager->GetAllEquipsetList();
+             case MCM::eListType::SelectList:
+                equipsets = manager->GetAllSortedEquipsetList();
                 if (_index != 0 && _index < equipsets.size() + 1) {
                     std::string name = equipsets[_index - 1];
+                    result = static_cast<RE::BSFixedString>(name);
+                }
+                break;
+
+            case MCM::eListType::Equipset:
+                equipsets = manager->GetAllSortedEquipsetList();
+                if (_index < equipsets.size()) {
+                    std::string name = equipsets[_index];
+                    result = static_cast<RE::BSFixedString>(name);
+                }
+                break;
+
+             case MCM::eListType::Font:
+                size = holder->list.mFontList.size();
+                if (_index < size) {
+                    std::string name = holder->list.mFontList[_index];
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
@@ -243,45 +280,49 @@ namespace Papyrus {
         return result;
     }
 
-    bool UIHS_NewEquipset(RE::StaticFunctionTag*, RE::BSFixedString _name, int32_t _hotkey, bool _modifier1,
-                          bool _modifier2, bool _modifier3, bool _sound, bool _toggle, bool _reequip, bool _beast, int32_t _widget,
-                          int32_t _hpos, int32_t _vpos, bool _dwidget, bool _dname, bool _dhotkey, int32_t _left,
-                          int32_t _right, int32_t _shout, int32_t _numitems, std::vector<int32_t> _items)
+    bool UIHS_NewEquipset(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data)
     {
         auto manager = &UIHS::EquipsetManager::GetSingleton();
         if (!manager) {
             return false;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
-        if (!dataHolder) {
+        auto holder = &MCM::DataHolder::GetSingleton();
+        if (!holder) {
             return false;
         }
 
-        std::string name = static_cast<std::string>(_name);
+        std::vector<std::string> stringData;
+        for (const auto& elem : _data) {
+            stringData.push_back(static_cast<std::string>(elem));
+        }
+
+        uint32_t order = manager->GetAllEquipsetSize();
+
+        std::string name = stringData[0];
         Hotkey* hotkey = new Hotkey;
-        hotkey->mKeyCode = _hotkey;
-        hotkey->mModifier[0] = _modifier1;
-        hotkey->mModifier[1] = _modifier2;
-        hotkey->mModifier[2] = _modifier3;
+        hotkey->mKeyCode = std::stoi(stringData[1]);
+        hotkey->mModifier[0] = to_bool(stringData[2]);
+        hotkey->mModifier[1] = to_bool(stringData[3]);
+        hotkey->mModifier[2] = to_bool(stringData[4]);
 
         Option* option = new Option;
-        option->mSound = _sound;
-        option->mToggleEquip = _toggle;
-        option->mReEquip = _reequip;
-        option->mBeast = _beast;
+        option->mSound = to_bool(stringData[5]);
+        option->mToggleEquip = to_bool(stringData[6]);
+        option->mReEquip = to_bool(stringData[7]);
+        option->mBeast = to_bool(stringData[8]);
 
         Widget* widget = new Widget;
-        widget->mWidget = dataHolder->list.mWidgetList[_widget].second;
-        widget->mHpos = _hpos;
-        widget->mVpos = _vpos;
-        widget->mDisplayWidget = _dwidget;
-        widget->mDisplayName = _dname;
-        widget->mDisplayHotkey = _dhotkey;
+        widget->mWidget = holder->list.mWidgetList[std::stoi(stringData[9])].second;
+        widget->mHpos = std::stoi(stringData[10]);
+        widget->mVpos = std::stoi(stringData[11]);
+        widget->mDisplayWidget = to_bool(stringData[12]);
+        widget->mDisplayName = to_bool(stringData[13]);
+        widget->mDisplayHotkey = to_bool(stringData[14]);
 
         Equipment* equipment = new Equipment;
-        auto left = equipment->mLeft;
-        auto lAction = static_cast<MCM::eAction>(_left);
+        auto& left = equipment->mLeft;
+        auto lAction = static_cast<MCM::eAction>(std::stoi(stringData[15]));
         switch (lAction) {
             case MCM::eAction::Nothing:
                 left.option = static_cast<int32_t>(MCM::eAction::Nothing);
@@ -294,8 +335,8 @@ namespace Papyrus {
             default:
                 left.option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        left.form = std::get<1>(dataHolder->list.mWeaponList[_left]);
-        auto xList = std::get<2>(dataHolder->list.mWeaponList[_left]);
+        left.form = std::get<1>(holder->list.mWeaponList[std::stoi(stringData[15])]);
+        auto xList = std::get<2>(holder->list.mWeaponList[std::stoi(stringData[15])]);
         bool bEnch = xList && Extra::IsEnchanted(xList);
         bool bTemp = xList && Extra::IsTempered(xList);
         left.hasExtra = std::make_pair(bEnch, bTemp);
@@ -303,8 +344,8 @@ namespace Papyrus {
         left.numEnch = Extra::GetNumEnchantment(xList);
         left.xList = xList;
 
-        auto right = equipment->mRight;
-        auto rAction = static_cast<MCM::eAction>(_right);
+        auto& right = equipment->mRight;
+        auto rAction = static_cast<MCM::eAction>(std::stoi(stringData[16]));
         switch (rAction) {
             case MCM::eAction::Nothing:
                 right.option = static_cast<int32_t>(MCM::eAction::Nothing);
@@ -317,9 +358,9 @@ namespace Papyrus {
             default:
                 right.option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        right.form = std::get<1>(dataHolder->list.mWeaponList[_right]);
+        right.form = std::get<1>(holder->list.mWeaponList[std::stoi(stringData[16])]);
         xList = nullptr;
-        xList = std::get<2>(dataHolder->list.mWeaponList[_right]);
+        xList = std::get<2>(holder->list.mWeaponList[std::stoi(stringData[16])]);
         bEnch = xList && Extra::IsEnchanted(xList);
         bTemp = xList && Extra::IsTempered(xList);
         right.hasExtra = std::make_pair(bEnch, bTemp);
@@ -327,18 +368,22 @@ namespace Papyrus {
         right.numEnch = Extra::GetNumEnchantment(xList);
         right.xList = xList;
 
-        auto shout = equipment->mShout;
-        shout.option = _shout;
-        shout.form = dataHolder->list.mShoutList[_shout].second;
+        auto& shout = equipment->mShout;
+        shout.option = std::stoi(stringData[17]);
+        shout.form = holder->list.mShoutList[std::stoi(stringData[17])].second;
 
-        Equipment::Items items = equipment->mItems;
-        items.numItems = _numitems;
-        for (const auto& elem : _items) {
-            auto form = std::get<1>(dataHolder->list.mItemsList[elem]);
+        auto& items = equipment->mItems;
+        items.numItems = std::stoi(stringData[18]);
+
+        for (int i = 0; i < items.numItems; i++) {
+            int index = i + 19;
+            int elem = std::stoi(stringData[index]);
+
+            auto form = std::get<1>(holder->list.mItemsList[elem]);
             items.form.push_back(form);
 
             xList = nullptr;
-            xList = std::get<2>(dataHolder->list.mItemsList[elem]);
+            xList = std::get<2>(holder->list.mItemsList[elem]);
             bEnch = xList && Extra::IsEnchanted(xList);
             bTemp = xList && Extra::IsTempered(xList);
             items.hasExtra.push_back(std::make_pair(bEnch, bTemp));
@@ -347,52 +392,93 @@ namespace Papyrus {
             items.xList.push_back(xList);
         }
 
-        manager->NewEquipset(name, hotkey, option, widget, equipment);
+        manager->NewEquipset(order, name, hotkey, option, widget, equipment);
 
         return true;
     }
 
-    bool UIHS_NewCycleEquipset(RE::StaticFunctionTag*, RE::BSFixedString _name, int32_t _hotkey, bool _modifier1,
-                          bool _modifier2, bool _modifier3, bool _persist, float _expire, float _reset, bool _beast,
-                          int32_t _hpos, int32_t _vpos, bool _dwidget, bool _dname, bool _dhotkey,
-                          int32_t _numitems, std::vector<int32_t> _items)
+    bool UIHS_NewCycleEquipset(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data)
     {
         auto manager = &UIHS::EquipsetManager::GetSingleton();
         if (!manager) {
             return false;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
-        if (!dataHolder) {
+        auto holder = &MCM::DataHolder::GetSingleton();
+        if (!holder) {
+            return false;
+        }
+
+        std::vector<std::string> stringData;
+        for (const auto& elem : _data) {
+            stringData.push_back(static_cast<std::string>(elem));
+        }
+        
+        uint32_t order = manager->GetAllEquipsetSize();
+
+        std::string name = stringData[0];
+        Hotkey* hotkey = new Hotkey;
+        hotkey->mKeyCode = std::stoi(stringData[1]);
+        hotkey->mModifier[0] = to_bool(stringData[2]);
+        hotkey->mModifier[1] = to_bool(stringData[3]);
+        hotkey->mModifier[2] = to_bool(stringData[4]);
+
+        CycleOption* option = new CycleOption;
+        option->mPersist = to_bool(stringData[5]);
+        option->mExpire = std::stof(stringData[6]);
+        option->mReset = std::stof(stringData[7]);
+        option->mBeast = to_bool(stringData[8]);
+
+        Widget* widget = new Widget;
+        widget->mHpos = std::stoi(stringData[9]);
+        widget->mVpos = std::stoi(stringData[10]);
+        widget->mDisplayWidget = to_bool(stringData[11]);
+        widget->mDisplayName = to_bool(stringData[12]);
+        widget->mDisplayHotkey = to_bool(stringData[13]);
+
+        std::vector<std::string> items;
+        int numItems = std::stoi(stringData[14]);
+        for (int i = 0; i < numItems; i++) {
+            int index = i + 15;
+            int elem = std::stoi(stringData[index]);
+
+            items.push_back(holder->list.mCycleItemsList[elem]);
+        }
+
+        manager->NewCycleEquipset(order, name, hotkey, option, widget, items, std::make_pair(0, -1));
+
+        return true;
+    }
+
+    bool UIHS_EditEquipset(RE::StaticFunctionTag*, RE::BSFixedString _name, std::vector<RE::BSFixedString> _data)
+    {
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        if (!manager) {
             return false;
         }
 
         std::string name = static_cast<std::string>(_name);
-        Hotkey* hotkey = new Hotkey;
-        hotkey->mKeyCode = _hotkey;
-        hotkey->mModifier[0] = _modifier1;
-        hotkey->mModifier[1] = _modifier2;
-        hotkey->mModifier[2] = _modifier3;
 
-        CycleOption* option = new CycleOption;
-        option->mPersist = _persist;
-        option->mExpire = _expire;
-        option->mReset = _reset;
-        option->mBeast = _beast;
-
-        Widget* widget = new Widget;
-        widget->mHpos = _hpos;
-        widget->mVpos = _vpos;
-        widget->mDisplayWidget = _dwidget;
-        widget->mDisplayName = _dname;
-        widget->mDisplayHotkey = _dhotkey;
-
-        std::vector<std::string> items;
-        for (int i = 0; i < _numitems; i++) {
-            items.push_back(dataHolder->list.mCycleItemsList[_items[i]]);
+        std::vector<std::string> stringData;
+        for (const auto& elem : _data) {
+            stringData.push_back(static_cast<std::string>(elem));
         }
 
-        manager->NewCycleEquipset(name, hotkey, option, widget, items, 0);
+        manager->EditEquipset(name, stringData);
+
+        return true;
+    }
+
+    bool UIHS_RemoveEquipset(RE::StaticFunctionTag*, RE::BSFixedString _data)
+    {
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        if (!manager) {
+            return false;
+        }
+
+        std::string stringData = static_cast<std::string>(_data);
+
+        manager->RemoveEquipset(stringData);
 
         return true;
     }
@@ -420,6 +506,17 @@ namespace Papyrus {
         return manager->IsNameConflict(_name);
     }
 
+    bool UIHS_IsCycleEquipset(RE::StaticFunctionTag*, RE::BSFixedString _name)
+    {
+        bool result = false;
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        if (!manager) {
+            return result;
+        }
+
+        return manager->IsCycleEquipset(_name);
+    }
+
     std::vector<RE::BSFixedString> UIHS_GetEquipsetData(RE::StaticFunctionTag*, RE::BSFixedString _name)
     {
         std::vector<RE::BSFixedString> result;
@@ -432,9 +529,57 @@ namespace Papyrus {
         return manager->GetEquipsetData(_name);
     }
 
+    std::vector<int32_t> UIHS_GetKeycodeList(RE::StaticFunctionTag*)
+    {
+        std::vector<int32_t> result;
+
+        auto manager = &UIHS::EquipsetManager::GetSingleton();
+        if (!manager) {
+            return result;
+        }
+
+        return manager->GetKeycodeList();
+    }
+
+    void UIHS_SendSettingData(RE::StaticFunctionTag*, std::vector<int32_t> _data)
+    {
+        auto holder = &MCM::DataHolder::GetSingleton();
+        if (!holder) {
+            return;
+        }
+
+        holder->setting.mSort = static_cast<MCM::eSortType>(_data[0]);
+        holder->setting.mFavor = _data[1];
+    }
+
+    void UIHS_SaveSetting(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data)
+    {
+        std::vector<std::string> stringData;
+
+        for (const auto& elem : _data) {
+            stringData.push_back(static_cast<std::string>(elem));
+        }
+
+        MCM::SaveSetting(stringData);
+    }
+
+    std::vector<RE::BSFixedString> UIHS_LoadSetting(RE::StaticFunctionTag*)
+    {
+        std::vector<std::string> data;
+        std::vector<RE::BSFixedString> result;
+
+        data = MCM::LoadSetting();
+
+        for (const auto& elem : data) {
+            result.push_back(static_cast<RE::BSFixedString>(elem));
+        }
+        
+        return result;
+    }
+
     bool RegisterFuncs(RE::BSScript::IVirtualMachine* vm)
     {
-        vm->RegisterFunction("Exec", "_HotkeysSystem_MCM", Papyrus::Exec);
+        vm->RegisterFunction("UIHS_Exec", "_HotkeysSystem_MCM", Papyrus::UIHS_Exec);
         vm->RegisterFunction("Exec2", "_HotkeysSystem_MCM", Papyrus::Exec2);
         vm->RegisterFunction("UIHS_Init", "_HotkeysSystem_MCM", Papyrus::UIHS_Init);
         vm->RegisterFunction("UIHS_Clear", "_HotkeysSystem_MCM", Papyrus::UIHS_Clear);
@@ -444,9 +589,16 @@ namespace Papyrus {
         vm->RegisterFunction("UIHS_GetStringFromList", "_HotkeysSystem_MCM", Papyrus::UIHS_GetStringFromList);
         vm->RegisterFunction("UIHS_NewEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_NewEquipset);
         vm->RegisterFunction("UIHS_NewCycleEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_NewCycleEquipset);
+        vm->RegisterFunction("UIHS_EditEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_EditEquipset);
+        vm->RegisterFunction("UIHS_RemoveEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_RemoveEquipset);
         vm->RegisterFunction("UIHS_GetKeyConflict", "_HotkeysSystem_MCM", Papyrus::UIHS_GetKeyConflict);
         vm->RegisterFunction("UIHS_IsNameConflict", "_HotkeysSystem_MCM", Papyrus::UIHS_IsNameConflict);
+        vm->RegisterFunction("UIHS_IsCycleEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_IsCycleEquipset);
         vm->RegisterFunction("UIHS_GetEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_GetEquipsetData);
+        vm->RegisterFunction("UIHS_GetKeycodeList", "_HotkeysSystem_MCM", Papyrus::UIHS_GetKeycodeList);
+        vm->RegisterFunction("UIHS_SendSettingData", "_HotkeysSystem_MCM", Papyrus::UIHS_SendSettingData);
+        vm->RegisterFunction("UIHS_SaveSetting", "_HotkeysSystem_MCM", Papyrus::UIHS_SaveSetting);
+        vm->RegisterFunction("UIHS_LoadSetting", "_HotkeysSystem_MCM", Papyrus::UIHS_LoadSetting);
 
         return true;
     }

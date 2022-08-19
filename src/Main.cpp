@@ -28,8 +28,10 @@ namespace {
 
         std::shared_ptr<spdlog::logger> log;
         if (IsDebuggerPresent()) {
+            //log = std::make_shared<spdlog::logger>(
+            //    "Global", std::make_shared<spdlog::sinks::msvc_sink_mt>());
             log = std::make_shared<spdlog::logger>(
-                "Global", std::make_shared<spdlog::sinks::msvc_sink_mt>());
+                "Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
         } else {
             log = std::make_shared<spdlog::logger>(
                 "Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));

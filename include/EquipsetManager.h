@@ -9,19 +9,28 @@ namespace UIHS {
 
         [[nodiscard]] static EquipsetManager& GetSingleton() noexcept;
 
-        void NewEquipset(std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment);
-        void NewCycleEquipset(std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, uint32_t _cycleIndex);
+        void NewEquipset(uint32_t _order, std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment);
+        void NewCycleEquipset(uint32_t _order, std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, std::pair<uint32_t, int32_t> _cycleIndex);
+        void EditEquipset(std::string _name, std::vector<std::string> _data);
+        void RemoveEquipset(std::string _name);
         void Display();
         void DisplayCycle();
         Equipset* SearchEquipsetByName(std::string _name);
         const RE::BSFixedString GetNamePrefix();
         RE::BSFixedString GetKeyConflict(int32_t _key, std::vector<bool> _modifier, bool _beast);
         std::vector<std::string> GetEquipsetList();
+        std::vector<std::string> GetCycleEquipsetList();
         std::vector<std::string> GetAllEquipsetList();
         std::vector<RE::BSFixedString> GetEquipsetData(RE::BSFixedString _name);
         uint32_t GetIndexFromList(std::string _name, MCM::eListType _type);
         uint32_t GetIndexFromList(RE::TESForm* _form, RE::ExtraDataList* _xList, MCM::eListType _type);
         bool IsNameConflict(RE::BSFixedString _name);
+        bool IsCycleEquipset(RE::BSFixedString _name);
+        std::vector<int32_t> GetKeycodeList();
+        uint32_t GetAllEquipsetSize();
+        std::vector<std::string> GetSortedEquipsetList();
+        std::vector<std::string> GetAllSortedEquipsetList();
+        void Exec(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3);
 
 
         /**

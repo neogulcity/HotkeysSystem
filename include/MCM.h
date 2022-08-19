@@ -20,7 +20,9 @@ namespace MCM {
         Shout,
         Items,
         CycleItems,
-        Equipsets
+        SelectList,
+        Equipset,
+        Font
     };
 
     class DataHolder {
@@ -30,7 +32,6 @@ namespace MCM {
         struct Setting {
             bool mFavor;           // Favorited only option
             eSortType mSort;       // Equipset sorting type
-            int32_t mModifier[3];  // Modifier keycode
         };
 
         struct List {
@@ -39,6 +40,7 @@ namespace MCM {
             std::vector<std::pair<std::string, RE::TESForm*>> mShoutList;         // Shout list
             std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> mItemsList;    // Items list
             std::vector<std::string> mCycleItemsList;  // CycleItems list
+            std::vector<std::string> mFontList;  // Font list
         };
 
         Setting setting;
@@ -53,5 +55,9 @@ namespace MCM {
     void Init_ShoutList();
     void Init_ItemsList();
     void Init_CycleItemsList();
+    void Init_FontList();
+    void Init_FontList();
+    void SaveSetting(std::vector<std::string> _data);
+    std::vector<std::string> LoadSetting();
     void ClearList();
 }

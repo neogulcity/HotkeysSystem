@@ -1,5 +1,6 @@
 #include "EquipsetManager.h"
 #include "ExtraData.h"
+#include "Utility.h"
 
 using namespace UIHS;
 
@@ -8,20 +9,211 @@ EquipsetManager& EquipsetManager::GetSingleton() noexcept {
     return instance;
 }
 
-void EquipsetManager::NewEquipset(std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment)
+void EquipsetManager::NewEquipset(uint32_t _order, std::string _name, Hotkey* _hotkey, Option* _option, Widget* _widget, Equipment* _equipment)
 {
-    mEquipset.push_back(new Equipset(_name, _hotkey, _option, _widget, _equipment));
+    mEquipset.push_back(new Equipset(_order, _name, _hotkey, _option, _widget, _equipment));
 }
 
-void EquipsetManager::NewCycleEquipset(std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, uint32_t _cycleIndex)
+void EquipsetManager::NewCycleEquipset(uint32_t _order, std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, std::pair<uint32_t, int32_t> _cycleIndex)
 {
-    mCycleEquipset.push_back(new CycleEquipset(_name, _hotkey, _option, _widget, _cycleItems, _cycleIndex));
+    mCycleEquipset.push_back(new CycleEquipset(_order, _name, _hotkey, _option, _widget, _cycleItems, _cycleIndex));
+}
+
+void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _data)
+{
+    auto holder = &MCM::DataHolder::GetSingleton();
+    if (!holder) {
+        return;
+    }
+
+    for (const auto& elem : mEquipset) {
+        if (elem->mName == _name) {
+            std::string name = _data[0];
+
+            Hotkey* hotkey = new Hotkey;
+            hotkey->mKeyCode = std::stoi(_data[1]);
+            hotkey->mModifier[0] = to_bool(_data[2]);
+            hotkey->mModifier[1] = to_bool(_data[3]);
+            hotkey->mModifier[2] = to_bool(_data[4]);
+
+            Option* option = new Option;
+            option->mSound = to_bool(_data[5]);
+            option->mToggleEquip = to_bool(_data[6]);
+            option->mReEquip = to_bool(_data[7]);
+            option->mBeast = to_bool(_data[8]);
+
+            Widget* widget = new Widget;
+            widget->mWidget = holder->list.mWidgetList[std::stoi(_data[9])].second;
+            widget->mHpos = std::stoi(_data[10]);
+            widget->mVpos = std::stoi(_data[11]);
+            widget->mDisplayWidget = to_bool(_data[12]);
+            widget->mDisplayName = to_bool(_data[13]);
+            widget->mDisplayHotkey = to_bool(_data[14]);
+
+            Equipment* equipment = new Equipment;
+            auto& left = equipment->mLeft;
+            auto lAction = static_cast<MCM::eAction>(std::stoi(_data[15]));
+            switch (lAction) {
+                case MCM::eAction::Nothing:
+                    left.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                    break;
+
+                case MCM::eAction::Unequip:
+                    left.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                    break;
+
+                default:
+                    left.option = static_cast<int32_t>(MCM::eAction::Equip);
+            }
+            left.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[15])]);
+            auto xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[15])]);
+            bool bEnch = xList && Extra::IsEnchanted(xList);
+            bool bTemp = xList && Extra::IsTempered(xList);
+            left.hasExtra = std::make_pair(bEnch, bTemp);
+            left.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+            left.numEnch = Extra::GetNumEnchantment(xList);
+            left.xList = xList;
+
+            auto& right = equipment->mRight;
+            auto rAction = static_cast<MCM::eAction>(std::stoi(_data[16]));
+            switch (rAction) {
+                case MCM::eAction::Nothing:
+                    right.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                    break;
+
+                case MCM::eAction::Unequip:
+                    right.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                    break;
+
+                default:
+                    right.option = static_cast<int32_t>(MCM::eAction::Equip);
+            }
+            right.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[16])]);
+            xList = nullptr;
+            xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[16])]);
+            bEnch = xList && Extra::IsEnchanted(xList);
+            bTemp = xList && Extra::IsTempered(xList);
+            right.hasExtra = std::make_pair(bEnch, bTemp);
+            right.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+            right.numEnch = Extra::GetNumEnchantment(xList);
+            right.xList = xList;
+
+            auto& shout = equipment->mShout;
+            shout.option = std::stoi(_data[17]);
+            shout.form = holder->list.mShoutList[std::stoi(_data[17])].second;
+
+            auto& items = equipment->mItems;
+            items.numItems = std::stoi(_data[18]);
+            for (int i = 0; i < items.numItems; i++) {
+                int index = i + 19;
+                int elem = std::stoi(_data[index]);
+
+                auto form = std::get<1>(holder->list.mItemsList[elem]);
+                items.form.push_back(form);
+
+                xList = nullptr;
+                xList = std::get<2>(holder->list.mItemsList[elem]);
+                bEnch = xList && Extra::IsEnchanted(xList);
+                bTemp = xList && Extra::IsTempered(xList);
+                items.hasExtra.push_back(std::make_pair(bEnch, bTemp));
+                items.extraData.push_back(std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList)));
+                items.numEnch.push_back(Extra::GetNumEnchantment(xList));
+                items.xList.push_back(xList);
+            }
+
+            delete elem->mHotkey;
+            delete elem->mOption;
+            delete elem->mWidget;
+            delete elem->mEquipment;
+
+            elem->mName = name;
+            elem->mHotkey = hotkey;
+            elem->mOption = option;
+            elem->mWidget = widget;
+            elem->mEquipment = equipment;
+        }
+    }
+
+    for (const auto& elem : mCycleEquipset) {
+        if (elem->mName == _name) {
+            std::string name = _data[0];
+            Hotkey* hotkey = new Hotkey;
+            hotkey->mKeyCode = std::stoi(_data[1]);
+            hotkey->mModifier[0] = to_bool(_data[2]);
+            hotkey->mModifier[1] = to_bool(_data[3]);
+            hotkey->mModifier[2] = to_bool(_data[4]);
+
+            CycleOption* option = new CycleOption;
+            option->mPersist = to_bool(_data[5]);
+            option->mExpire = std::stof(_data[6]);
+            option->mReset = std::stof(_data[7]);
+            option->mBeast = to_bool(_data[8]);
+
+            Widget* widget = new Widget;
+            widget->mHpos = std::stoi(_data[9]);
+            widget->mVpos = std::stoi(_data[10]);
+            widget->mDisplayWidget = to_bool(_data[11]);
+            widget->mDisplayName = to_bool(_data[12]);
+            widget->mDisplayHotkey = to_bool(_data[13]);
+
+            std::vector<std::string> items;
+            int numItems = std::stoi(_data[14]);
+            for (int i = 0; i < numItems; i++) {
+                int index = i + 15;
+                int elem = std::stoi(_data[index]);
+
+                items.push_back(holder->list.mCycleItemsList[elem]);
+            }
+
+            delete elem->mHotkey;
+            delete elem->mOption;
+            delete elem->mWidget;
+
+            elem->mName = name;
+            elem->mHotkey = hotkey;
+            elem->mOption = option;
+            elem->mWidget = widget;
+            elem->mCycleItems = items;
+            elem->mCycleIndex = std::make_pair(0, -1);
+        }
+    }
+}
+
+void EquipsetManager::RemoveEquipset(std::string _name)
+{
+    std::vector<std::string> list = GetEquipsetList();
+
+    for (int i = 0; i < list.size(); i++) {
+        if (list[i] == _name) {
+            delete mEquipset[i];
+            mEquipset.erase(mEquipset.begin() + i);
+        }
+    }
+
+    std::vector<std::string> cycleList = GetCycleEquipsetList();
+
+    for (int i = 0; i < cycleList.size(); i++) {
+        if (cycleList[i] == _name) {
+            delete mCycleEquipset[i];
+            mCycleEquipset.erase(mCycleEquipset.begin() + i);
+        }
+    }
 }
 
 std::vector<std::string> EquipsetManager::GetEquipsetList()
 {
     std::vector<std::string> result;
     for (const auto& elem : mEquipset) {
+        result.push_back(elem->mName);
+    }
+
+    return result;
+}
+
+std::vector<std::string> EquipsetManager::GetCycleEquipsetList()
+{
+    std::vector<std::string> result;
+    for (const auto& elem : mCycleEquipset) {
         result.push_back(elem->mName);
     }
 
@@ -70,6 +262,14 @@ uint32_t EquipsetManager::GetIndexFromList(std::string _name, MCM::eListType _ty
         case MCM::eListType::CycleItems:
             for (int i = 0; i < dataHolder->list.mCycleItemsList.size(); i++) {
                 if (_name == dataHolder->list.mCycleItemsList[i]) {
+                    result = i;
+                }
+            }
+            break;
+
+        case MCM::eListType::Font:
+            for (int i = 0; i < dataHolder->list.mFontList.size(); i++) {
+                if (_name == dataHolder->list.mFontList[i]) {
                     result = i;
                 }
             }
@@ -150,9 +350,9 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
             result.push_back(std::to_string(elem->mWidget->mDisplayWidget));
             result.push_back(std::to_string(elem->mWidget->mDisplayName));
             result.push_back(std::to_string(elem->mWidget->mDisplayHotkey));
-            
+
             uint32_t leftIndex;
-            auto left = elem->mEquipment->mLeft;
+            auto& left = elem->mEquipment->mLeft;
             MCM::eAction lAction = static_cast<MCM::eAction>(left.option);
             switch (lAction) {
                 case MCM::eAction::Nothing:
@@ -170,7 +370,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
             }
 
             uint32_t rightIndex;
-            auto right = elem->mEquipment->mRight;
+            auto& right = elem->mEquipment->mRight;
             MCM::eAction rAction = static_cast<MCM::eAction>(right.option);
             switch (rAction) {
                 case MCM::eAction::Nothing:
@@ -188,7 +388,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
             }
 
             uint32_t shoutIndex;
-            auto shout = elem->mEquipment->mShout;
+            auto& shout = elem->mEquipment->mShout;
             MCM::eAction sAction = static_cast<MCM::eAction>(shout.option);
             switch (sAction) {
                 case MCM::eAction::Nothing:
@@ -200,7 +400,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
                     break;
 
                 default:
-                    auto form = elem->mEquipment->mShout.form;
+                    auto form = shout.form;
                     if (!form) {
                         shoutIndex = GetIndexFromList(form->GetName(), MCM::eListType::Shout);
                         result.push_back(std::to_string(shoutIndex));
@@ -208,7 +408,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
                     break;
             }
 
-            Equipment::Items items = elem->mEquipment->mItems;
+            auto& items = elem->mEquipment->mItems;
             result.push_back(std::to_string(items.numItems));
             for (int i = 0; i < items.numItems; i++) {
                 uint32_t itemIndex;
@@ -258,6 +458,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
     for (const auto& elem : result) {
         strReturn.push_back(static_cast<RE::BSFixedString>(elem));
     }
+
     return strReturn;
 }
 
@@ -290,7 +491,7 @@ void EquipsetManager::Display()
         log::debug("Display Hotkey: {}", widget->mDisplayHotkey);
 
         auto equipment = equipset->mEquipment;
-        auto left = equipment->mLeft;
+        auto& left = equipment->mLeft;
         log::debug("Lefthand Option: {}", left.option);
         if (left.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             auto leftForm = left.form;
@@ -308,7 +509,7 @@ void EquipsetManager::Display()
             }
         }
 
-        auto right = equipment->mRight;
+        auto& right = equipment->mRight;
         log::debug("Righthand Option: {}", right.option);
         if (right.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             auto rightForm = right.form;
@@ -326,7 +527,7 @@ void EquipsetManager::Display()
             }
         }
 
-        auto shout = equipment->mShout;
+        auto& shout = equipment->mShout;
         log::debug("Shout Option: {}", shout.option);
         if (shout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             log::debug("Shout: {}({:X})", shout.form->GetName(), shout.form->formID);
@@ -334,7 +535,7 @@ void EquipsetManager::Display()
 
         log::debug("Contained Items");
 
-        auto items = equipment->mItems;
+        auto& items = equipment->mItems;
         uint32_t size = items.numItems;
         log::debug("Items size: {}", size);
         for (int i = 0; i < size; i++) {
@@ -496,4 +697,169 @@ bool EquipsetManager::IsNameConflict(RE::BSFixedString _name)
     }
 
     return false;
+}
+
+bool EquipsetManager::IsCycleEquipset(RE::BSFixedString _name)
+{
+    std::string name = static_cast<std::string>(_name);
+
+    for (const auto& elem : mCycleEquipset) {
+        if (elem->mName == name) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::vector<int32_t> EquipsetManager::GetKeycodeList()
+{
+    std::vector<int32_t> result;
+
+    for (const auto& elem : mEquipset) {
+        result.push_back(elem->mHotkey->mKeyCode);
+    }
+    for (const auto& elem : mCycleEquipset) {
+        result.push_back(elem->mHotkey->mKeyCode);
+    }
+
+    return result;
+}
+
+uint32_t EquipsetManager::GetAllEquipsetSize() 
+{
+    return mEquipset.size() + mCycleEquipset.size();
+}
+
+bool CreateDesc(std::pair<uint32_t, std::string> _data1, std::pair<uint32_t, std::string> _data2)
+{
+    return _data2.first < _data1.first;
+}
+
+bool NameAsc(std::pair<uint32_t, std::string> _data1, std::pair<uint32_t, std::string> _data2)
+{
+    return _data1.second < _data2.second;
+}
+
+bool NameDesc(std::pair<uint32_t, std::string> _data1, std::pair<uint32_t, std::string> _data2)
+{
+    return _data2.second < _data1.second;
+}
+
+std::vector<std::string> EquipsetManager::GetSortedEquipsetList()
+{
+    std::vector<std::string> result;
+
+    auto holder = &MCM::DataHolder::GetSingleton();
+    if (!holder) {
+        return result;
+    }
+
+    std::vector<std::pair<uint32_t, std::string>> pairList;
+
+    for (const auto& elem : mEquipset) {
+        pairList.push_back(std::make_pair(elem->mOrder, elem->mName));
+    }
+
+    switch (holder->setting.mSort) {
+        case MCM::eSortType::CreateAsc:
+            std::sort(pairList.begin(), pairList.end());
+            break;
+
+        case MCM::eSortType::CreateDesc:
+            std::sort(pairList.begin(), pairList.end(), CreateDesc);
+            break;
+
+        case MCM::eSortType::NameAsc:
+            std::sort(pairList.begin(), pairList.end(), NameAsc);
+            break;
+
+        case MCM::eSortType::NameDesc:
+            std::sort(pairList.begin(), pairList.end(), NameDesc);
+            break;
+    }
+
+    for (const auto& elem : pairList) {
+        result.push_back(elem.second);
+    }
+
+    return result;
+}
+
+std::vector<std::string> EquipsetManager::GetAllSortedEquipsetList()
+{
+    std::vector<std::string> result;
+
+    auto holder = &MCM::DataHolder::GetSingleton();
+    if (!holder) {
+        return result;
+    }
+
+    std::vector<std::pair<uint32_t, std::string>> pairList;
+
+    for (const auto& elem : mEquipset) {
+        pairList.push_back(std::make_pair(elem->mOrder, elem->mName));
+    }
+
+    for (const auto& elem : mCycleEquipset) {
+        pairList.push_back(std::make_pair(elem->mOrder, elem->mName));
+    }
+
+    switch (holder->setting.mSort) {
+        case MCM::eSortType::CreateAsc:
+            std::sort(pairList.begin(), pairList.end());
+            break;
+
+        case MCM::eSortType::CreateDesc:
+            std::sort(pairList.begin(), pairList.end(), CreateDesc);
+            break;
+
+        case MCM::eSortType::NameAsc:
+            std::sort(pairList.begin(), pairList.end(), NameAsc);
+            break;
+
+        case MCM::eSortType::NameDesc:
+            std::sort(pairList.begin(), pairList.end(), NameDesc);
+            break;
+    }
+
+    for (const auto& elem : pairList) {
+        result.push_back(elem.second);
+    }
+
+    return result;
+}
+
+bool IsPlayerBeast()
+{
+	auto menu = RE::MenuControls::GetSingleton();
+    if (!menu) {
+        return false;
+    }
+	return menu->InBeastForm();
+}
+
+void EquipsetManager::Exec(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3)
+{
+    for (const auto& elem : mEquipset) {
+        auto hotkey = elem->mHotkey;
+        if (hotkey->mKeyCode == _code &&
+            hotkey->mModifier[0] == _modifier1 &&
+            hotkey->mModifier[1] == _modifier2 &&
+            hotkey->mModifier[2] == _modifier3 &&
+            elem->mOption->mBeast == IsPlayerBeast()) {
+            elem->Equip();
+        }
+    }
+
+    for (const auto& elem : mCycleEquipset) {
+        auto hotkey = elem->mHotkey;
+        if (hotkey->mKeyCode == _code &&
+            hotkey->mModifier[0] == _modifier1 &&
+            hotkey->mModifier[1] == _modifier2 &&
+            hotkey->mModifier[2] == _modifier3 &&
+            elem->mOption->mBeast == IsPlayerBeast()) {
+            elem->Equip();
+        }
+    }
 }

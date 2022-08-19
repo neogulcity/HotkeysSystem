@@ -32,6 +32,7 @@ set(sources
         src/MCM.cpp
         src/Actor.cpp
         src/Serialize.cpp
+        src/Equipset.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 
