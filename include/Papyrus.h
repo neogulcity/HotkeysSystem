@@ -61,9 +61,16 @@ namespace Papyrus {
     bool UIHS_IsCycleEquipset(RE::StaticFunctionTag*, RE::BSFixedString _name);
     std::vector<RE::BSFixedString> UIHS_GetEquipsetData(RE::StaticFunctionTag*, RE::BSFixedString _name);
     std::vector<int32_t> UIHS_GetKeycodeList(RE::StaticFunctionTag*);
-    void UIHS_SendSettingData(RE::StaticFunctionTag*, std::vector<int32_t> _data);
+    void UIHS_SendSettingData(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data);
+    void UIHS_SendWidgetData(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data);
     void UIHS_SaveSetting(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data);
     std::vector<RE::BSFixedString> UIHS_LoadSetting(RE::StaticFunctionTag*);
+    void UIHS_InitWidget(RE::StaticFunctionTag*);
+    void UIHS_InitWidgetNext(RE::StaticFunctionTag*);
+    void UIHS_ClearWidget(RE::StaticFunctionTag*);
+    void UIHS_SaveEquipsetData(RE::StaticFunctionTag*);
+    void UIHS_LoadEquipsetData(RE::StaticFunctionTag*);
+    void UIHS_RemoveAllEquipset(RE::StaticFunctionTag*);
 
     bool RegisterFuncs(RE::BSScript::IVirtualMachine* vm);
 }

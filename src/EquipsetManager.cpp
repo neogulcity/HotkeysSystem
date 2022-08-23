@@ -1,6 +1,7 @@
 #include "EquipsetManager.h"
 #include "ExtraData.h"
 #include "Utility.h"
+#include "WidgetHandler.h"
 
 using namespace UIHS;
 
@@ -607,6 +608,16 @@ Equipset* EquipsetManager::SearchEquipsetByName(std::string _name)
     return nullptr;
 }
 
+CycleEquipset* EquipsetManager::SearchCycleEquipsetByName(std::string _name) {
+    for (auto& elem : mCycleEquipset) {
+        if (elem->mName == _name) {
+            return elem;
+        }
+    }
+
+    return nullptr;
+}
+
 const RE::BSFixedString EquipsetManager::GetNamePrefix()
 {
     RE::BSFixedString result;
@@ -648,6 +659,10 @@ const RE::BSFixedString EquipsetManager::GetNamePrefix()
 RE::BSFixedString EquipsetManager::GetKeyConflict(int32_t _key, std::vector<bool> _modifier, bool _beast)
 {
     std::string result = "_NOTFOUND_";
+
+    if (_key == -1) {
+        return result;
+    }
 
     for (const auto& elem : mEquipset) {
         if (elem->mHotkey->mKeyCode != _key) {
@@ -886,5 +901,354 @@ void EquipsetManager::CalculateKeydown(int32_t _code, bool _modifier1, bool _mod
                 elem->mCloseReset = true;
             }
         }
+    }
+}
+
+void EquipsetManager::ClearWidget()
+{
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return;
+    }
+
+    {
+        auto list = GetEquipsetList();
+        for (const auto& elem : list) {
+            auto equipset = SearchEquipsetByName(elem);
+            if (!equipset) {
+                continue;
+            }
+
+            std::vector<int32_t> clear;
+            equipset->mWidget->mWidgetID = clear;
+            equipset->mWidget->mNameID = clear;
+            equipset->mWidget->mHotkeyID = -1;
+            equipset->mWidget->mBackgroundID = -1;
+        }
+    }
+    {
+        auto list = GetCycleEquipsetList();
+        for (const auto& elem : list) {
+            auto equipset = SearchCycleEquipsetByName(elem);
+            if (!equipset) {
+                continue;
+            }
+
+            std::vector<int32_t> clear;
+            equipset->mWidget->mWidgetID = clear;
+            equipset->mWidget->mNameID = clear;
+            equipset->mWidget->mHotkeyID = -1;
+            equipset->mWidget->mBackgroundID = -1;
+        }
+    }
+
+    widgetHandler->CloseWidgetMenu();
+}
+
+void EquipsetManager::InitWidget()
+{
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return;
+    }
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return;
+    }
+
+    int32_t id = 0;
+
+    widgetHandler->OpenWidgetMenu();
+
+    {
+        auto list = GetEquipsetList();
+        for (const auto& elem : list) {
+            auto equipset = SearchEquipsetByName(elem);
+            if (!equipset) {
+                continue;
+            }
+
+            auto widget = equipset->mWidget;
+            if (widget->mDisplayWidget) {
+                widgetHandler->LoadWidget("UIHS/Background.dds", widget->mHpos, widget->mVpos);
+                widget->mBackgroundID = id;
+                ++id;
+            }
+            if (widget->mDisplayWidget) {
+                widgetHandler->LoadWidget(widget->mWidget, widget->mHpos, widget->mVpos);
+                widget->mWidgetID.push_back(id);
+                ++id;
+            }
+            if (widget->mDisplayName) {
+                widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos + 10, widget->mVpos + 110);
+                widget->mNameID.push_back(id);
+                ++id;
+            }
+            if (widget->mDisplayHotkey) {
+                std::string name = "";
+                name = equipset->mHotkey->mModifier[0] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[0]) + " + " : name;
+                name = equipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[1]) + " + " : name;
+                name = equipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
+                name += GetStringFromKeycode(equipset->mHotkey->mKeyCode);
+                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos + 40, widget->mVpos - 40);
+                widget->mHotkeyID = id;
+                ++id;
+            }
+        }
+    }
+
+    {
+        auto list = GetCycleEquipsetList();
+        for (const auto& elem : list) {
+            auto cycleEquipset = SearchCycleEquipsetByName(elem);
+            if (!cycleEquipset) {
+                continue;
+            }
+
+            auto cycleWidget = cycleEquipset->mWidget;
+            if (cycleWidget->mDisplayWidget) {
+                widgetHandler->LoadWidget("UIHS/Background.dds", cycleWidget->mHpos, cycleWidget->mVpos);
+                cycleWidget->mBackgroundID = id;
+                ++id;
+            }
+            if (cycleWidget->mDisplayWidget) {
+                for (const auto& strItem : cycleEquipset->mCycleItems) {
+                    auto equipset = SearchEquipsetByName(strItem);
+                    if (!equipset) {
+                        continue;
+                    }
+
+                    auto widget = equipset->mWidget;
+                    widgetHandler->LoadWidget(widget->mWidget, cycleWidget->mHpos, cycleWidget->mVpos);
+                    cycleWidget->mWidgetID.push_back(id);
+                    ++id;
+                }
+            }
+            if (cycleWidget->mDisplayName) {
+                for (const auto& strItem : cycleEquipset->mCycleItems) {
+                    auto equipset = SearchEquipsetByName(strItem);
+                    if (!equipset) {
+                        continue;
+                    }
+
+                    auto widget = equipset->mWidget;
+                    widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos + 10, cycleWidget->mVpos + 110);
+                    cycleWidget->mNameID.push_back(id);
+                    ++id;
+                }
+            }
+            if (cycleWidget->mDisplayHotkey) {
+                std::string name = "";
+                name = cycleEquipset->mHotkey->mModifier[0] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[0]) + " + " : name;
+                name = cycleEquipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[1]) + " + " : name;
+                name = cycleEquipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
+                name += GetStringFromKeycode(cycleEquipset->mHotkey->mKeyCode);
+                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos + 40, cycleWidget->mVpos - 40);
+                cycleWidget->mHotkeyID = id;
+                ++id;
+            }
+        }
+    }
+}
+
+void EquipsetManager::InitWidgetNext()
+{
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return;
+    }
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return;
+    }
+
+    {
+        auto list = GetEquipsetList();
+        for (const auto& elem : list) {
+            auto equipset = SearchEquipsetByName(elem);
+            if (!equipset) {
+                continue;
+            }
+
+            auto widget = equipset->mWidget;
+            if (widget->mDisplayWidget && widget->mBackgroundID != -1) {
+                widgetHandler->SetSize(widget->mBackgroundID, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100);
+                widgetHandler->SetAlpha(widget->mBackgroundID, dataHolder->widget.mAlpha);
+            }
+            if (widget->mDisplayWidget && widget->mWidgetID.size() > 0) {
+                widgetHandler->SetSize(widget->mWidgetID[0], 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100);
+                widgetHandler->SetAlpha(widget->mWidgetID[0], 100);
+            }
+            if (widget->mDisplayName && widget->mNameID.size() > 0) {
+                widgetHandler->SetAlpha(widget->mNameID[0], 100);
+            }
+            if (widget->mDisplayHotkey && widget->mHotkeyID != -1) {
+                widgetHandler->SetAlpha(widget->mHotkeyID, 100);
+            }
+        }
+    }
+    
+    {
+        auto list = GetCycleEquipsetList();
+        for (const auto& elem : list) {
+            auto equipset = SearchCycleEquipsetByName(elem);
+            if (!equipset) {
+                continue;
+            }
+
+            auto widget = equipset->mWidget;
+            if (widget->mDisplayWidget && widget->mBackgroundID != -1) {
+                widgetHandler->SetSize(widget->mBackgroundID, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100);
+                widgetHandler->SetAlpha(widget->mBackgroundID, dataHolder->widget.mAlpha);
+            }
+            if (widget->mDisplayWidget && widget->mWidgetID.size() > 0) {
+                for (const auto& id : widget->mWidgetID) {
+                    widgetHandler->SetSize(id, 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100);
+                }
+                widgetHandler->SetAlpha(widget->mWidgetID[equipset->mCycleIndex.first], 100);
+            }
+            if (widget->mDisplayName && widget->mNameID.size() > 0) {
+                for (const auto& id : widget->mNameID) {
+                    //
+                }
+                widgetHandler->SetAlpha(widget->mNameID[equipset->mCycleIndex.first], 100);
+            }
+            if (widget->mDisplayHotkey && widget->mHotkeyID != -1) {
+                widgetHandler->SetAlpha(widget->mHotkeyID, 100);
+            }
+        }
+    }
+
+    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+    if (type != MCM::eWidgetDisplay::InCombat) {
+        return;
+    }
+
+    if (dataHolder->widget.mDelay == 0.0f) {
+        return;
+    }
+
+    if (IsThreadWorking()) {
+        return;
+    }
+
+    SetDissolveTimer();
+}
+
+void EquipsetManager::DissolveIn_Function()
+{
+    SetThreadWorking(true);
+
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) {
+        return;
+    }
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return;
+    }
+
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return;
+    }
+
+    auto playerref = RE::PlayerCharacter::GetSingleton();
+    if (!playerref) {
+        return;
+    }
+
+    SetRemain(dataHolder->widget.mDelay);
+    while (!IsThreadClosing() && mRemain > 0.0f) {
+        float remain = GetRemain();
+        remain = !UI->GameIsPaused() && !playerref->IsInCombat() ? remain - 0.1f : remain;
+        SetRemain(remain);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    if (!IsThreadClosing()) {
+        widgetHandler->DissolveIn();
+    }
+
+    SetRemain(0.0f);
+    SetThreadClose(false);
+    SetThreadWorking(false);
+}
+
+void EquipsetManager::SetDissolveTimer()
+{
+    std::thread dissolveThread = std::thread(&EquipsetManager::DissolveIn_Function, this);
+    dissolveThread.detach();
+}
+
+void EquipsetManager::DissolveOut_Function()
+{
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) {
+        return;
+    }
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return;
+    }
+
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return;
+    }
+
+    widgetHandler->DissolveOut();
+}
+
+float EquipsetManager::GetRemain()
+{
+    std::unique_lock lock(GetSingleton()._lock);
+    return mRemain;
+}
+
+void EquipsetManager::SetRemain(float _param)
+{
+    std::unique_lock lock(GetSingleton()._lock);
+    mRemain = _param;
+}
+
+bool EquipsetManager::IsThreadClosing()
+{
+    std::unique_lock lock(GetSingleton()._lock);
+    return mThreadClose;
+}
+
+void EquipsetManager::SetThreadClose(bool _param)
+{
+    std::unique_lock lock(GetSingleton()._lock);
+    mThreadClose = _param;
+}
+
+bool EquipsetManager::IsThreadWorking()
+{
+    std::unique_lock lock(GetSingleton()._lock);
+    return mThreadWorking;
+}
+
+void EquipsetManager::SetThreadWorking(bool _param)
+{
+    std::unique_lock lock(GetSingleton()._lock);
+    mThreadWorking = _param;
+}
+
+void EquipsetManager::RemoveAllEquipset()
+{
+    while (mEquipset.size() > 0) {
+        delete mEquipset[0];
+        mEquipset.erase(mEquipset.begin());
+    }
+
+    while (mCycleEquipset.size() > 0) {
+        delete mCycleEquipset[0];
+        mCycleEquipset.erase(mCycleEquipset.begin());
     }
 }

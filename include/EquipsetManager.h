@@ -16,6 +16,7 @@ namespace UIHS {
         void Display();
         void DisplayCycle();
         Equipset* SearchEquipsetByName(std::string _name);
+        CycleEquipset* SearchCycleEquipsetByName(std::string _name);
         const RE::BSFixedString GetNamePrefix();
         RE::BSFixedString GetKeyConflict(int32_t _key, std::vector<bool> _modifier, bool _beast);
         std::vector<std::string> GetEquipsetList();
@@ -32,7 +33,25 @@ namespace UIHS {
         std::vector<std::string> GetAllSortedEquipsetList();
         void Exec(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3);
         void CalculateKeydown(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time);
+        void InitWidget();
+        void InitWidgetNext();
+        void ClearWidget();
+        void SaveEquipsetData();
+        void LoadEquipsetData();
+        void RemoveAllEquipset();
 
+        void SetDissolveTimer();
+        void DissolveIn_Function();
+        void DissolveOut_Function();
+
+        float GetRemain();
+        void SetRemain(float _param);
+
+        bool IsThreadClosing();
+        void SetThreadClose(bool _param);
+
+        bool IsThreadWorking();
+        void SetThreadWorking(bool _param);
 
         /**
          * The serialization handler for reverting game state.
@@ -63,7 +82,11 @@ namespace UIHS {
         EquipsetManager() = default;
 
         mutable std::mutex _lock;
+
         std::vector<Equipset*> mEquipset;
         std::vector<CycleEquipset*> mCycleEquipset;
+        bool mThreadClose{false};
+        bool mThreadWorking{false};
+        float mRemain{0.0f};
     };
 }

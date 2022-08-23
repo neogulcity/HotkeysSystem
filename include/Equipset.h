@@ -52,7 +52,15 @@ public:
 
 class Widget {
 public:
-    Widget() : mWidget(""), mHpos(0), mVpos(0), mDisplayWidget(false), mDisplayName(false), mDisplayHotkey(false) {}
+    Widget()
+        : mWidget(""),
+          mHpos(0),
+          mVpos(0),
+          mDisplayWidget(false),
+          mDisplayName(false),
+          mDisplayHotkey(false),
+          mBackgroundID(-1),
+          mHotkeyID(-1) {}
 
     std::string mWidget;  // Widget icon type
     int32_t mHpos;        // Widget horizontal position
@@ -60,6 +68,10 @@ public:
     bool mDisplayWidget;  // Enable widget equipset icon on hud
     bool mDisplayName;    // Enable widget equipset name on hud
     bool mDisplayHotkey;  // Enable widget equipset hotkey on hud
+    std::vector<int32_t> mWidgetID;
+    std::vector<int32_t> mNameID;
+    int32_t mHotkeyID;
+    int32_t mBackgroundID;
 };
 
 class Equipment {
@@ -166,6 +178,10 @@ public:
     void SetResetTimer();
 
 private:
+    using Lock = std::recursive_mutex;
+	using Locker = std::lock_guard<Lock>;
+
+    mutable Lock _lock;
     uint32_t mOrder;
     std::string mName;  // Equipset name
     std::vector<std::string> mCycleItems; // Conatined Equipsets name.

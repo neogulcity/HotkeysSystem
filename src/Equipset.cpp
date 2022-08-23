@@ -2,6 +2,7 @@
 #include "EquipsetManager.h"
 #include "MCM.h"
 #include "Offset.h"
+#include "WidgetHandler.h"
 
 RE::TESForm* GetDummyDagger()
 {
@@ -321,6 +322,48 @@ void Equipset::Equip()
             EquipItem(mEquipment->mItems.form[i], nullptr, mOption->mSound, mEquipment->mItems.xList[i]);
         }
     }
+
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return;
+    }
+
+    auto manager = &UIHS::EquipsetManager::GetSingleton();
+    if (!manager) {
+        return;
+    }
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return;
+    }
+
+    if (!dataHolder->setting.mWidgetActive) {
+        return;
+    }
+
+    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+    if (type == MCM::eWidgetDisplay::InCombat) {
+        if (dataHolder->widget.mDelay != 0.0f) {
+            manager->DissolveOut_Function();
+            if (!manager->IsThreadWorking()) {
+                manager->SetDissolveTimer();
+            }
+            else {
+                manager->SetRemain(dataHolder->widget.mDelay + 1.0f);
+            }
+        }
+    }   
+
+    if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
+        widgetHandler->Animate(mWidget->mWidgetID[0]);
+    }
+    if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
+        widgetHandler->Animate(mWidget->mNameID[0]);
+    }
+    if (mWidget->mDisplayHotkey && mWidget->mHotkeyID != -1) {
+        widgetHandler->Animate(mWidget->mHotkeyID);
+    }
 }
 
 void CycleEquipset::Equip()
@@ -417,7 +460,6 @@ void CycleEquipset::Equip()
                 if (mOption->mExpire != 0.0f) {
                     SetExpireTimer();
                 }
-                return;
             }
         }
 
@@ -430,7 +472,6 @@ void CycleEquipset::Equip()
             if (mOption->mExpire != 0.0f) {
                 SetExpireTimer();
             }
-            return;
         }
     }
     // Cycle persist option Off or It's first time to execute cycle EquipSet
@@ -442,7 +483,46 @@ void CycleEquipset::Equip()
         if (mOption->mExpire != 0.0f) {
             SetExpireTimer();
         }
+    }
+
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
         return;
+    }
+
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return;
+    }
+
+    if (!dataHolder->setting.mWidgetActive) {
+        return;
+    }
+
+    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+    if (type == MCM::eWidgetDisplay::InCombat) {
+        if (dataHolder->widget.mDelay != 0.0f) {
+            manager->DissolveOut_Function();
+            if (!manager->IsThreadWorking()) {
+                manager->SetDissolveTimer();
+            }
+            else {
+                manager->SetRemain(dataHolder->widget.mDelay + 1.0f);
+            }
+        }
+    }    
+
+    if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
+        widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.second], 0);
+        widgetHandler->Animate(mWidget->mWidgetID[mCycleIndex.first]);
+    }
+    if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
+        widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.second], 0);
+        widgetHandler->Animate(mWidget->mNameID[mCycleIndex.first]);
+    }
+    if (mWidget->mDisplayHotkey && mWidget->mHotkeyID != -1) {
+        widgetHandler->SetAlpha(mWidget->mHotkeyID, 0);
+        widgetHandler->Animate(mWidget->mHotkeyID);
     }
 }
 
@@ -460,6 +540,8 @@ void CycleEquipset::Expire_Function()
         mRemain = !UI->GameIsPaused() ? mRemain - 0.1f : mRemain;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    Locker locker(_lock);
 
     if (!mCloseExpire) {
         mCycleIndex.first = 0;
@@ -499,6 +581,8 @@ void CycleEquipset::Reset_Function()
         num = !UI->GameIsPaused() ? num - 0.01f : num;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    Locker locker(_lock);
 
     if (!mCloseReset) {
         mCycleIndex.first = 0;

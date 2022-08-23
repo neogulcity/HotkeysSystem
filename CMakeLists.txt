@@ -33,6 +33,12 @@ set(sources
         src/Actor.cpp
         src/Serialize.cpp
         src/Equipset.cpp
+        src/ViewHandler.cpp
+        src/WidgetHandler.cpp
+        src/Scaleform/Scaleform.cpp
+        src/Scaleform/WidgetMenu.cpp
+        src/Utility.cpp
+        src/Event.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
 

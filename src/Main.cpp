@@ -116,6 +116,8 @@ namespace {
         //log::trace("Trampoline initialized.");
 
         //Sample::InitializeHook(trampoline);
+        Scaleform::Register();
+        OnCombatEvent::RegisterEvent();
     }
 
     /**

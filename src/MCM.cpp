@@ -5,6 +5,7 @@
 #include "EquipsetManager.h"
 #include "ExtraData.h"
 #include "MCM.h"
+#include "Utility.h"
 
 using namespace SKSE;
 
@@ -28,6 +29,7 @@ namespace MCM {
         }
         Json::Value root;
         file >> root;
+        file.close();
 
         const Json::Value jValue = root["WidgetList"];
         for (int i = 0; i < jValue.size(); ++i) {
@@ -382,42 +384,65 @@ namespace MCM {
         }
     }
 
+    void SetSetting(std::vector<std::string> _data)
+    {
+        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        if (!dataHolder) {
+            return;
+        }
+
+        assert(_data.size() == 6);
+
+        dataHolder->setting.mModifier[0] = std::stoi(_data[0]);
+        dataHolder->setting.mModifier[1] = std::stoi(_data[1]);
+        dataHolder->setting.mModifier[2] = std::stoi(_data[2]);
+        dataHolder->setting.mSort = static_cast<eSortType>(std::stoi(_data[3]));
+        dataHolder->setting.mFavor = to_bool(_data[4]);
+        dataHolder->setting.mWidgetActive = to_bool(_data[5]);
+    }
+
+    void SetWidgetData(std::vector<std::string> _data)
+    {
+        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        if (!dataHolder) {
+            return;
+        }
+
+        assert(_data.size() == 6);
+
+        dataHolder->widget.mFont = dataHolder->list.mFontList[std::stoi(_data[0])];
+        dataHolder->widget.mFontSize = std::stoi(_data[1]);
+        dataHolder->widget.mSize = std::stoi(_data[2]);
+        dataHolder->widget.mAlpha = std::stoi(_data[3]);
+        dataHolder->widget.mDisplay = std::stoi(_data[4]);
+        dataHolder->widget.mDelay = std::stof(_data[5]);
+    }
+
     void SaveSetting(std::vector<std::string> _data)
     {
+        assert(_data.size() == 14);
+
         Json::Value root;
         root["sWidget_Font"]        = _data[0];
-        root["sWidget_Size"]        = _data[1];
-        root["sWidget_Alpha"]       = _data[2];
-        root["sWidget_Display"]     = _data[3];
-        root["sWidget_Delay"]       = _data[4];
-        root["sWidget_EFont"]       = _data[5];
-        root["sWidget_ESize"]       = _data[6];
-        root["sWidget_EAlpha"]      = _data[7];
-        root["sWidget_EDisplay"]    = _data[8];
-        root["sWidget_EDelay"]      = _data[9];
-        root["sWidget_LDisplay"]    = _data[10];
-        root["sWidget_LName"]       = _data[11];
-        root["sWidget_LHpos"]       = _data[12];
-        root["sWidget_LVpos"]       = _data[13];
-        root["sWidget_RDisplay"]    = _data[14];
-        root["sWidget_RName"]       = _data[15];
-        root["sWidget_RHpos"]       = _data[16];
-        root["sWidget_RVpos"]       = _data[17];
-        root["sWidget_SDisplay"]    = _data[18];
-        root["sWidget_SName"]       = _data[19];
-        root["sWidget_SHpos"]       = _data[20];
-        root["sWidget_SVpos"]       = _data[21];
-        root["sSetting_Modifier1"]  = _data[22];
-        root["sSetting_Modifier2"]  = _data[23];
-        root["sSetting_Modifier3"]  = _data[24];
-        root["sSetting_Sort"]       = _data[25];
-        root["sSetting_Gamepad"]    = _data[26];
-        root["sSetting_Favor"]      = _data[27];
+        root["sWidget_FontSize"]    = _data[1];
+        root["sWidget_Size"]        = _data[2];
+        root["sWidget_Alpha"]       = _data[3];
+        root["sWidget_Display"]     = _data[4];
+        root["sWidget_Delay"]       = _data[5];
+        root["sSetting_Modifier1"]  = _data[6];
+        root["sSetting_Modifier2"]  = _data[7];
+        root["sSetting_Modifier3"]  = _data[8];
+        root["sSetting_Sort"]       = _data[9];
+        root["sSetting_Gamepad"]    = _data[10];
+        root["sSetting_Favor"]      = _data[11];
+        root["sMaintenance_Mod"]    = _data[12];
+        root["sMaintenance_Widget"] = _data[13];
 
         Json::StyledWriter writer;
         std::string outString = writer.write(root);
         std::ofstream out("Data/SKSE/Plugins/UIHS/Settings.json");
         out << outString;
+        out.close();
     }
 
     std::vector<std::string> LoadSetting()
@@ -431,35 +456,22 @@ namespace MCM {
         }
         Json::Value root;
         file >> root;
+        file.close();
 
         result.push_back(root.get("sWidget_Font", "0").asString());
+        result.push_back(root.get("sWidget_FontSize", "100").asString());
         result.push_back(root.get("sWidget_Size", "100").asString());
         result.push_back(root.get("sWidget_Alpha", "100").asString());
         result.push_back(root.get("sWidget_Display", "0").asString());
         result.push_back(root.get("sWidget_Delay", "3.000000").asString());
-        result.push_back(root.get("sWidget_EFont", "0").asString());
-        result.push_back(root.get("sWidget_ESize", "100").asString());
-        result.push_back(root.get("sWidget_EAlpha", "100").asString());
-        result.push_back(root.get("sWidget_EDisplay", "0").asString());
-        result.push_back(root.get("sWidget_EDelay", "3.000000").asString());
-        result.push_back(root.get("sWidget_LDisplay", "False").asString());
-        result.push_back(root.get("sWidget_LName", "False").asString());
-        result.push_back(root.get("sWidget_LHpos", "0").asString());
-        result.push_back(root.get("sWidget_LVpos", "0").asString());
-        result.push_back(root.get("sWidget_RDisplay", "False").asString());
-        result.push_back(root.get("sWidget_RName", "False").asString());
-        result.push_back(root.get("sWidget_RHpos", "0").asString());
-        result.push_back(root.get("sWidget_RVpos", "0").asString());
-        result.push_back(root.get("sWidget_SDisplay", "False").asString());
-        result.push_back(root.get("sWidget_SName", "False").asString());
-        result.push_back(root.get("sWidget_SHpos", "0").asString());
-        result.push_back(root.get("sWidget_SVpos", "0").asString());
         result.push_back(root.get("sSetting_Modifier1", "42").asString());
         result.push_back(root.get("sSetting_Modifier2", "29").asString());
         result.push_back(root.get("sSetting_Modifier3", "56").asString());
         result.push_back(root.get("sSetting_Sort", "0").asString());
         result.push_back(root.get("sSetting_Gamepad", "False").asString());
         result.push_back(root.get("sSetting_Favor", "False").asString());
+        result.push_back(root.get("sMaintenance_Mod", "True").asString());
+        result.push_back(root.get("sMaintenance_Widget", "True").asString());
         
         return result;
     }

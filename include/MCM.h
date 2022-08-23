@@ -25,13 +25,29 @@ namespace MCM {
         Font
     };
 
+    enum class eWidgetDisplay {
+        Always,
+        InCombat
+    };
+
     class DataHolder {
     public:
         [[nodiscard]] static DataHolder& GetSingleton() noexcept;
 
+        struct Widget {
+            std::string mFont;
+            int32_t mFontSize;
+            int32_t mSize;
+            int32_t mAlpha;
+            int32_t mDisplay;
+            float mDelay;
+        };
+
         struct Setting {
+            int32_t mModifier[3];
             bool mFavor;           // Favorited only option
             eSortType mSort;       // Equipset sorting type
+            bool mWidgetActive;
         };
 
         struct List {
@@ -42,6 +58,8 @@ namespace MCM {
             std::vector<std::string> mCycleItemsList;  // CycleItems list
             std::vector<std::string> mFontList;  // Font list
         };
+
+        Widget widget;
 
         Setting setting;
         List list;
@@ -56,7 +74,8 @@ namespace MCM {
     void Init_ItemsList();
     void Init_CycleItemsList();
     void Init_FontList();
-    void Init_FontList();
+    void SetSetting(std::vector<std::string> _data);
+    void SetWidgetData(std::vector<std::string> _data);
     void SaveSetting(std::vector<std::string> _data);
     std::vector<std::string> LoadSetting();
     void ClearList();
