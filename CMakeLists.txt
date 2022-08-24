@@ -24,7 +24,6 @@ set(headers
         include/header.h)
 
 set(sources
-        src/Config.cpp
         src/Main.cpp
         src/Papyrus.cpp
         src/EquipsetManager.cpp

@@ -135,7 +135,7 @@ void UnequipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::E
     }
 
     if (_form->Is(RE::FormType::Shout)) {
-        // Need to figure out Unequip Shout // Shout Unequip 은 아직 확인이 더 필요.
+        // Need to figure out Unequip Shout
 
     } else {
         RE::TESBoundObject* object = _form->As<RE::TESBoundObject>();
@@ -458,7 +458,12 @@ void CycleEquipset::Equip()
                 mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
 
                 if (mOption->mExpire != 0.0f) {
-                    SetExpireTimer();
+                    if (!IsExpireWorking()) {
+                        SetExpireTimer();
+                    }
+                    else {
+                        SetRemain(mOption->mExpire);
+                    }
                 }
             }
         }
@@ -470,7 +475,12 @@ void CycleEquipset::Equip()
             mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
 
             if (mOption->mExpire != 0.0f) {
-                SetExpireTimer();
+                if (!IsExpireWorking()) {
+                    SetExpireTimer();
+                }
+                else {
+                    SetRemain(mOption->mExpire);
+                }
             }
         }
     }
@@ -481,7 +491,12 @@ void CycleEquipset::Equip()
         mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
 
         if (mOption->mExpire != 0.0f) {
-            SetExpireTimer();
+            if (!IsExpireWorking()) {
+                SetExpireTimer();
+            }
+            else {
+                SetRemain(mOption->mExpire);
+            }
         }
     }
 
@@ -499,110 +514,205 @@ void CycleEquipset::Equip()
         return;
     }
 
-    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
-    if (type == MCM::eWidgetDisplay::InCombat) {
-        if (dataHolder->widget.mDelay != 0.0f) {
-            manager->DissolveOut_Function();
-            if (!manager->IsThreadWorking()) {
-                manager->SetDissolveTimer();
-            }
-            else {
-                manager->SetRemain(dataHolder->widget.mDelay + 1.0f);
-            }
-        }
-    }    
-
     if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
         widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.second], 0);
+        widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.first], 100);
         widgetHandler->Animate(mWidget->mWidgetID[mCycleIndex.first]);
     }
     if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
         widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.second], 0);
+        widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.first], 100);
         widgetHandler->Animate(mWidget->mNameID[mCycleIndex.first]);
     }
     if (mWidget->mDisplayHotkey && mWidget->mHotkeyID != -1) {
         widgetHandler->SetAlpha(mWidget->mHotkeyID, 0);
+        widgetHandler->SetAlpha(mWidget->mHotkeyID, 100);
         widgetHandler->Animate(mWidget->mHotkeyID);
     }
 }
 
-void CycleEquipset::Expire_Function()
+bool CycleEquipset::Expire_Function()
 {
+    SetExpireWorking(true);
     auto UI = RE::UI::GetSingleton();
     if (!UI) {
-        return;
+        return false;
     }
 
-    mCloseExpire = false;
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return false;
+    }
 
-    mRemain = mOption->mExpire;
-    while (!mCloseExpire && mRemain > 0) {
-        mRemain = !UI->GameIsPaused() ? mRemain - 0.1f : mRemain;
+    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    if (!dataHolder) {
+        return false;
+    }
+
+    auto manager = &UIHS::EquipsetManager::GetSingleton();
+    if (!manager) {
+        return false;
+    }
+
+    SetExpireClose(false);
+
+    SetRemain(mOption->mExpire);
+    while (!IsExpireClosing() && GetRemain() > 0.0f) {
+        float remain = GetRemain();
+        remain = !UI->GameIsPaused() ? remain - 0.1f : remain;
+        SetRemain(remain);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    Locker locker(_lock);
+    if (!IsExpireClosing()) {
+        MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+        if (type == MCM::eWidgetDisplay::InCombat) {
+            if (dataHolder->widget.mDelay != 0.0f) {
+                manager->DissolveOut_Function();
+                if (manager->IsThreadWorking()) {
+                    SetRemain(dataHolder->widget.mDelay + 1.0f);
+                }
+                else {
+                    manager->SetDissolveTimer();
+                }
+            }
+        }
 
-    if (!mCloseExpire) {
+        if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
+            widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.first], 0);
+            widgetHandler->SetAlpha(mWidget->mWidgetID[0], 100);
+            widgetHandler->Animate(mWidget->mWidgetID[0]);
+        }
+        if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
+            widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.first], 0);
+            widgetHandler->SetAlpha(mWidget->mNameID[0], 100);
+            widgetHandler->Animate(mWidget->mNameID[0]);
+        }
+        if (mWidget->mDisplayHotkey && mWidget->mHotkeyID != -1) {
+            widgetHandler->Animate(mWidget->mHotkeyID);
+        }
         mCycleIndex.first = 0;
         mCycleIndex.second = -1;
     }
 
-    mRemain = 0.0f;
-    mCloseExpire = true;
+    SetRemain(0.0f);
+    SetExpireClose(true);
+    SetExpireWorking(false);
+
+    return true;
 }
 
 void CycleEquipset::SetExpireTimer()
 {
-    if (mOption->mExpire == 0.0f) {
-        return;
-    }
-
-    if (!mCloseExpire) {
-        mRemain = mOption->mExpire;
-        return;
-    }
-
-    std::thread expireThread = std::thread(&CycleEquipset::Expire_Function, this);
-    expireThread.detach();
+    mExpireHandle = std::async(&CycleEquipset::Expire_Function, this);
 }
 
-void CycleEquipset::Reset_Function()
+bool CycleEquipset::Reset_Function()
 {
+    SetResetWorking(true);
     auto UI = RE::UI::GetSingleton();
     if (!UI) {
-        return;
+        return false;
     }
 
-    mCloseReset = false;
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) {
+        return false;
+    }
+
+    SetResetClose(false);
 
     float num = mOption->mReset;
-    while (!mCloseReset && num > 0) {
+    while (!IsResetClosing() && num > 0.0f) {
         num = !UI->GameIsPaused() ? num - 0.01f : num;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+ 
+    if (!IsResetClosing()) {
+        if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
+            widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.first], 0);
+            widgetHandler->SetAlpha(mWidget->mWidgetID[0], 100);
+            widgetHandler->Animate(mWidget->mWidgetID[0]);
+        }
+        if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
+            widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.first], 0);
+            widgetHandler->SetAlpha(mWidget->mNameID[0], 100);
+            widgetHandler->Animate(mWidget->mNameID[0]);
+        }
+        if (mWidget->mDisplayHotkey && mWidget->mHotkeyID != -1) {
+            widgetHandler->Animate(mWidget->mHotkeyID);
+        }
 
-    Locker locker(_lock);
-
-    if (!mCloseReset) {
         mCycleIndex.first = 0;
         mCycleIndex.second = -1;
         Equip();
     }
 
-    mCloseReset = true;
+    SetResetClose(true);
+    SetResetWorking(false);
+    return true;
 }
 
 void CycleEquipset::SetResetTimer()
 {
-    if (mOption->mReset == 0.0f) {
-        return;
-    }
+    mResetHandle = std::async(&CycleEquipset::Reset_Function, this);
+}
 
-    if (!mCloseReset) {
-        return;
-    }
+float CycleEquipset::GetRemain()
+{
+    Locker locker(_lock);
+    return mRemain;
+}
+void CycleEquipset::SetRemain(float _param)
+{
+    Locker locker(_lock);
+    mRemain = _param;
+}
 
-    std::thread resetThread = std::thread(&CycleEquipset::Reset_Function, this);
-    resetThread.detach();
+bool CycleEquipset::IsExpireClosing()
+{
+    Locker locker(_lock);
+    return mExpireClose;
+}
+
+void CycleEquipset::SetExpireClose(bool _param)
+{
+    Locker locker(_lock);
+    mExpireClose = _param;
+}
+
+bool CycleEquipset::IsExpireWorking()
+{
+    Locker locker(_lock);
+    return mExpireWorking;
+}
+
+void CycleEquipset::SetExpireWorking(bool _param)
+{
+    Locker locker(_lock);
+    mExpireWorking = _param;
+}
+
+bool CycleEquipset::IsResetClosing()
+{
+    Locker locker(_lock);
+    return mResetClose;
+}
+
+void CycleEquipset::SetResetClose(bool _param)
+{
+    Locker locker(_lock);
+    mResetClose = _param;
+}
+
+bool CycleEquipset::IsResetWorking()
+{
+    Locker locker(_lock);
+    return mResetWorking;
+}
+
+void CycleEquipset::SetResetWorking(bool _param)
+{
+    Locker locker(_lock);
+    mResetWorking = _param;
 }

@@ -510,6 +510,7 @@ void EquipsetManager::SaveEquipsetData()
             root[name]["lHasExtra_first"] = left.hasExtra.first;
             root[name]["lNumEnch"] = left.numEnch;
             root[name]["lExtraData_first"] = left.hasExtra.first ? left.extraData.first->GetFormID() : 0;
+
             root[name]["lHasExtra_second"] = left.hasExtra.second;
             root[name]["lExtraData_second"] = left.extraData.second;
 
@@ -635,11 +636,11 @@ void EquipsetManager::LoadEquipsetData()
             {
                 auto& left = equipment->mLeft;
                 left.option = root[name].get("lOption", 0).asInt();
-                RE::FormID formID = root[name].get("lForm", 0).asInt();
+                RE::FormID formID = root[name].get("lForm", 0).asInt64();
                 left.form = left.option == 2 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
                 left.hasExtra.first = root[name].get("lHasExtra_first", false).asBool();
                 left.numEnch = root[name].get("lNumEnch", 0).asInt();
-                RE::FormID enchantID = root[name].get("lExtraData_first", 0).asInt();
+                RE::FormID enchantID = root[name].get("lExtraData_first", 0).asInt64();
                 RE::EnchantmentItem* enchantForm = left.hasExtra.first ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
                 left.extraData.first = left.hasExtra.first && enchantForm ? enchantForm : nullptr;
                 left.hasExtra.second = root[name].get("lHasExtra_second", false).asBool();
@@ -651,11 +652,11 @@ void EquipsetManager::LoadEquipsetData()
             {
                 auto& right = equipment->mRight;
                 right.option = root[name].get("rOption", 0).asInt();
-                RE::FormID formID = root[name].get("rForm", 0).asInt();
+                RE::FormID formID = root[name].get("rForm", 0).asInt64();
                 right.form = right.option == 2 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
                 right.hasExtra.first = root[name].get("rHasExtra_first", false).asBool();
                 right.numEnch = root[name].get("rNumEnch", 0).asInt();
-                RE::FormID enchantID = root[name].get("rExtraData_first", 0).asInt();
+                RE::FormID enchantID = root[name].get("rExtraData_first", 0).asInt64();
                 RE::EnchantmentItem* enchantForm = right.hasExtra.first ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
                 right.extraData.first = right.hasExtra.first && enchantForm ? enchantForm : nullptr;
                 right.hasExtra.second = root[name].get("rHasExtra_second", false).asBool();
@@ -675,7 +676,7 @@ void EquipsetManager::LoadEquipsetData()
             items.numItems = root[name].get("mNumItems", 0).asInt();
             for (int j = 0; j < items.numItems; j++) {
                 auto itemName = "Item_" + std::to_string(j);
-                RE::FormID formID = root[name]["Items"][itemName].get("form", 0).asInt();
+                RE::FormID formID = root[name]["Items"][itemName].get("form", 0).asInt64();
                 RE::TESForm* form = formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
                 if (form) {
                     items.form.push_back(form);
@@ -683,7 +684,7 @@ void EquipsetManager::LoadEquipsetData()
                 bool hasItemsExtraEnch = root[name]["Items"][itemName].get("hasExtra_first", false).asBool();
                 uint32_t numItemsEnch = root[name]["Items"][itemName].get("numEnch", 0).asInt();
                 items.numEnch.push_back(numItemsEnch);
-                RE::FormID enchantID = root[name]["Items"][itemName].get("extraData_first", 0).asInt();
+                RE::FormID enchantID = root[name]["Items"][itemName].get("extraData_first", 0).asInt64();
                 RE::EnchantmentItem* enchantForm = hasItemsExtraEnch ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
                 bool hasItemsExtraTemp = root[name]["Items"][itemName].get("hasExtra_second", false).asBool();
                 items.hasExtra.push_back(std::make_pair(hasItemsExtraEnch, hasItemsExtraTemp));

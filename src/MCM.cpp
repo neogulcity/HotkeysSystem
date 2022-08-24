@@ -159,8 +159,8 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mWeaponList.push_back(std::make_tuple("$Nothing", nullptr, nullptr));
-        dataHolder->list.mWeaponList.push_back(std::make_tuple("$Unequip", nullptr, nullptr));
+        dataHolder->list.mWeaponList.push_back(std::make_tuple("$UIHS_Nothing", nullptr, nullptr));
+        dataHolder->list.mWeaponList.push_back(std::make_tuple("$UIHS_Unequip", nullptr, nullptr));
 
         for (int i = 0; i < result.size(); i++) {
             dataHolder->list.mWeaponList.push_back(result[i]);
@@ -243,8 +243,8 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mShoutList.push_back(std::make_pair("$Nothing", nullptr));
-        dataHolder->list.mShoutList.push_back(std::make_pair("$Unequip", nullptr));
+        dataHolder->list.mShoutList.push_back(std::make_pair("$UIHS_Nothing", nullptr));
+        dataHolder->list.mShoutList.push_back(std::make_pair("$UIHS_Unequip", nullptr));
 
         for (int i = 0; i < result.size(); i++) {
             dataHolder->list.mShoutList.push_back(result[i]);
@@ -332,7 +332,7 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mItemsList.push_back(std::make_tuple("$Nothing", nullptr, nullptr));
+        dataHolder->list.mItemsList.push_back(std::make_tuple("$UIHS_Nothing", nullptr, nullptr));
 
         for (int i = 0; i < result.size(); i++) {
             dataHolder->list.mItemsList.push_back(result[i]);
@@ -353,7 +353,7 @@ namespace MCM {
             return;
         }
 
-        result.push_back("$Nothing");
+        result.push_back("$UIHS_Nothing");
 
         auto list = manager->GetSortedEquipsetList();
         for (const auto& elem : list) {

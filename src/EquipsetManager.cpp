@@ -137,6 +137,26 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
 
     for (const auto& elem : mCycleEquipset) {
         if (elem->mName == _name) {
+            if (elem->mOption->mReset != 0.0f && elem->IsResetWorking()) {
+                try {
+                    elem->SetResetClose(true);
+                    elem->mResetHandle.get();
+                }
+                catch (const std::future_error& error) {
+                    log::error("Caught a future_error: {}", error.what());
+                }
+            }
+            if (elem->mOption->mExpire != 0.0f && elem->IsExpireWorking()) {
+                try {
+                    elem->SetExpireClose(true);
+                    elem->mExpireHandle.get();
+                }
+                catch (const std::future_error& error) {
+                    log::error("Caught a future_error: {}", error.what());
+                }
+            }
+
+
             std::string name = _data[0];
             Hotkey* hotkey = new Hotkey;
             hotkey->mKeyCode = std::stoi(_data[1]);
@@ -176,9 +196,9 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
             elem->mWidget = widget;
             elem->mCycleItems = items;
             elem->mCycleIndex = std::make_pair(0, -1);
-            elem->mCloseExpire = true;
-            elem->mCloseReset = true;
-            elem->mRemain = 0.0f;
+            elem->SetExpireClose(true);
+            elem->SetResetClose(true);
+            elem->SetRemain(0.0f);
         }
     }
 }
@@ -198,7 +218,26 @@ void EquipsetManager::RemoveEquipset(std::string _name)
 
     for (int i = 0; i < cycleList.size(); i++) {
         if (cycleList[i] == _name) {
-            delete mCycleEquipset[i];
+            auto equipset = mCycleEquipset[i];
+            if (equipset->mOption->mExpire != 0.0f && equipset->IsExpireWorking()) {
+                try {
+                    equipset->SetExpireClose(true);
+                    equipset->mExpireHandle.get();
+                }
+                catch (const std::future_error& error) {
+                    log::error("Caught a future_error: {}", error.what());
+                }
+            }
+            if (equipset->mOption->mReset != 0.0f && equipset->IsResetWorking()) {
+                try {
+                    equipset->SetResetClose(true);
+                    equipset->mResetHandle.get();
+                }
+                catch (const std::future_error& error) {
+                    log::error("Caught a future_error: {}", error.what());
+                }
+            }
+            delete equipset;
             mCycleEquipset.erase(mCycleEquipset.begin() + i);
         }
     }
@@ -881,7 +920,9 @@ void EquipsetManager::Exec(int32_t _code, bool _modifier1, bool _modifier2, bool
                 elem->Equip();
             }
             else {
-                elem->SetResetTimer();
+                if (!elem->IsResetWorking()) {
+                    elem->SetResetTimer();
+                }
             }
         }
     }
@@ -897,8 +938,14 @@ void EquipsetManager::CalculateKeydown(int32_t _code, bool _modifier1, bool _mod
             hotkey->mModifier[2] == _modifier3 &&
             elem->mOption->mBeast == IsPlayerBeast()) {
             if (elem->mOption->mReset != 0.0f && _time < elem->mOption->mReset) {
-                elem->Equip();
-                elem->mCloseReset = true;
+                try {
+                    elem->Equip();
+                    elem->SetResetClose(true);
+                    elem->mResetHandle.get();
+                }
+                catch (const std::future_error& error) {
+                    log::error("Caught a future_error: {}", error.what());
+                }
             }
         }
     }
@@ -981,7 +1028,7 @@ void EquipsetManager::InitWidget()
                 ++id;
             }
             if (widget->mDisplayName) {
-                widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos + 10, widget->mVpos + 110);
+                widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos, widget->mVpos + (50 * dataHolder->widget.mSize / 100));
                 widget->mNameID.push_back(id);
                 ++id;
             }
@@ -991,7 +1038,7 @@ void EquipsetManager::InitWidget()
                 name = equipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[1]) + " + " : name;
                 name = equipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
                 name += GetStringFromKeycode(equipset->mHotkey->mKeyCode);
-                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos + 40, widget->mVpos - 40);
+                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos, widget->mVpos - (50 * dataHolder->widget.mSize / 100));
                 widget->mHotkeyID = id;
                 ++id;
             }
@@ -1033,7 +1080,7 @@ void EquipsetManager::InitWidget()
                     }
 
                     auto widget = equipset->mWidget;
-                    widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos + 10, cycleWidget->mVpos + 110);
+                    widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos + (50 * dataHolder->widget.mSize / 100));
                     cycleWidget->mNameID.push_back(id);
                     ++id;
                 }
@@ -1044,7 +1091,7 @@ void EquipsetManager::InitWidget()
                 name = cycleEquipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[1]) + " + " : name;
                 name = cycleEquipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
                 name += GetStringFromKeycode(cycleEquipset->mHotkey->mKeyCode);
-                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos + 40, cycleWidget->mVpos - 40);
+                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos - (50 * dataHolder->widget.mSize / 100));
                 cycleWidget->mHotkeyID = id;
                 ++id;
             }
@@ -1131,38 +1178,39 @@ void EquipsetManager::InitWidgetNext()
     }
 
     if (IsThreadWorking()) {
-        return;
+        SetRemain(dataHolder->widget.mDelay + 1.0f);
     }
-
-    SetDissolveTimer();
+    else {
+        SetDissolveTimer();
+    }
 }
 
-void EquipsetManager::DissolveIn_Function()
+bool EquipsetManager::DissolveIn_Function()
 {
     SetThreadWorking(true);
 
     auto UI = RE::UI::GetSingleton();
     if (!UI) {
-        return;
+        return false;
     }
 
     auto dataHolder = &MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
-        return;
+        return false;
     }
 
     auto widgetHandler = WidgetHandler::GetSingleton();
     if (!widgetHandler) {
-        return;
+        return false;
     }
 
     auto playerref = RE::PlayerCharacter::GetSingleton();
     if (!playerref) {
-        return;
+        return false;
     }
 
-    SetRemain(dataHolder->widget.mDelay);
-    while (!IsThreadClosing() && mRemain > 0.0f) {
+    SetRemain(dataHolder->widget.mDelay + 1.0f);
+    while (!IsThreadClosing() && GetRemain() > 0.0f) {
         float remain = GetRemain();
         remain = !UI->GameIsPaused() && !playerref->IsInCombat() ? remain - 0.1f : remain;
         SetRemain(remain);
@@ -1176,12 +1224,12 @@ void EquipsetManager::DissolveIn_Function()
     SetRemain(0.0f);
     SetThreadClose(false);
     SetThreadWorking(false);
+    return true;
 }
 
 void EquipsetManager::SetDissolveTimer()
 {
-    std::thread dissolveThread = std::thread(&EquipsetManager::DissolveIn_Function, this);
-    dissolveThread.detach();
+    mThreadHandle = std::async(&EquipsetManager::DissolveIn_Function, this);
 }
 
 void EquipsetManager::DissolveOut_Function()
@@ -1243,12 +1291,10 @@ void EquipsetManager::SetThreadWorking(bool _param)
 void EquipsetManager::RemoveAllEquipset()
 {
     while (mEquipset.size() > 0) {
-        delete mEquipset[0];
-        mEquipset.erase(mEquipset.begin());
+        RemoveEquipset(mEquipset[0]->mName);
     }
 
     while (mCycleEquipset.size() > 0) {
-        delete mCycleEquipset[0];
-        mCycleEquipset.erase(mCycleEquipset.begin());
+        RemoveEquipset(mCycleEquipset[0]->mName);
     }
 }

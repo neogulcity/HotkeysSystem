@@ -167,15 +167,30 @@ public:
           mWidget(_widget),
           mCycleItems(_cycleItems),
           mCycleIndex(_cycleIndex),
-          mCloseExpire(true),
-          mCloseReset(true),
+          mExpireClose(true),
+          mExpireWorking(false),
+          mResetClose(true),
+          mResetWorking(false),
           mRemain(0.0f) {}
 
     void Equip();
-    void Expire_Function();
-    void Reset_Function();
+    bool Expire_Function();
+    bool Reset_Function();
     void SetExpireTimer();
     void SetResetTimer();
+
+    float GetRemain();
+    void SetRemain(float _param);
+
+    bool IsExpireClosing();
+    void SetExpireClose(bool _param);
+    bool IsExpireWorking();
+    void SetExpireWorking(bool _param);
+
+    bool IsResetClosing();
+    void SetResetClose(bool _param);
+    bool IsResetWorking();
+    void SetResetWorking(bool _param);
 
 private:
     using Lock = std::recursive_mutex;
@@ -190,9 +205,13 @@ private:
     Widget* mWidget;
     std::pair<uint32_t, int32_t> mCycleIndex; // first: Current index to equip, second: Previous index
 
-    bool mCloseExpire;
-    bool mCloseReset;
+    bool mExpireClose;
+    bool mExpireWorking;
+    bool mResetClose;
+    bool mResetWorking;
     float mRemain;
+    std::future<bool> mExpireHandle;
+    std::future<bool> mResetHandle;
 };
 
 RE::TESForm* GetDummyDagger();

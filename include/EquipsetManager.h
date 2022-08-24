@@ -41,7 +41,7 @@ namespace UIHS {
         void RemoveAllEquipset();
 
         void SetDissolveTimer();
-        void DissolveIn_Function();
+        bool DissolveIn_Function();
         void DissolveOut_Function();
 
         float GetRemain();
@@ -88,5 +88,6 @@ namespace UIHS {
         bool mThreadClose{false};
         bool mThreadWorking{false};
         float mRemain{0.0f};
+        std::future<bool> mThreadHandle;
     };
 }

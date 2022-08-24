@@ -158,7 +158,7 @@ namespace Papyrus {
                 break;
 
              case MCM::eListType::SelectList:
-                result.push_back(static_cast<RE::BSFixedString>("$cancel"));
+                result.push_back(static_cast<RE::BSFixedString>("$UIHS_Cancel"));
                 equipsets = manager->GetAllSortedEquipsetList();
                 for (const auto& elem : equipsets) {
                     result.push_back(static_cast<RE::BSFixedString>(elem));
@@ -674,6 +674,7 @@ namespace Papyrus {
         vm->RegisterFunction("UIHS_ClearWidget", "_HotkeysSystem_MCM", Papyrus::UIHS_ClearWidget);
         vm->RegisterFunction("UIHS_SaveEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_SaveEquipsetData);
         vm->RegisterFunction("UIHS_LoadEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_LoadEquipsetData);
+        vm->RegisterFunction("UIHS_RemoveAllEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_RemoveAllEquipset);
 
         return true;
     }

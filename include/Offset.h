@@ -2,9 +2,9 @@
 
 RE::BGSEquipSlot* GetRightHandSlot()
 {
-	using func_t = decltype(GetRightHandSlot);
+    using func_t = decltype(GetRightHandSlot);
     if (REL::Module::IsAE()) {
-        REL::Relocation<func_t> func{REL::ID(23151)};
+        REL::Relocation<func_t> func{REL::ID(23608)};
         return func();
     }
 	else {
@@ -17,7 +17,7 @@ RE::BGSEquipSlot* GetLeftHandSlot()
 {
 	using func_t = decltype(GetLeftHandSlot);
     if (REL::Module::IsAE()) {
-        REL::Relocation<func_t> func{REL::ID(23150)};
+        REL::Relocation<func_t> func{REL::ID(23607)};
         return func();
     } else {
         REL::Relocation<func_t> func{REL::ID(23150)};
