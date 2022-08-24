@@ -6,7 +6,7 @@ namespace Actor {
         if (!_actor) {
             return 0;
         }
-
+        
         return _actor->addedSpells.size();
     }
 
@@ -20,7 +20,7 @@ namespace Actor {
         if (data) {
             return data->numSpells;
         }
-
+        
         return 0;
     }
 
@@ -76,5 +76,91 @@ namespace Actor {
         }
 
         return nullptr;
+    }
+
+    bool HasItem(RE::Actor* _actor, RE::TESForm* _form)
+    {
+        if (!_actor) {
+            return false;
+        }
+
+        if (!_form) {
+            return false;
+        }
+
+        auto inv = _actor->GetInventory();
+        for (const auto& [item, data] : inv) {
+            const auto& [numItem, entry] = data;
+
+            if (numItem > 0 && item->GetFormID() == _form->GetFormID()) {
+			    return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool HasMagic(RE::Actor* _actor, RE::SpellItem* _spell)
+    {
+        if (!_actor) {
+            return false;
+        }
+
+        if (!_spell) {
+            return false;
+        }
+        
+        auto spellSize = GetSpellCount(_actor);
+        for (int i = 0; i < spellSize; i++) {
+            auto spell = Actor::GetNthSpell(_actor, i);
+            if (spell && spell->GetFormID() == _spell->GetFormID()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool HasMagic(RE::TESNPC* _actor, RE::SpellItem* _spell)
+    {
+        if (!_actor) {
+            return false;
+        }
+
+        if (!_spell) {
+            return false;
+        }
+
+        
+        auto baseSpellSize = GetSpellCount(_actor);
+        for (int i = 0; i < baseSpellSize; i++) {
+            auto spell = GetNthSpell(_actor, i);
+            if (spell && spell->GetFormID() == _spell->GetFormID()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool HasShout(RE::TESNPC* _actor, RE::TESShout* _shout)
+    {
+        if (!_actor) {
+            return false;
+        }
+
+        if (!_shout) {
+            return false;
+        }
+
+        auto baseShoutSize = Actor::GetShoutCount(_actor);
+        for (int i = 0; i < baseShoutSize; i++) {
+            auto shout = Actor::GetNthShout(_actor, i);
+            if (shout && shout->GetFormID() == _shout->GetFormID()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

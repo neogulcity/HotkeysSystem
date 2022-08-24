@@ -48,23 +48,6 @@ namespace Papyrus {
         return;
     }
 
-    void Exec2(RE::StaticFunctionTag*)
-    {
-        log::debug("Exec2 Function Start");
-
-        auto playerref = RE::PlayerCharacter::GetSingleton();
-        if (!playerref) {
-            return;
-        }
-        
-        auto right = playerref->GetEquippedObject(false);
-        if (!right) {
-            return;
-        }
-
-        log::warn("FormID: {:X}", right->GetFormID());
-    }
-
     void UIHS_Init(RE::StaticFunctionTag*)
     {
         MCM::Init_WidgetList();
@@ -649,7 +632,6 @@ namespace Papyrus {
     {
         vm->RegisterFunction("UIHS_Exec", "_HotkeysSystem_MCM", Papyrus::UIHS_Exec);
         vm->RegisterFunction("UIHS_CalculateKeydown", "_HotkeysSystem_MCM", Papyrus::UIHS_CalculateKeydown);
-        vm->RegisterFunction("Exec2", "_HotkeysSystem_MCM", Papyrus::Exec2);
         vm->RegisterFunction("UIHS_Init", "_HotkeysSystem_MCM", Papyrus::UIHS_Init);
         vm->RegisterFunction("UIHS_Clear", "_HotkeysSystem_MCM", Papyrus::UIHS_Clear);
         vm->RegisterFunction("UIHS_GetNamePrefix", "_HotkeysSystem_MCM", Papyrus::UIHS_GetNamePrefix);

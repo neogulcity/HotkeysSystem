@@ -898,6 +898,10 @@ bool IsPlayerBeast()
 
 void EquipsetManager::Exec(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3)
 {
+    auto playerref = RE::PlayerCharacter::GetSingleton();
+    const auto xContainer = playerref ? playerref->extraList.GetByType<RE::ExtraContainerChanges>() : nullptr;
+	const auto invChanges = xContainer ? xContainer->changes : nullptr;
+
     for (const auto& elem : mEquipset) {
         auto hotkey = elem->mHotkey;
         if (hotkey->mKeyCode == _code &&

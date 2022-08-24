@@ -218,6 +218,5 @@ RE::TESForm* GetDummyDagger();
 RE::TESForm* GetDummyShout();
 RE::TESForm* GetEquippedShout(RE::Actor* _actor);
 std::vector<RE::TESForm*> GetAllEquippedItems();
-bool HasItem(RE::TESForm* _form);
 void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue, bool _force);
 void UnequipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue, bool _force);

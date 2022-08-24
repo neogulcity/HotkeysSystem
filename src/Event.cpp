@@ -57,5 +57,7 @@ bool OnCombatEvent::RegisterEvent()
 
     ScriptEventSource->AddEventSink(&g_combateventhandler);
 
+    log::info("Registered OnCombatEvent");
+
     return true;
 }

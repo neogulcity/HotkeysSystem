@@ -2,7 +2,6 @@ Scriptname _HotkeysSystem_MCM extends SKI_ConfigBase
 
 ; Global Native Functions
 Function UIHS_Exec(int _code, bool _modifier1, bool _modifier2, bool _modifier3) Global Native
-Function Exec2() Global Native
 Function UIHS_Init() Global Native
 Function UIHS_Clear() Global Native
 string Function UIHS_GetNamePrefix() Global Native
@@ -34,7 +33,7 @@ Function UIHS_RemoveAllEquipset() Global Native
 ; Number of items Equipset can have & Cycle Equipset can have / Number of displaying Overview page Equipset
 int MAX_ITEMS = 15
 int MAX_CYCLEITEMS = 5
-int MAX_OVERVIEWLIST = 20
+int MAX_OVERVIEWLIST = 60
 
 ; Properties
 bool bGenWidget
@@ -250,9 +249,9 @@ Event OnConfigClose()
 
 	UIHS_ClearWidget()
 	if sMaintenance_Widget 
-		Utility.Wait(0.25)
+		Utility.Wait(0.1)
 		UIHS_InitWidget()
-		Utility.Wait(0.25)
+		Utility.Wait(0.1)
 		UIHS_InitWidgetNext()
 		bGenWidget = false
 	endif
@@ -267,9 +266,9 @@ Event OnGameReload()
 
 	UIHS_ClearWidget()
 	if sMaintenance_Widget 
-		Utility.Wait(0.25)
+		Utility.Wait(0.1)
 		UIHS_InitWidget()
-		Utility.Wait(0.25)
+		Utility.Wait(0.1)
 		UIHS_InitWidgetNext()
 	endif
 EndEvent
@@ -741,6 +740,12 @@ EndFunction
 
 Function OnPage_Overview_Items()
 	AddHeaderOption(CString(UIHS_GetStringFromList(sOverview_Equipset, eType_Equipset), eColor_Green), OPTION_FLAG_NONE)
+	AddKeyMapOption("$UIHS_Managing_Hotkey", sManaging_Hotkey, OPTION_FLAG_DISABLED)
+	AddToggleOption(UIHS_GetStringFromKeycode(sSetting_Modifier1), sManaging_Modifier1, OPTION_FLAG_DISABLED)
+	AddToggleOption(UIHS_GetStringFromKeycode(sSetting_Modifier2), sManaging_Modifier2, OPTION_FLAG_DISABLED)
+	AddToggleOption(UIHS_GetStringFromKeycode(sSetting_Modifier3), sManaging_Modifier3, OPTION_FLAG_DISABLED)
+	AddEmptyOption()
+	AddHeaderOption("$UIHS_Managing_Weapons", OPTION_FLAG_NONE)
 	AddTextOption("$UIHS_Managing_Lefthand", UIHS_GetStringFromList(sManaging_Left, eType_Weapon), OPTION_FLAG_NONE)
 	AddTextOption("$UIHS_Managing_Righthand", UIHS_GetStringFromList(sManaging_Right, eType_Weapon), OPTION_FLAG_NONE)
 	AddTextOption("$UIHS_Managing_Shout", UIHS_GetStringFromList(sManaging_Shout, eType_Shout), OPTION_FLAG_NONE)
@@ -764,7 +769,12 @@ EndFunction
 
 Function OnPage_Overview_CycleItems()
 	AddHeaderOption(CString(UIHS_GetStringFromList(sOverview_Equipset, eType_Equipset), eColor_Green), OPTION_FLAG_NONE)
-	
+	AddKeyMapOption("$UIHS_Managing_Hotkey", sManaging_CycleHotkey, OPTION_FLAG_DISABLED)
+	AddToggleOption(UIHS_GetStringFromKeycode(sSetting_Modifier1), sManaging_CycleModifier1, OPTION_FLAG_DISABLED)
+	AddToggleOption(UIHS_GetStringFromKeycode(sSetting_Modifier2), sManaging_CycleModifier2, OPTION_FLAG_DISABLED)
+	AddToggleOption(UIHS_GetStringFromKeycode(sSetting_Modifier3), sManaging_CycleModifier3, OPTION_FLAG_DISABLED)
+	AddEmptyOption()
+	AddHeaderOption("$UIHS_Managing_Equipsets", OPTION_FLAG_NONE)
 	if sManaging_CyclenumItems == 0
 		AddTextOption("", "$UIHS_Nothing", OPTION_FLAG_NONE)
 	else
@@ -993,7 +1003,7 @@ Function OnOptionSliderOpen_New(int _opt)
 	elseif _opt == optManaging_Vpos
 		SetSliderDialogStartValue(sManaging_Vpos as float)
 		SetSliderDialogDefaultValue(sManaging_Vpos as float)
-		SetSliderDialogRange(-720.0, 720.0)
+		SetSliderDialogRange(0.0, 720.0)
 		SetSliderDialogInterval(1.0)
 	endif
 EndFunction
@@ -1017,7 +1027,7 @@ Function OnOptionSliderOpen_NewCycle(int _opt)
 	elseif _opt == optManaging_CycleVpos
 		SetSliderDialogStartValue(sManaging_CycleVpos as float)
 		SetSliderDialogDefaultValue(sManaging_CycleVpos as float)
-		SetSliderDialogRange(-720.0, 720.0)
+		SetSliderDialogRange(0.0, 720.0)
 		SetSliderDialogInterval(1.0)
 	endif
 EndFunction
@@ -1396,20 +1406,31 @@ Function OnOptionKeyMapChange(int _opt, int _code, string _conflictCode, string 
 				OnOptionKeyMapChange_New(_opt, _code, _conflictCode, _conflictMod)
 			endif
 		endif
+	elseif CurPage == ePage_Setting
+		if _opt == optSetting_Modifier1
+			sSetting_Modifier1 = _code
+			SetKeyMapOptionValue(_opt, _code, false)
+		elseif _opt == optSetting_Modifier2
+			sSetting_Modifier2 = _code
+			SetKeyMapOptionValue(_opt, _code, false)
+		elseif _opt == optSetting_Modifier3
+			sSetting_Modifier3 = _code
+			SetKeyMapOptionValue(_opt, _code, false)
+		endif
 	endif
 EndFunction
 
 Function OnOptionKeyMapChange_New(int _opt, int _code, string _conflictCode, string _conflictMod)
 	if _opt == optManaging_Hotkey
 		sManaging_Hotkey = _code
-		SetKeyMapOptionValue(optManaging_Hotkey, _code, false)
+		SetKeyMapOptionValue(_opt, _code, false)
 	endif
 EndFunction
 
 Function OnOptionKeyMapChange_NewCycle(int _opt, int _code, string _conflictCode, string _conflictMod)
 	if _opt == optManaging_CycleHotkey
 		sManaging_CycleHotkey = _code
-		SetKeyMapOptionValue(optManaging_CycleHotkey, _code, false)
+		SetKeyMapOptionValue(_opt, _code, false)
 	endif
 EndFunction
 

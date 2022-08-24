@@ -1,12 +1,6 @@
 #pragma once
 
 namespace Papyrus {
-    void UIHS_Exec(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3);
-    void UIHS_CalculateKeydown(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time);
-    void Exec2(RE::StaticFunctionTag*);
-    void UIHS_Init(RE::StaticFunctionTag*);
-    void UIHS_Clear(RE::StaticFunctionTag*);
-
     /** 
      * _data[0]: Equipset Name
      * _data[1]: Keycode
@@ -52,6 +46,10 @@ namespace Papyrus {
     bool UIHS_NewCycleEquipset(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data);
     bool UIHS_EditEquipset(RE::StaticFunctionTag*, RE::BSFixedString _name, std::vector<RE::BSFixedString> _data);
     bool UIHS_RemoveEquipset(RE::StaticFunctionTag*, RE::BSFixedString _data);
+    void UIHS_Exec(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3);
+    void UIHS_CalculateKeydown(RE::StaticFunctionTag*, int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time);
+    void UIHS_Init(RE::StaticFunctionTag*);
+    void UIHS_Clear(RE::StaticFunctionTag*);
     RE::BSFixedString UIHS_GetNamePrefix(RE::StaticFunctionTag*);
     RE::BSFixedString UIHS_GetStringFromKeycode(RE::StaticFunctionTag*, int32_t _key);
     std::vector<RE::BSFixedString> UIHS_GetList(RE::StaticFunctionTag*, int32_t _type);

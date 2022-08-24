@@ -1,3 +1,4 @@
+#include "Actor.h"
 #include "Equipset.h"
 #include "EquipsetManager.h"
 #include "MCM.h"
@@ -48,41 +49,13 @@ std::vector<RE::TESForm*> GetAllEquippedItems()
 	return result;
 }
 
-
-bool HasItem(RE::TESForm* _form)
-{
-    if (!_form) {
-        return false;
-    }
-
-    if (_form == GetDummyDagger()) {
-        return true;
-    }
-
-    auto playerref = RE::PlayerCharacter::GetSingleton();
-    if (!playerref) {
-        return false;
-    }
-
-    auto inv = playerref->GetInventory();
-    for (const auto& [item, data] : inv) {
-        const auto& [numItem, entry] = data;
-
-        if (numItem > 0 && item->GetFormID() == _form->GetFormID()) {
-			return true;
-        }
-    }
-
-    return false;
-}
-
 void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue = true, bool _force = false)
 {
     if (!_form) {
         return;
     }
 
-    RE::ActorEquipManager* equipManager = RE::ActorEquipManager::GetSingleton();
+    auto equipManager = RE::ActorEquipManager::GetSingleton();
     if (!equipManager) {
         return;
     }
@@ -92,25 +65,35 @@ void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::Ext
         return;
     }
 
+    auto playerbase = playerref->GetActorBase();
+    if (!playerbase) {
+        return;
+    }
+
     // Check FormType Spell
     if (_form->Is(RE::FormType::Spell)) {
         RE::SpellItem* spell = _form->As<RE::SpellItem>();
-
-        equipManager->EquipSpell(playerref, spell, _slot);
+        if (spell) {
+            if (Actor::HasMagic(playerref, spell) || Actor::HasMagic(playerbase, spell)) {
+                equipManager->EquipSpell(playerref, spell, _slot);
+            }
+        }
 
         // Check FormType Shout
     } else if (_form->Is(RE::FormType::Shout)) {
         RE::TESShout* shout = _form->As<RE::TESShout>();
-
-        equipManager->EquipShout(playerref, shout);
+        if (shout && Actor::HasShout(playerbase, shout)) {
+            equipManager->EquipShout(playerref, shout);
+        }
 
         // Items
     } else {
         if (_form->GetFormType() == RE::FormType::Light) {
-            RE::TESBoundObject* object = _form->As<RE::TESBoundObject>();
-
-            equipManager->EquipObject(playerref, object, nullptr, 1U, _slot, _queue, _force, _sound, false);
-        } else if (HasItem(_form)) {
+            if (Actor::HasItem(playerref, _form)) {
+                RE::TESBoundObject* object = _form->As<RE::TESBoundObject>();
+                equipManager->EquipObject(playerref, object, nullptr, 1U, _slot, _queue, _force, _sound, false);
+            }
+        } else if (Actor::HasItem(playerref, _form) || _form->formID == GetDummyDagger()->formID) {
             RE::TESBoundObject* object = _form->As<RE::TESBoundObject>();
 
             equipManager->EquipObject(playerref, object, _xList, 1U, _slot, _queue, _force, _sound, false);
