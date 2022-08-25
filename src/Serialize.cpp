@@ -390,7 +390,7 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                 manager->NewEquipset(order, mName, hotkey, option, widget, equipment);
             }
         }
-        if (type == CycleEquipsetRecord) {
+        else if (type == CycleEquipsetRecord) {
             // First read how many items follow in this record, so we know how many times to iterate.
             size_t equipsetSize;
             serde->ReadRecordData(&equipsetSize, sizeof(equipsetSize));

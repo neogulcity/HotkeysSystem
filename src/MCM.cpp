@@ -119,11 +119,8 @@ namespace MCM {
                 auto type = spell->GetSpellType();
                 if (type == RE::MagicSystem::SpellType::kSpell) {
                     if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(spell)) {
-                        RE::FormID table = 0x1031D3;  // Combat Heal Rate
-                        if (spell->GetFormID() != table) {
-                            std::string name = spell->GetName();
-                            result.push_back(std::make_tuple(name, spell, nullptr));
-                        }
+                        std::string name = spell->GetName();
+                        result.push_back(std::make_tuple(name, spell, nullptr));
                     }
                 }
             }
@@ -136,23 +133,8 @@ namespace MCM {
                 auto type = spell->GetSpellType();
                 if (type == RE::MagicSystem::SpellType::kSpell) {
                     if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(spell)) {
-                        RE::FormID table[5] = {0x4027332,   // Ahzidal's Genius
-                                               0x403B563,   // Deathbrand Instinct
-                                               0x1711D,     // Shrouded Armor Full Set
-                                               0x1711F,     // Nightingale Armor Full Set
-                                               0x2012CCC};  // Crossbow bonus
-
-                        bool checkID = false;
-                        for (int j = 0; j < 5; j++) {
-                            if (spell->GetFormID() == table[j]) {
-                                checkID = true;
-                            }
-                        }
-
-                        if (!checkID) {
-                            std::string name = spell->GetName();
-                            result.push_back(std::make_tuple(name, spell, nullptr));
-                        }
+                        std::string name = spell->GetName();
+                        result.push_back(std::make_tuple(name, spell, nullptr));
                     }
                 }
             }
@@ -190,13 +172,10 @@ namespace MCM {
             auto power = Actor::GetNthSpell(playerbase, i);
             if (power) {
                 auto type = power->GetSpellType();
-                if (type == RE::MagicSystem::SpellType::kPower) {
+                if (type == RE::MagicSystem::SpellType::kLesserPower) {
                     if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(power)) {
-                        RE::FormID table = 0x1031D3;  // Combat Heal Rate
-                        if (power->GetFormID() != table) {
-                            std::string name = power->GetName();
-                            result.push_back(std::make_pair(name, power));
-                        }
+                        std::string name = power->GetName();
+                        result.push_back(std::make_pair(name, power));
                     }
                 }
             }
@@ -207,25 +186,10 @@ namespace MCM {
             auto power = Actor::GetNthSpell(playerref, i);
             if (power) {
                 auto type = power->GetSpellType();
-                if (type == RE::MagicSystem::SpellType::kPower) {
+                if (type == RE::MagicSystem::SpellType::kLesserPower) {
                     if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(power)) {
-                        RE::FormID table[5] = {0x4027332,   // Ahzidal's Genius
-                                               0x403B563,   // Deathbrand Instinct
-                                               0x1711D,     // Shrouded Armor Full Set
-                                               0x1711F,     // Nightingale Armor Full Set
-                                               0x2012CCC};  // Crossbow bonus
-
-                        bool checkID = false;
-                        for (int j = 0; j < 5; j++) {
-                            if (power->GetFormID() == table[j]) {
-                                checkID = true;
-                            }
-                        }
-
-                        if (!checkID) {
-                            std::string name = power->GetName();
-                            result.push_back(std::make_pair(name, power));
-                        }
+                        std::string name = power->GetName();
+                        result.push_back(std::make_pair(name, power));
                     }
                 }
             }
