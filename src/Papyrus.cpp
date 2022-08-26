@@ -640,6 +640,11 @@ namespace Papyrus {
         manager->RemoveAllEquipset();
     }
 
+    bool UIHS_IsInventoryInit(RE::StaticFunctionTag*)
+    {
+        return MCM::IsInventoryInit();
+    }
+
     bool RegisterFuncs(RE::BSScript::IVirtualMachine* vm)
     {
         vm->RegisterFunction("UIHS_Exec", "_HotkeysSystem_MCM", Papyrus::UIHS_Exec);
@@ -669,6 +674,7 @@ namespace Papyrus {
         vm->RegisterFunction("UIHS_SaveEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_SaveEquipsetData);
         vm->RegisterFunction("UIHS_LoadEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_LoadEquipsetData);
         vm->RegisterFunction("UIHS_RemoveAllEquipset", "_HotkeysSystem_MCM", Papyrus::UIHS_RemoveAllEquipset);
+        vm->RegisterFunction("UIHS_IsInventoryInit", "_HotkeysSystem_MCM", Papyrus::UIHS_IsInventoryInit);
 
         return true;
     }
