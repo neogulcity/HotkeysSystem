@@ -79,4 +79,5 @@ namespace MCM {
     void SaveSetting(std::vector<std::string> _data);
     std::vector<std::string> LoadSetting();
     void ClearList();
+    bool IsInventoryInit();
 }

@@ -69,6 +69,7 @@ namespace Papyrus {
     void UIHS_SaveEquipsetData(RE::StaticFunctionTag*);
     void UIHS_LoadEquipsetData(RE::StaticFunctionTag*);
     void UIHS_RemoveAllEquipset(RE::StaticFunctionTag*);
+    bool UIHS_IsInventoryInit(RE::StaticFunctionTag*);
 
     bool RegisterFuncs(RE::BSScript::IVirtualMachine* vm);
 }
