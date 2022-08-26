@@ -24,182 +24,198 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
 {
     auto holder = &MCM::DataHolder::GetSingleton();
     if (!holder) {
+        log::error("Unable to get DataHolder.");
         return;
     }
 
     for (const auto& elem : mEquipset) {
-        if (elem->mName == _name) {
-            std::string name = _data[0];
+        if (elem->mName != _name) {
+            continue;
+        }
 
-            Hotkey* hotkey = new Hotkey;
-            hotkey->mKeyCode = std::stoi(_data[1]);
-            hotkey->mModifier[0] = to_bool(_data[2]);
-            hotkey->mModifier[1] = to_bool(_data[3]);
-            hotkey->mModifier[2] = to_bool(_data[4]);
+        std::string name = _data[0];
 
-            Option* option = new Option;
-            option->mSound = to_bool(_data[5]);
-            option->mToggleEquip = to_bool(_data[6]);
-            option->mReEquip = to_bool(_data[7]);
-            option->mBeast = to_bool(_data[8]);
+        Hotkey* hotkey = new Hotkey;
+        hotkey->mKeyCode = std::stoi(_data[1]);
+        hotkey->mModifier[0] = to_bool(_data[2]);
+        hotkey->mModifier[1] = to_bool(_data[3]);
+        hotkey->mModifier[2] = to_bool(_data[4]);
 
-            Widget* widget = new Widget;
-            widget->mWidget = holder->list.mWidgetList[std::stoi(_data[9])].second;
-            widget->mHpos = std::stoi(_data[10]);
-            widget->mVpos = std::stoi(_data[11]);
-            widget->mDisplayWidget = to_bool(_data[12]);
-            widget->mDisplayName = to_bool(_data[13]);
-            widget->mDisplayHotkey = to_bool(_data[14]);
+        Option* option = new Option;
+        option->mSound = to_bool(_data[5]);
+        option->mToggleEquip = to_bool(_data[6]);
+        option->mReEquip = to_bool(_data[7]);
+        option->mBeast = to_bool(_data[8]);
 
-            Equipment* equipment = new Equipment;
-            auto& left = equipment->mLeft;
-            auto lAction = static_cast<MCM::eAction>(std::stoi(_data[15]));
-            switch (lAction) {
-                case MCM::eAction::Nothing:
-                    left.option = static_cast<int32_t>(MCM::eAction::Nothing);
-                    break;
+        Widget* widget = new Widget;
+        widget->mWidget = holder->list.mWidgetList[std::stoi(_data[9])].second;
+        widget->mHpos = std::stoi(_data[10]);
+        widget->mVpos = std::stoi(_data[11]);
+        widget->mDisplayWidget = to_bool(_data[12]);
+        widget->mDisplayName = to_bool(_data[13]);
+        widget->mDisplayHotkey = to_bool(_data[14]);
 
-                case MCM::eAction::Unequip:
-                    left.option = static_cast<int32_t>(MCM::eAction::Unequip);
-                    break;
+        Equipment* equipment = new Equipment;
+        auto& left = equipment->mLeft;
+        auto lAction = static_cast<MCM::eAction>(std::stoi(_data[15]));
+        switch (lAction) {
+            case MCM::eAction::Nothing:
+                left.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                break;
 
-                default:
-                    left.option = static_cast<int32_t>(MCM::eAction::Equip);
-            }
-            left.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[15])]);
-            auto xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[15])]);
-            bool bEnch = xList && Extra::IsEnchanted(xList);
-            bool bTemp = xList && Extra::IsTempered(xList);
-            left.hasExtra = std::make_pair(bEnch, bTemp);
-            left.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
-            left.numEnch = Extra::GetNumEnchantment(xList);
-            left.xList = xList;
+            case MCM::eAction::Unequip:
+                left.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                break;
 
-            auto& right = equipment->mRight;
-            auto rAction = static_cast<MCM::eAction>(std::stoi(_data[16]));
-            switch (rAction) {
-                case MCM::eAction::Nothing:
-                    right.option = static_cast<int32_t>(MCM::eAction::Nothing);
-                    break;
+            default:
+                left.option = static_cast<int32_t>(MCM::eAction::Equip);
+        }
+        left.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[15])]);
+        auto xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[15])]);
+        bool bEnch = xList && Extra::IsEnchanted(xList);
+        bool bTemp = xList && Extra::IsTempered(xList);
+        left.hasExtra = std::make_pair(bEnch, bTemp);
+        left.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+        left.numEnch = Extra::GetNumEnchantment(xList);
+        left.xList = xList;
 
-                case MCM::eAction::Unequip:
-                    right.option = static_cast<int32_t>(MCM::eAction::Unequip);
-                    break;
+        auto& right = equipment->mRight;
+        auto rAction = static_cast<MCM::eAction>(std::stoi(_data[16]));
+        switch (rAction) {
+            case MCM::eAction::Nothing:
+                right.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                break;
 
-                default:
-                    right.option = static_cast<int32_t>(MCM::eAction::Equip);
-            }
-            right.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[16])]);
+            case MCM::eAction::Unequip:
+                right.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                break;
+
+            default:
+                right.option = static_cast<int32_t>(MCM::eAction::Equip);
+        }
+        right.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[16])]);
+        xList = nullptr;
+        xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[16])]);
+        bEnch = xList && Extra::IsEnchanted(xList);
+        bTemp = xList && Extra::IsTempered(xList);
+        right.hasExtra = std::make_pair(bEnch, bTemp);
+        right.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+        right.numEnch = Extra::GetNumEnchantment(xList);
+        right.xList = xList;
+
+        auto& shout = equipment->mShout;
+        auto sAction = static_cast<MCM::eAction>(std::stoi(_data[17]));
+        switch (sAction) {
+            case MCM::eAction::Nothing:
+                shout.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                break;
+
+            case MCM::eAction::Unequip:
+                shout.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                break;
+
+            default:
+                shout.option = static_cast<int32_t>(MCM::eAction::Equip);
+        }
+        shout.form = holder->list.mShoutList[std::stoi(_data[17])].second;
+
+        auto& items = equipment->mItems;
+        items.numItems = std::stoi(_data[18]);
+        for (int i = 0; i < items.numItems; i++) {
+            int index = i + 19;
+            int elem = std::stoi(_data[index]);
+
+            auto form = std::get<1>(holder->list.mItemsList[elem]);
+            items.form.push_back(form);
+
             xList = nullptr;
-            xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[16])]);
+            xList = std::get<2>(holder->list.mItemsList[elem]);
             bEnch = xList && Extra::IsEnchanted(xList);
             bTemp = xList && Extra::IsTempered(xList);
-            right.hasExtra = std::make_pair(bEnch, bTemp);
-            right.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
-            right.numEnch = Extra::GetNumEnchantment(xList);
-            right.xList = xList;
-
-            auto& shout = equipment->mShout;
-            shout.option = std::stoi(_data[17]);
-            shout.form = holder->list.mShoutList[std::stoi(_data[17])].second;
-
-            auto& items = equipment->mItems;
-            items.numItems = std::stoi(_data[18]);
-            for (int i = 0; i < items.numItems; i++) {
-                int index = i + 19;
-                int elem = std::stoi(_data[index]);
-
-                auto form = std::get<1>(holder->list.mItemsList[elem]);
-                items.form.push_back(form);
-
-                xList = nullptr;
-                xList = std::get<2>(holder->list.mItemsList[elem]);
-                bEnch = xList && Extra::IsEnchanted(xList);
-                bTemp = xList && Extra::IsTempered(xList);
-                items.hasExtra.push_back(std::make_pair(bEnch, bTemp));
-                items.extraData.push_back(std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList)));
-                items.numEnch.push_back(Extra::GetNumEnchantment(xList));
-                items.xList.push_back(xList);
-            }
-
-            delete elem->mHotkey;
-            delete elem->mOption;
-            delete elem->mWidget;
-            delete elem->mEquipment;
-
-            elem->mName = name;
-            elem->mHotkey = hotkey;
-            elem->mOption = option;
-            elem->mWidget = widget;
-            elem->mEquipment = equipment;
+            items.hasExtra.push_back(std::make_pair(bEnch, bTemp));
+            items.extraData.push_back(std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList)));
+            items.numEnch.push_back(Extra::GetNumEnchantment(xList));
+            items.xList.push_back(xList);
         }
+
+        delete elem->mHotkey;
+        delete elem->mOption;
+        delete elem->mWidget;
+        delete elem->mEquipment;
+
+        elem->mName = name;
+        elem->mHotkey = hotkey;
+        elem->mOption = option;
+        elem->mWidget = widget;
+        elem->mEquipment = equipment;
     }
 
     for (const auto& elem : mCycleEquipset) {
-        if (elem->mName == _name) {
-            if (elem->mOption->mReset != 0.0f && elem->IsResetWorking()) {
-                try {
-                    elem->SetResetClose(true);
-                    elem->mResetHandle.get();
-                }
-                catch (const std::future_error& error) {
-                    log::error("Caught a future_error: {}", error.what());
-                }
-            }
-            if (elem->mOption->mExpire != 0.0f && elem->IsExpireWorking()) {
-                try {
-                    elem->SetExpireClose(true);
-                    elem->mExpireHandle.get();
-                }
-                catch (const std::future_error& error) {
-                    log::error("Caught a future_error: {}", error.what());
-                }
-            }
-
-
-            std::string name = _data[0];
-            Hotkey* hotkey = new Hotkey;
-            hotkey->mKeyCode = std::stoi(_data[1]);
-            hotkey->mModifier[0] = to_bool(_data[2]);
-            hotkey->mModifier[1] = to_bool(_data[3]);
-            hotkey->mModifier[2] = to_bool(_data[4]);
-
-            CycleOption* option = new CycleOption;
-            option->mPersist = to_bool(_data[5]);
-            option->mExpire = std::stof(_data[6]);
-            option->mReset = std::stof(_data[7]);
-            option->mBeast = to_bool(_data[8]);
-
-            Widget* widget = new Widget;
-            widget->mHpos = std::stoi(_data[9]);
-            widget->mVpos = std::stoi(_data[10]);
-            widget->mDisplayWidget = to_bool(_data[11]);
-            widget->mDisplayName = to_bool(_data[12]);
-            widget->mDisplayHotkey = to_bool(_data[13]);
-
-            std::vector<std::string> items;
-            int numItems = std::stoi(_data[14]);
-            for (int i = 0; i < numItems; i++) {
-                int index = i + 15;
-                int elem = std::stoi(_data[index]);
-
-                items.push_back(holder->list.mCycleItemsList[elem]);
-            }
-
-            delete elem->mHotkey;
-            delete elem->mOption;
-            delete elem->mWidget;
-
-            elem->mName = name;
-            elem->mHotkey = hotkey;
-            elem->mOption = option;
-            elem->mWidget = widget;
-            elem->mCycleItems = items;
-            elem->mCycleIndex = std::make_pair(0, -1);
-            elem->SetExpireClose(true);
-            elem->SetResetClose(true);
-            elem->SetRemain(0.0f);
+        if (elem->mName != _name) {
+            continue;
         }
+
+        if (elem->mOption->mReset != 0.0f && elem->IsResetWorking()) {
+            try {
+                elem->SetResetClose(true);
+                elem->mResetHandle.get();
+            }
+            catch (const std::future_error& error) {
+                log::error("Caught a future_error: {}", error.what());
+            }
+        }
+        if (elem->mOption->mExpire != 0.0f && elem->IsExpireWorking()) {
+            try {
+                elem->SetExpireClose(true);
+                elem->mExpireHandle.get();
+            }
+            catch (const std::future_error& error) {
+                log::error("Caught a future_error: {}", error.what());
+            }
+        }
+
+        std::string name = _data[0];
+        Hotkey* hotkey = new Hotkey;
+        hotkey->mKeyCode = std::stoi(_data[1]);
+        hotkey->mModifier[0] = to_bool(_data[2]);
+        hotkey->mModifier[1] = to_bool(_data[3]);
+        hotkey->mModifier[2] = to_bool(_data[4]);
+
+        CycleOption* option = new CycleOption;
+        option->mPersist = to_bool(_data[5]);
+        option->mExpire = std::stof(_data[6]);
+        option->mReset = std::stof(_data[7]);
+        option->mBeast = to_bool(_data[8]);
+
+        Widget* widget = new Widget;
+        widget->mHpos = std::stoi(_data[9]);
+        widget->mVpos = std::stoi(_data[10]);
+        widget->mDisplayWidget = to_bool(_data[11]);
+        widget->mDisplayName = to_bool(_data[12]);
+        widget->mDisplayHotkey = to_bool(_data[13]);
+
+        std::vector<std::string> items;
+        int numItems = std::stoi(_data[14]);
+        for (int i = 0; i < numItems; i++) {
+            int index = i + 15;
+            int elem = std::stoi(_data[index]);
+
+            items.push_back(holder->list.mCycleItemsList[elem]);
+        }
+
+        delete elem->mHotkey;
+        delete elem->mOption;
+        delete elem->mWidget;
+
+        elem->mName = name;
+        elem->mHotkey = hotkey;
+        elem->mOption = option;
+        elem->mWidget = widget;
+        elem->mCycleItems = items;
+        elem->mCycleIndex = std::make_pair(0, -1);
+        elem->SetExpireClose(true);
+        elem->SetResetClose(true);
+        elem->SetRemain(0.0f);
     }
 }
 
@@ -444,7 +460,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
 
                 default:
                     auto form = shout.form;
-                    if (!form) {
+                    if (form) {
                         shoutIndex = GetIndexFromList(form->GetName(), MCM::eListType::Shout);
                         result.push_back(std::to_string(shoutIndex));
                     }
