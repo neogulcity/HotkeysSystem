@@ -78,6 +78,15 @@ namespace Actor {
         return nullptr;
     }
 
+    RE::TESForm* GetEquippedShout(RE::Actor* _actor)
+    {
+        if (!_actor) {
+            return nullptr;
+        }
+
+        return _actor->selectedPower;
+    }
+
     bool HasItem(RE::Actor* _actor, RE::TESForm* _form)
     {
         if (!_actor) {
