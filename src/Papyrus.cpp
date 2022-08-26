@@ -348,7 +348,19 @@ namespace Papyrus {
         right.xList = xList;
 
         auto& shout = equipment->mShout;
-        shout.option = std::stoi(stringData[17]);
+        auto sAction = static_cast<MCM::eAction>(std::stoi(stringData[17]));
+        switch (sAction) {
+            case MCM::eAction::Nothing:
+                shout.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                break;
+
+            case MCM::eAction::Unequip:
+                shout.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                break;
+
+            default:
+                shout.option = static_cast<int32_t>(MCM::eAction::Equip);
+        }
         shout.form = holder->list.mShoutList[std::stoi(stringData[17])].second;
 
         auto& items = equipment->mItems;
