@@ -17,6 +17,14 @@ namespace UIHS {
 void EquipsetManager::OnRevert(SerializationInterface*)
 {
     std::unique_lock lock(GetSingleton()._lock);
+
+    auto manager = &GetSingleton();
+    if (!manager) {
+        log::error("Unable to get EquipsetManager");
+        return;
+    }
+
+    manager->RemoveAllEquipset();
 }
 
 void EquipsetManager::OnGameSaved(SerializationInterface* serde)

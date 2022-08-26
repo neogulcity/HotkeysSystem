@@ -28,7 +28,8 @@ namespace {
 
         std::shared_ptr<spdlog::logger> log;
         if (IsDebuggerPresent()) {
-            log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::msvc_sink_mt>());
+            //log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::msvc_sink_mt>());
+            log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
         } else {
             log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
         }
@@ -60,7 +61,7 @@ namespace {
         auto* serde = GetSerializationInterface();
         serde->SetUniqueID(_byteswap_ulong('UIHS'));
         serde->SetSaveCallback(UIHS::EquipsetManager::OnGameSaved);
-        // serde->SetRevertCallback(UIHS::EquipsetManager::OnRevert);
+        serde->SetRevertCallback(UIHS::EquipsetManager::OnRevert);
         serde->SetLoadCallback(UIHS::EquipsetManager::OnGameLoaded);
         log::trace("Cosave serialization initialized.");
     }
