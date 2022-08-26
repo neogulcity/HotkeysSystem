@@ -8,22 +8,17 @@
 RE::TESForm* GetDummyDagger()
 {
     RE::FormID ID = 0x20163;
-    return RE::TESForm::LookupByID<RE::TESForm>(ID);
+    RE::TESForm* dummyDagger = RE::TESForm::LookupByID<RE::TESForm>(ID);
+    if (!dummyDagger) {
+        log::error("Failed to lookup DummyDagger FormID.");
+    }
+    return dummyDagger;
 }
 
-RE::TESForm* GetDummyShout()
+[[maybe_unused]] RE::TESForm* GetDummyShout()
 {
     RE::FormID ID = 0x55;
     return RE::TESForm::LookupByID<RE::TESForm>(ID);
-}
-
-RE::TESForm* GetEquippedShout(RE::Actor* _actor)
-{
-    if (!_actor) {
-        return nullptr;
-    }
-
-    return _actor->selectedPower;
 }
 
 std::vector<RE::TESForm*> GetAllEquippedItems()
@@ -32,6 +27,7 @@ std::vector<RE::TESForm*> GetAllEquippedItems()
 
 	auto playerref = RE::PlayerCharacter::GetSingleton();
     if (!playerref) {
+        log::error("Unable to get playerref.");
         return result;
     }
 
@@ -52,21 +48,25 @@ std::vector<RE::TESForm*> GetAllEquippedItems()
 void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue = true, bool _force = false)
 {
     if (!_form) {
+        log::warn("Warning. Trying to equip nullptr form.");
         return;
     }
 
     auto equipManager = RE::ActorEquipManager::GetSingleton();
     if (!equipManager) {
+        log::error("Unable to get ActorEquipManager.");
         return;
     }
 
     auto playerref = RE::PlayerCharacter::GetSingleton();
     if (!playerref) {
+        log::error("Unable to get playerref.");
         return;
     }
 
     auto playerbase = playerref->GetActorBase();
     if (!playerbase) {
+        log::error("Unable to get PlayerActorBase.");
         return;
     }
 
@@ -79,14 +79,14 @@ void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::Ext
             }
         }
 
-        // Check FormType Shout
+    // Check FormType Shout
     } else if (_form->Is(RE::FormType::Shout)) {
         RE::TESShout* shout = _form->As<RE::TESShout>();
         if (shout && Actor::HasShout(playerbase, shout)) {
             equipManager->EquipShout(playerref, shout);
         }
 
-        // Items
+    // Items
     } else {
         if (_form->GetFormType() == RE::FormType::Light) {
             if (Actor::HasItem(playerref, _form)) {
@@ -104,16 +104,19 @@ void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::Ext
 // Unequip Item
 void UnequipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList, bool _queue = false, bool _force = false) {
     if (!_form) {
+        log::warn("Warning. Trying to unequip nullptr form.");
         return;
     }
 
     RE::ActorEquipManager* equipManager = RE::ActorEquipManager::GetSingleton();
     if (!equipManager) {
+        log::error("Unable to get ActorEquipManager.");
         return;
     }
 
     auto playerref = RE::PlayerCharacter::GetSingleton();
     if (!playerref) {
+        log::error("Unable to get playerref.");
         return;
     }
 
@@ -130,6 +133,7 @@ void Equipset::Equip()
 {
     auto playerref = RE::PlayerCharacter::GetSingleton();
     if (!playerref) {
+        log::error("Unable to get playerref.");
         return;
     }
     
@@ -144,7 +148,7 @@ void Equipset::Equip()
     
     RE::TESForm* equippedRight = playerref->GetEquippedObject(false);
     RE::TESForm* equippedLeft = playerref->GetEquippedObject(true);
-    RE::TESForm* equippedShout = GetEquippedShout(playerref);
+    RE::TESForm* equippedShout = Actor::GetEquippedShout(playerref);
 
     // Toggle equip/unequip option Off & Re equip option On
     if (!mOption->mToggleEquip && mOption->mReEquip) {
@@ -191,12 +195,11 @@ void Equipset::Equip()
             else if (equippedShout->GetFormID() != mEquipment->mShout.form->GetFormID())
                 EquipShout = true;
         }
-
         uint32_t count = 0;
         if (mEquipment->mItems.numItems > 0) {
             std::vector<RE::TESForm*> items = GetAllEquippedItems();
-            std::vector<RE::FormID> itemsID(mEquipment->mItems.numItems, false);
-            std::vector<bool> isEquipped;
+            std::vector<RE::FormID> itemsID(mEquipment->mItems.numItems, 0);
+            std::vector<bool> isEquipped(mEquipment->mItems.numItems, 0);
 
             for (const auto& elem : items) {
                 if (elem) {
@@ -219,7 +222,6 @@ void Equipset::Equip()
                 }
             }
         }
-
         if (mOption->mToggleEquip) {
             // Toggle equip/unequip option On & Re equip option Off
             if (!EquipRight && !EquipLeft && !EquipShout && count == mEquipment->mItems.numItems) {
@@ -270,6 +272,7 @@ void Equipset::Equip()
         }
     }
     */
+
     for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
         if (UnequipItems[i]) {
             UnequipItem(mEquipment->mItems.form[i], nullptr, mOption->mSound, mEquipment->mItems.xList[i]);
@@ -283,7 +286,6 @@ void Equipset::Equip()
     if (EquipRight && mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip)) {
         EquipItem(mEquipment->mRight.form, GetRightHandSlot(), mOption->mSound, mEquipment->mRight.xList);
     }
-
     if (EquipShout && mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
         EquipItem(mEquipment->mShout.form, nullptr, mOption->mSound, nullptr);
     }
@@ -308,16 +310,19 @@ void Equipset::Equip()
 
     auto widgetHandler = WidgetHandler::GetSingleton();
     if (!widgetHandler) {
+        log::error("Unable to get WidgetHandler.");
         return;
     }
 
     auto manager = &UIHS::EquipsetManager::GetSingleton();
     if (!manager) {
+        log::error("Unable to get EquipsetManager.");
         return;
     }
 
     auto dataHolder = &MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
+        log::error("Unable to get DataHolder.");
         return;
     }
 
@@ -353,16 +358,23 @@ void CycleEquipset::Equip()
 {
     auto manager = &UIHS::EquipsetManager::GetSingleton();
     if (!manager) {
+        log::error("Unable to get EquipsetManager.");
         return;
     }
 
     auto playerref = RE::PlayerCharacter::GetSingleton();
     if (!playerref) {
+        log::error("Unable to get playerref.");
+        return;
+    }
+
+    if (mCycleItems.size() == 0) {
         return;
     }
 
     auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
     if (!equipset) {
+        log::warn("Failed to search Equipest by name.");
         return;
     }
 
@@ -370,7 +382,7 @@ void CycleEquipset::Equip()
     if (mOption->mPersist && mCycleIndex.second != -1) {
         bool IsChanged = false;
         std::vector<RE::TESForm*> items = GetAllEquippedItems();
-        std::vector<RE::FormID> itemsID(mCycleItems.size(), false);
+        std::vector<RE::FormID> itemsID(mCycleItems.size(), 0);
         
         for (const auto& elem : items) {
             if (elem) {
@@ -380,36 +392,39 @@ void CycleEquipset::Equip()
 
         if (equipset->mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
             RE::TESForm* form = playerref->GetEquippedObject(true);
+            auto left = equipset->mEquipment->mLeft.form;
 
             if (!form) {
                 IsChanged = true;
             }
 
-            else if (form->GetFormID() != equipset->mEquipment->mLeft.form->GetFormID()) {
+            else if (left && form->GetFormID() != left->GetFormID()) {
                 IsChanged = true;
             }
         }
 
         if (equipset->mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             RE::TESForm* form = playerref->GetEquippedObject(false);
+            auto right = equipset->mEquipment->mRight.form;
 
             if (!form) {
                 IsChanged = true;
             }
 
-            else if (form->GetFormID() != equipset->mEquipment->mRight.form->GetFormID()) {
+            else if (right && form->GetFormID() != right->GetFormID()) {
                 IsChanged = true;
             }
         }
 
         if (equipset->mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
-            RE::TESForm* form = GetEquippedShout(playerref);
+            RE::TESForm* form = Actor::GetEquippedShout(playerref);
+            auto shout = equipset->mEquipment->mShout.form;
 
             if (!form) {
                 IsChanged = true;
             }
 
-            else if (form->GetFormID() != equipset->mEquipment->mShout.form->GetFormID()) {
+            else if (shout && form->GetFormID() != shout->GetFormID()) {
                 IsChanged = true;
             }
         }
@@ -419,7 +434,8 @@ void CycleEquipset::Equip()
                 int count = 0;
 
                 for (int j = 0; j < items.size(); j++) {
-                    if (itemsID[j] == equipset->mEquipment->mItems.form[i]->GetFormID()) {
+                    auto item = equipset->mEquipment->mItems.form[i];
+                    if (item && itemsID[j] == item->GetFormID()) {
                         ++count;
                     }
                 }
@@ -435,7 +451,10 @@ void CycleEquipset::Equip()
             mCycleIndex.first = mCycleIndex.first <= 0 ? mCycleItems.size() - 1 : --mCycleIndex.first;
 
             auto prevEquipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
-            if (prevEquipset) {
+            if (!prevEquipset) {
+                log::warn("Failed to search Equipset by name");
+            }
+            else {
                 prevEquipset->Equip();
                 mCycleIndex.second = mCycleIndex.first;
                 mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
@@ -485,11 +504,13 @@ void CycleEquipset::Equip()
 
     auto widgetHandler = WidgetHandler::GetSingleton();
     if (!widgetHandler) {
+        log::error("Unable to get WidgetHandler.");
         return;
     }
 
     auto dataHolder = &MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
+        log::error("Unable to get DataHolder.");
         return;
     }
 
@@ -519,21 +540,25 @@ bool CycleEquipset::Expire_Function()
     SetExpireWorking(true);
     auto UI = RE::UI::GetSingleton();
     if (!UI) {
+        log::error("Unable to get UI.");
         return false;
     }
 
     auto widgetHandler = WidgetHandler::GetSingleton();
     if (!widgetHandler) {
+        log::error("Unable to get WidgetHandler.");
         return false;
     }
 
     auto dataHolder = &MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
+        log::error("Unable to get DataHolder.");
         return false;
     }
 
     auto manager = &UIHS::EquipsetManager::GetSingleton();
     if (!manager) {
+        log::error("Unable to get EquipsetManager.");
         return false;
     }
 
@@ -595,11 +620,13 @@ bool CycleEquipset::Reset_Function()
     SetResetWorking(true);
     auto UI = RE::UI::GetSingleton();
     if (!UI) {
+        log::error("Unable to get UI.");
         return false;
     }
 
     auto widgetHandler = WidgetHandler::GetSingleton();
     if (!widgetHandler) {
+        log::error("Unable to get WidgetHandler.");
         return false;
     }
 
