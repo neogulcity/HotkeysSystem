@@ -28,6 +28,7 @@ Function UIHS_InitWidgetNext() Global Native
 Function UIHS_SaveEquipsetData() Global Native
 Function UIHS_LoadEquipsetData() Global Native
 Function UIHS_RemoveAllEquipset() Global Native
+bool Function UIHS_IsInventoryInit() Global Native
 
 
 ; Number of items Equipset can have & Cycle Equipset can have / Number of displaying Overview page Equipset
@@ -220,11 +221,6 @@ Event OnConfigInit()
 EndEvent
 
 Event OnConfigOpen()
-	if sMaintenance_Widget && bGenWidget 
-		ShowMessage("$UIHS_MSG_PREFIX9", false, "$OK", "")
-		return
-	endif
-
 	ClearProperties()
 	UIHS_Clear()
 	UIHS_SendSettingData(ZipSettingData())
@@ -273,7 +269,17 @@ Event OnGameReload()
 	endif
 EndEvent
 
-Event OnPageReset(string _page)	
+Event OnPageReset(string _page)
+	if sMaintenance_Widget && bGenWidget 
+		ShowMessage("$UIHS_MSG_PREFIX9", false, "$OK", "")
+		return
+	endif
+
+	if !UIHS_IsInventoryInit()
+		ShowMessage("$UIHS_MSG_PREFIX14", false, "$OK", "")
+		return
+	endif
+
 	if _page == "$UIHS_Page_Managing"
 		if CurPage != ePage_Managing
 			UIHS_Clear()

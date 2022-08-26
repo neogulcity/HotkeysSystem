@@ -461,4 +461,53 @@ namespace MCM {
         dataHolder->list.mCycleItemsList = CycleItems;
         dataHolder->list.mFontList = font;
     }
+
+    bool IsInventoryInit()
+    {
+        auto playerref = RE::PlayerCharacter::GetSingleton();
+        if (!playerref) {
+            log::error("Unable to get playerref.");
+            return false;
+        }
+
+        auto playerbase = playerref->GetActorBase();
+        if (!playerbase) {
+            log::error("Unable to get PlayerActorBase.");
+            return false;
+        }
+
+        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        if (!dataHolder) {
+            log::error("Unable to get DataHolder.");
+            return false;
+        }
+
+        auto inv = playerref->GetInventory();
+        for (const auto& [item, data] : inv) {
+            const auto& [numItem, entry] = data;
+            if (!item->Is(RE::FormType::Weapon, RE::FormType::Armor)) {
+                continue;
+            }
+
+            if (numItem > 0) {
+                auto extraLists = entry->extraLists;
+                if (extraLists) {
+                    for (auto& xList : *extraLists) {
+                        if (Extra::IsEnchanted(xList) || Extra::IsTempered(xList)) {
+                            if (Extra::HasDisplayName(xList)) {
+                                RE::BSFixedString name;
+                                name = Extra::GetDisplayName(xList);
+                                std::string sName = static_cast<std::string>(name);
+                                if (sName == "") {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
 }
