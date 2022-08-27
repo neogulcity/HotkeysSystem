@@ -372,27 +372,29 @@ void CycleEquipset::Equip()
         return;
     }
 
-    auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
-    if (!equipset) {
-        log::warn("Failed to search Equipest by name.");
-        return;
-    }
-
     // Cycle persist option On and it's not first time to execute cycle EquipSet
     if (mOption->mPersist && mCycleIndex.second != -1) {
+        auto prevEquipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.second]);
+        if (!prevEquipset) {
+            log::warn("Failed to search Equipest by name.");
+            return;
+        }
+
         bool IsChanged = false;
         std::vector<RE::TESForm*> items = GetAllEquippedItems();
-        std::vector<RE::FormID> itemsID(mCycleItems.size(), 0);
+        std::vector<RE::FormID> itemsID;
         
         for (const auto& elem : items) {
             if (elem) {
                 itemsID.push_back(elem->GetFormID());
+            } else {
+                itemsID.push_back(0);
             }
         }
 
-        if (equipset->mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
+        if (prevEquipset->mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip)) {
             RE::TESForm* form = playerref->GetEquippedObject(true);
-            auto left = equipset->mEquipment->mLeft.form;
+            auto left = prevEquipset->mEquipment->mLeft.form;
 
             if (!form) {
                 IsChanged = true;
@@ -403,9 +405,9 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (equipset->mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (prevEquipset->mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
             RE::TESForm* form = playerref->GetEquippedObject(false);
-            auto right = equipset->mEquipment->mRight.form;
+            auto right = prevEquipset->mEquipment->mRight.form;
 
             if (!form) {
                 IsChanged = true;
@@ -416,9 +418,9 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (equipset->mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
+        if (prevEquipset->mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
             RE::TESForm* form = Actor::GetEquippedShout(playerref);
-            auto shout = equipset->mEquipment->mShout.form;
+            auto shout = prevEquipset->mEquipment->mShout.form;
 
             if (!form) {
                 IsChanged = true;
@@ -430,11 +432,11 @@ void CycleEquipset::Equip()
         }
 
         if (!IsChanged) {
-            for (uint32_t i = 0; i < equipset->mEquipment->mItems.numItems; ++i) {
+            for (uint32_t i = 0; i < prevEquipset->mEquipment->mItems.numItems; ++i) {
                 int count = 0;
 
                 for (int j = 0; j < items.size(); j++) {
-                    auto item = equipset->mEquipment->mItems.form[i];
+                    auto item = prevEquipset->mEquipment->mItems.form[i];
                     if (item && itemsID[j] == item->GetFormID()) {
                         ++count;
                     }
@@ -450,12 +452,12 @@ void CycleEquipset::Equip()
         if (IsChanged) {
             mCycleIndex.first = mCycleIndex.first <= 0 ? mCycleItems.size() - 1 : --mCycleIndex.first;
 
-            auto prevEquipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
-            if (!prevEquipset) {
+            auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
+            if (!equipset) {
                 log::warn("Failed to search Equipset by name");
             }
             else {
-                prevEquipset->Equip();
+                equipset->Equip();
                 mCycleIndex.second = mCycleIndex.first;
                 mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
 
@@ -472,6 +474,11 @@ void CycleEquipset::Equip()
 
         // Equipped weapons, spells, shout, items are not changed so, Go forward.
         else {
+            auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
+            if (!equipset) {
+                log::warn("Failed to search Equipset by name");
+            }
+
             equipset->Equip();
             mCycleIndex.second = mCycleIndex.first;
             mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
@@ -488,6 +495,11 @@ void CycleEquipset::Equip()
     }
     // Cycle persist option Off or It's first time to execute cycle EquipSet
     else {
+        auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
+        if (!equipset) {
+            log::warn("Failed to search Equipset by name");
+        }
+
         equipset->Equip();
         mCycleIndex.second = mCycleIndex.first;
         mCycleIndex.first = mCycleIndex.first >= mCycleItems.size() - 1 ? 0 : ++mCycleIndex.first;
@@ -612,7 +624,7 @@ bool CycleEquipset::Expire_Function()
 
 void CycleEquipset::SetExpireTimer()
 {
-    mExpireHandle = std::async(&CycleEquipset::Expire_Function, this);
+    mExpireHandle = std::async(std::launch::async, &CycleEquipset::Expire_Function, this);
 }
 
 bool CycleEquipset::Reset_Function()
@@ -665,7 +677,7 @@ bool CycleEquipset::Reset_Function()
 
 void CycleEquipset::SetResetTimer()
 {
-    mResetHandle = std::async(&CycleEquipset::Reset_Function, this);
+    mResetHandle = std::async(std::launch::async, &CycleEquipset::Reset_Function, this);
 }
 
 float CycleEquipset::GetRemain()

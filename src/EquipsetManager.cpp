@@ -1249,7 +1249,7 @@ bool EquipsetManager::DissolveIn_Function()
 
 void EquipsetManager::SetDissolveTimer()
 {
-    mThreadHandle = std::async(&EquipsetManager::DissolveIn_Function, this);
+    mThreadHandle = std::async(std::launch::async, &EquipsetManager::DissolveIn_Function, this);
 }
 
 void EquipsetManager::DissolveOut_Function()
