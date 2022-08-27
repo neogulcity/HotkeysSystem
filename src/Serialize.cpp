@@ -280,7 +280,6 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     serde->ReadRecordData(&ID, sizeof(ID));                                                                    // Equipset::Equipment::Left::form
                     if (!serde->ResolveFormID(ID, newID)) {
                         log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
                     }
                     left.form = RE::TESForm::LookupByID<RE::TESForm>(newID);
                     serde->ReadRecordData(&left.hasExtra.first, sizeof(left.hasExtra.first));                                  // Equipset::Equipment::Left::hasExtra.first
@@ -290,7 +289,6 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                         serde->ReadRecordData(&ExtraID, sizeof(ExtraID));                                                      // Equipset::Equipment::Left::extraData.first
                         if (!serde->ResolveFormID(ExtraID, newExtraID)) {
                             log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                            continue;
                         }
                         left.extraData.first = RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID);
                     }
@@ -310,7 +308,6 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     serde->ReadRecordData(&ID, sizeof(ID));                                                                    // Equipset::Equipment::Right::form
                     if (!serde->ResolveFormID(ID, newID)) {
                         log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
                     }
                     right.form = RE::TESForm::LookupByID<RE::TESForm>(newID);
                     serde->ReadRecordData(&right.hasExtra.first, sizeof(right.hasExtra.first));                                // Equipset::Equipment::Right::hasExtra.first
@@ -320,7 +317,6 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                         serde->ReadRecordData(&ExtraID, sizeof(ExtraID));                                                      // Equipset::Equipment::Right::extraData.first
                         if (!serde->ResolveFormID(ExtraID, newExtraID)) {
                             log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                            continue;
                         }
                         right.extraData.first = RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID);
                     }
@@ -340,7 +336,6 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     serde->ReadRecordData(&ID, sizeof(ID));                                                                    // Equipset::Equipment::Shout::form
                     if (!serde->ResolveFormID(ID, newID)) {
                         log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
                     }
                     shout.form = RE::TESForm::LookupByID<RE::TESForm>(newID);
                 }
@@ -349,12 +344,13 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                 uint32_t itemsSize;
                 serde->ReadRecordData(&itemsSize, sizeof(itemsSize));                                                          // Equipset::Equipment::Items::numItems
                 items.numItems = itemsSize;                
+
                 for (int j = 0; j < itemsSize; j++) {
                     RE::FormID ID, newID;
                     serde->ReadRecordData(&ID, sizeof(ID));                                                                    // Equipset::Equipment::Items::form
                     if (!serde->ResolveFormID(ID, newID)) {
                         log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                        continue;
+
                     }
                     items.form.push_back(RE::TESForm::LookupByID<RE::TESForm>(newID));
 
@@ -370,10 +366,12 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                         serde->ReadRecordData(&ExtraID, sizeof(ExtraID));                                                      // Equipset::Equipment::Items::extraData.first
                         if (!serde->ResolveFormID(ExtraID, newExtraID)) {
                             log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                            continue;
                         }
                         itemsExtraEnch = RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID);
+                    } else {
+                        items.numEnch.push_back(0);
                     }
+
                     bool hasItemsExtraTemp;
                     float itemsExtraTemp;
                     serde->ReadRecordData(&hasItemsExtraTemp, sizeof(hasItemsExtraTemp));                                      // Equipset::Equipment::Items::hasExtra.second
@@ -387,7 +385,6 @@ void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
                     xList = Extra::SearchExtraList(items.form[j], items.numEnch[j], items.extraData[j].first, items.extraData[j].second);
                     items.xList.push_back(xList);                                                                              // Equipset::Equipment::Items::xList
                 }
-                
 
                 auto manager = &GetSingleton();
                 if (!manager) {
