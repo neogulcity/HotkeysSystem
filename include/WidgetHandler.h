@@ -38,14 +38,13 @@ public:
     void AddID(int32_t _id, eIDType _type);
     void RemoveID(int32_t _id);
     std::vector<std::pair<int32_t, eIDType>> GetIDList();
+
     void SetText(int32_t _id, std::string _text);
-    void ProcessText();
     void SetSize(int32_t _id, int32_t _width, int32_t _height);
-    void ProcessSize();
     void SetPos(int32_t _id, int32_t _x, int32_t _y);
-    void ProcessPos();
     void SetAlpha(int32_t _id, int32_t _alpha);
-    void ProcessAlpha();
+    void SetMenuVisible(bool _visible);
+
     void Animate(int32_t _id);
     void ProcessAnimate();
 

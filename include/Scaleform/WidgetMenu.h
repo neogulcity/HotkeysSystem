@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ViewHandler.h"
-
 namespace Scaleform
 {
 	class WidgetMenu : public RE::IMenu
@@ -20,6 +18,12 @@ namespace Scaleform
         void LoadText(std::string _text, std::string _font, int32_t _size, int32_t _x, int32_t _y);
         void UnloadWidget(int32_t _id);
         void UnloadText(int32_t _id);
+		void SetText(int32_t _id, std::string _text);
+		void SetSize(int32_t _id, int32_t _width, int32_t _height);
+		void SetPos(int32_t _id, int32_t _x, int32_t _y);
+		void SetAlpha(int32_t _id, int32_t _alpha);
+
+		void SetMenuVisible(bool _visible);
 
 		void RefreshUI();
 
@@ -41,7 +45,6 @@ namespace Scaleform
 			assert(success);
 			menuFlags.set(RE::UI_MENU_FLAGS::kAllowSaving);
 
-			_viewHandler.emplace(menu);
 			_view = menu->uiMovie;
             _view->GetVariable(&_root, "_root");
             _view->GetVariable(&_widget, "_root.WidgetHolder");
@@ -114,6 +117,5 @@ namespace Scaleform
 		static constexpr std::int8_t SORT_PRIORITY{ 0 };
 
 		RE::GPtr<RE::GFxMovieView> _view;
-        std::optional<ViewHandler> _viewHandler;
 	};
 }

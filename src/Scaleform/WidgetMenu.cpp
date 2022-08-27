@@ -29,54 +29,6 @@ namespace Scaleform {
                 widgetHandler->ProcessDissolveOut();
             }
 
-            while (widgetHandler->mText.size() > 0) {
-                const auto& elem = widgetHandler->mText;
-                int32_t id = std::get<0>(elem[0]);
-                std::string text = std::get<1>(elem[1]);
-                RE::GFxValue args[2];
-                args[0].SetNumber(id);
-                args[1].SetString(text);
-                _widget.Invoke("SetText", nullptr, args, 2);
-                widgetHandler->ProcessText();
-            }
-
-            while (widgetHandler->mSize.size() > 0) {
-                const auto& elem = widgetHandler->mSize;
-                int32_t id = std::get<0>(elem[0]);
-                int32_t width = std::get<1>(elem[0]);
-                int32_t height = std::get<2>(elem[0]);
-                RE::GFxValue args[3];
-                args[0].SetNumber(id);
-                args[1].SetNumber(width);
-                args[2].SetNumber(height);
-                _widget.Invoke("SetSize", nullptr, args, 3);
-                widgetHandler->ProcessSize();
-            }
-
-            while (widgetHandler->mPos.size() > 0) {
-                const auto& elem = widgetHandler->mPos;
-                int32_t id = std::get<0>(elem[0]);
-                int32_t xPos = std::get<1>(elem[0]);
-                int32_t yPos = std::get<2>(elem[0]);
-                RE::GFxValue args[3];
-                args[0].SetNumber(id);
-                args[1].SetNumber(xPos);
-                args[2].SetNumber(yPos);
-                _widget.Invoke("SetPos", nullptr, args, 3);
-                widgetHandler->ProcessPos();
-            }
-
-            while (widgetHandler->mAlpha.size() > 0) {
-                const auto& elem = widgetHandler->mAlpha;
-                int32_t id = std::get<0>(elem[0]);
-                int32_t alpha = std::get<1>(elem[0]);
-                RE::GFxValue args[2];
-                args[0].SetNumber(id);
-                args[1].SetNumber(alpha);
-                _widget.Invoke("SetAlpha", nullptr, args, 2);
-                widgetHandler->ProcessAlpha();
-            }
-
             while (widgetHandler->mAnimate.size() > 0) {
                 const auto& elem = widgetHandler->mAnimate;
                 int32_t id = elem[0];
@@ -183,5 +135,84 @@ namespace Scaleform {
         arg[0].SetNumber(_id);
         _widget.Invoke("UnloadText", nullptr, arg, 1);
         widgetHandler->RemoveID(_id);
+    }
+
+    void WidgetMenu::SetText(int32_t _id, std::string _text)
+    {
+        auto widgetHandler = WidgetHandler::GetSingleton();
+        if (!widgetHandler) {
+            return;
+        }
+
+        if (!uiMovie) {
+            return;
+        }
+
+        const auto& elem = widgetHandler->mText;
+        RE::GFxValue args[2];
+        args[0].SetNumber(_id);
+        args[1].SetString(_text);
+        _widget.Invoke("SetText", nullptr, args, 2);
+    }
+
+    void WidgetMenu::SetSize(int32_t _id, int32_t _width, int32_t _height)
+    {
+        auto widgetHandler = WidgetHandler::GetSingleton();
+        if (!widgetHandler) {
+            return;
+        }
+
+        if (!uiMovie) {
+            return;
+        }
+
+        RE::GFxValue args[3];
+        args[0].SetNumber(_id);
+        args[1].SetNumber(_width);
+        args[2].SetNumber(_height);
+        _widget.Invoke("SetSize", nullptr, args, 3);
+    }
+
+    void WidgetMenu::SetPos(int32_t _id, int32_t _x, int32_t _y)
+    {
+        auto widgetHandler = WidgetHandler::GetSingleton();
+        if (!widgetHandler) {
+            return;
+        }
+
+        if (!uiMovie) {
+            return;
+        }
+
+        RE::GFxValue args[3];
+        args[0].SetNumber(_id);
+        args[1].SetNumber(_x);
+        args[2].SetNumber(_y);
+        _widget.Invoke("SetPos", nullptr, args, 3);
+    }
+
+    void WidgetMenu::SetAlpha(int32_t _id, int32_t _alpha)
+    {
+        auto widgetHandler = WidgetHandler::GetSingleton();
+        if (!widgetHandler) {
+            return;
+        }
+
+        if (!uiMovie) {
+            return;
+        }
+
+        RE::GFxValue args[2];
+        args[0].SetNumber(_id);
+        args[1].SetNumber(_alpha);
+        _widget.Invoke("SetAlpha", nullptr, args, 2);
+    }
+
+    void WidgetMenu::SetMenuVisible(bool _visible)
+    {
+        const auto prev = _view->GetVisible();
+		if (prev != _visible) {
+			_view->SetVisible(_visible);
+		}
     }
 }

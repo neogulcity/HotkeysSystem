@@ -32,6 +32,7 @@ namespace {
         } else {
             log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
         }
+
         log->set_level(spdlog::level::level_enum::info);
         log->flush_on(spdlog::level::level_enum::info);
         
@@ -113,6 +114,7 @@ namespace {
         //Sample::InitializeHook(trampoline);
         Scaleform::Register();
         OnCombatEvent::RegisterEvent();
+        HUDHandler::Register();
     }
 
     /**

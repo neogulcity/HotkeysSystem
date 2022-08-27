@@ -93,54 +93,37 @@ std::vector<std::pair<int32_t, WidgetHandler::eIDType>> WidgetHandler::GetIDList
 
 void WidgetHandler::SetText(int32_t _id, std::string _text)
 {
-	Locker locker(_lock);
-    mText.push_back(std::make_tuple(_id, _text));
-    RefreshWidgetMenu();
-}
-
-void WidgetHandler::ProcessText()
-{
-	Locker locker(_lock);
-    mText.erase(mText.begin());
+	AddWidgetMenuTask([_id, _text](WidgetMenu& a_menu) {
+		a_menu.SetText(_id, _text);
+	});
 }
 
 void WidgetHandler::SetSize(int32_t _id, int32_t _width, int32_t _height)
 {
-	Locker locker(_lock);
-    mSize.push_back(std::make_tuple(_id, _width, _height));
-    RefreshWidgetMenu();
-}
-
-void WidgetHandler::ProcessSize()
-{
-	Locker locker(_lock);
-    mSize.erase(mSize.begin());
+	AddWidgetMenuTask([_id, _width, _height](WidgetMenu& a_menu) {
+		a_menu.SetSize(_id, _width, _height);
+	});
 }
 
 void WidgetHandler::SetPos(int32_t _id, int32_t _x, int32_t _y)
 {
-    Locker locker(_lock);
-    mPos.push_back(std::make_tuple(_id, _x, _y));
-    RefreshWidgetMenu();
-}
-
-void WidgetHandler::ProcessPos()
-{
-    Locker locker(_lock);
-    mPos.erase(mPos.begin());
+    AddWidgetMenuTask([_id, _x, _y](WidgetMenu& a_menu) {
+		a_menu.SetPos(_id, _x, _y);
+	});
 }
 
 void WidgetHandler::SetAlpha(int32_t _id, int32_t _alpha)
 {
-    Locker locker(_lock);
-    mAlpha.push_back(std::make_tuple(_id, _alpha));
-    RefreshWidgetMenu();
+    AddWidgetMenuTask([_id, _alpha](WidgetMenu& a_menu) {
+		a_menu.SetAlpha(_id, _alpha);
+	});
 }
 
-void WidgetHandler::ProcessAlpha()
+void WidgetHandler::SetMenuVisible(bool _visible)
 {
-    Locker locker(_lock);
-    mAlpha.erase(mAlpha.begin());
+    AddWidgetMenuTask([_visible](WidgetMenu& a_menu) {
+		a_menu.SetMenuVisible(_visible);
+	});
 }
 
 void WidgetHandler::Animate(int32_t _id)
