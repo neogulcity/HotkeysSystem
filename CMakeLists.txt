@@ -6,7 +6,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ########################################################################################################################
 project(
         HotkeysSystem
-        VERSION 1.0.1
+        VERSION 1.0.2
         DESCRIPTION "A SKSE plugin built with CommonLibSSE."
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
@@ -32,7 +32,7 @@ set(sources
         src/Actor.cpp
         src/Serialize.cpp
         src/Equipset.cpp
-        src/ViewHandler.cpp
+        src/HUDHandler.cpp
         src/WidgetHandler.cpp
         src/Scaleform/Scaleform.cpp
         src/Scaleform/WidgetMenu.cpp
