@@ -1196,6 +1196,7 @@ Function OnOptionSelect(int _opt)
 				SetTextOptionValue(_opt, "$UIHS_Maintenance_Act", false)
 			else
 				SetTextOptionValue(_opt, "$UIHS_Maintenance_Deact", false)
+				UIHS_SendSettingData(ZipSettingdata())
 			endif
 		endif
 	endif
