@@ -26,18 +26,32 @@ namespace {
         *path /= PluginDeclaration::GetSingleton()->GetName();
         *path += L".log";
 
-        std::shared_ptr<spdlog::logger> log;
+        
         if (IsDebuggerPresent()) {
-            log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::msvc_sink_mt>());
-        } else {
-            log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
+            auto msvc_sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+            msvc_sink->set_level(spdlog::level::debug);
+
+            auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
+            file_sink->set_level(spdlog::level::trace);
+            
+            auto log = std::make_shared<spdlog::logger>("Global", std::initializer_list<spdlog::sink_ptr>{msvc_sink, file_sink});
+            log->set_level(spdlog::level::trace);
+            log->flush_on(spdlog::level::level_enum::trace);
+        
+            spdlog::set_default_logger(std::move(log));
+            spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
+        }
+        else {
+            auto log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
+
+            log->set_level(spdlog::level::level_enum::info);
+            log->flush_on(spdlog::level::level_enum::info);
+        
+            spdlog::set_default_logger(std::move(log));
+            spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
         }
 
-        log->set_level(spdlog::level::level_enum::info);
-        log->flush_on(spdlog::level::level_enum::info);
-        
-        spdlog::set_default_logger(std::move(log));
-        spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
+       
     }
 
     /**
