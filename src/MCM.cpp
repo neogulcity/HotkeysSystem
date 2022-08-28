@@ -10,14 +10,9 @@
 using namespace SKSE;
 
 namespace MCM {
-    DataHolder& DataHolder::GetSingleton() noexcept {
-        static DataHolder instance;
-        return instance;
-    }
-
     void Init_WidgetList()
     {
-        auto dataHolder = &DataHolder::GetSingleton();
+        auto dataHolder = DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -36,7 +31,7 @@ namespace MCM {
             std::string name = jValue[i].asString();
             std::string path = root["Path"].get(name, "").asString();
             if (path != "") {
-                dataHolder->list.mWidgetList.push_back(std::make_pair(name, path));
+                dataHolder->list->mWidgetList.push_back(std::make_pair(name, path));
             }
         }
     }
@@ -55,7 +50,7 @@ namespace MCM {
             return;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -72,7 +67,7 @@ namespace MCM {
                     favorSize = Extra::GetNumFavorited(extraLists);
                     for (auto& xList : *extraLists) {
                         if (Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
-                            if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                            if (!dataHolder->setting->mFavor || Extra::IsFavorited(xList)) {
                                 RE::BSFixedString name;
                                 name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
                                 std::string sName = static_cast<std::string>(name);
@@ -81,7 +76,7 @@ namespace MCM {
                             }
                             ++numExtra;
                         } else if (Extra::IsEnchanted(xList) && !Extra::IsTempered(xList)) {
-                            if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                            if (!dataHolder->setting->mFavor || Extra::IsFavorited(xList)) {
                                 RE::BSFixedString name;
                                 name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
                                 std::string sName = static_cast<std::string>(name);
@@ -90,7 +85,7 @@ namespace MCM {
                             }
                             ++numExtra;
                         } else if (!Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
-                            if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                            if (!dataHolder->setting->mFavor || Extra::IsFavorited(xList)) {
                                 RE::BSFixedString name;
                                 name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
                                 std::string sName = static_cast<std::string>(name);
@@ -102,7 +97,7 @@ namespace MCM {
                     }
                 }
                 if (numItem - numExtra != 0) {
-                    if (!dataHolder->setting.mFavor || favorSize - numFavor != 0) {
+                    if (!dataHolder->setting->mFavor || favorSize - numFavor != 0) {
                         RE::BSFixedString name;
                         name = item->GetName();
                         std::string sName = static_cast<std::string>(name);
@@ -118,7 +113,7 @@ namespace MCM {
             if (spell) {
                 auto type = spell->GetSpellType();
                 if (type == RE::MagicSystem::SpellType::kSpell) {
-                    if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(spell)) {
+                    if (!dataHolder->setting->mFavor || Extra::IsMagicFavorited(spell)) {
                         std::string name = spell->GetName();
                         result.push_back(std::make_tuple(name, spell, nullptr));
                     }
@@ -132,7 +127,7 @@ namespace MCM {
             if (spell) {
                 auto type = spell->GetSpellType();
                 if (type == RE::MagicSystem::SpellType::kSpell) {
-                    if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(spell)) {
+                    if (!dataHolder->setting->mFavor || Extra::IsMagicFavorited(spell)) {
                         std::string name = spell->GetName();
                         result.push_back(std::make_tuple(name, spell, nullptr));
                     }
@@ -141,11 +136,13 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mWeaponList.push_back(std::make_tuple("$UIHS_Nothing", nullptr, nullptr));
-        dataHolder->list.mWeaponList.push_back(std::make_tuple("$UIHS_Unequip", nullptr, nullptr));
+        dataHolder->list->mWeaponList.push_back(std::make_tuple("$UIHS_Nothing", nullptr, nullptr));
+        dataHolder->list->mWeaponList.push_back(std::make_tuple("$UIHS_Unequip", nullptr, nullptr));
 
-        for (int i = 0; i < result.size(); i++) {
-            dataHolder->list.mWeaponList.push_back(result[i]);
+        for (auto& elem : result) {
+            auto& name = std::get<0>(elem);
+            name = name == "" ? std::get<1>(elem)->GetName() : name;
+            dataHolder->list->mWeaponList.push_back(elem);
         }
     }
 
@@ -162,7 +159,7 @@ namespace MCM {
             return;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -173,7 +170,7 @@ namespace MCM {
             if (power) {
                 auto type = power->GetSpellType();
                 if (type == RE::MagicSystem::SpellType::kLesserPower) {
-                    if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(power)) {
+                    if (!dataHolder->setting->mFavor || Extra::IsMagicFavorited(power)) {
                         std::string name = power->GetName();
                         result.push_back(std::make_pair(name, power));
                     }
@@ -187,7 +184,7 @@ namespace MCM {
             if (power) {
                 auto type = power->GetSpellType();
                 if (type == RE::MagicSystem::SpellType::kLesserPower) {
-                    if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(power)) {
+                    if (!dataHolder->setting->mFavor || Extra::IsMagicFavorited(power)) {
                         std::string name = power->GetName();
                         result.push_back(std::make_pair(name, power));
                     }
@@ -199,7 +196,7 @@ namespace MCM {
         for (int i = 0; i < baseShoutSize; i++) {
             auto shout = Actor::GetNthShout(playerbase, i);
             if (shout) {
-                if (!dataHolder->setting.mFavor || Extra::IsMagicFavorited(shout)) {
+                if (!dataHolder->setting->mFavor || Extra::IsMagicFavorited(shout)) {
                     std::string name = shout->GetName();
                     result.push_back(std::make_pair(name, shout));
                 }
@@ -207,11 +204,11 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mShoutList.push_back(std::make_pair("$UIHS_Nothing", nullptr));
-        dataHolder->list.mShoutList.push_back(std::make_pair("$UIHS_Unequip", nullptr));
+        dataHolder->list->mShoutList.push_back(std::make_pair("$UIHS_Nothing", nullptr));
+        dataHolder->list->mShoutList.push_back(std::make_pair("$UIHS_Unequip", nullptr));
 
         for (int i = 0; i < result.size(); i++) {
-            dataHolder->list.mShoutList.push_back(result[i]);
+            dataHolder->list->mShoutList.push_back(result[i]);
         }
     }
 
@@ -224,7 +221,7 @@ namespace MCM {
             return;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -246,7 +243,7 @@ namespace MCM {
                         favorSize = Extra::GetNumFavorited(extraLists);
                         for (auto& xList : *extraLists) {
                             if (Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
-                                if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                                if (!dataHolder->setting->mFavor || Extra::IsFavorited(xList)) {
                                     RE::BSFixedString name;
                                     name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
                                     std::string sName = static_cast<std::string>(name);
@@ -255,7 +252,7 @@ namespace MCM {
                                 }
                                 ++numExtra;
                             } else if (Extra::IsEnchanted(xList) && !Extra::IsTempered(xList)) {
-                                if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                                if (!dataHolder->setting->mFavor || Extra::IsFavorited(xList)) {
                                     RE::BSFixedString name;
                                     name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
                                     std::string sName = static_cast<std::string>(name);
@@ -264,7 +261,7 @@ namespace MCM {
                                 }
                                 ++numExtra;
                             } else if (!Extra::IsEnchanted(xList) && Extra::IsTempered(xList)) {
-                                if (!dataHolder->setting.mFavor || Extra::IsFavorited(xList)) {
+                                if (!dataHolder->setting->mFavor || Extra::IsFavorited(xList)) {
                                     RE::BSFixedString name;
                                     name = Extra::HasDisplayName(xList) ? Extra::GetDisplayName(xList) : item->GetName();
                                     std::string sName = static_cast<std::string>(name);
@@ -276,7 +273,7 @@ namespace MCM {
                         }
                     }
                     if (numItem - numExtra != 0) {
-                        if (!dataHolder->setting.mFavor || favorSize - numFavor != 0) {
+                        if (!dataHolder->setting->mFavor || favorSize - numFavor != 0) {
                             RE::BSFixedString name;
                             name = item->GetName();
                             std::string sName = static_cast<std::string>(name);
@@ -285,7 +282,7 @@ namespace MCM {
                     }
                 }
                 else {
-                    if (!dataHolder->setting.mFavor || Extra::IsFavorited(entry->extraLists)) {
+                    if (!dataHolder->setting->mFavor || Extra::IsFavorited(entry->extraLists)) {
                         RE::BSFixedString name;
                         name = item->GetName();
                         std::string sName = static_cast<std::string>(name);
@@ -296,10 +293,12 @@ namespace MCM {
         }
 
         sort(result.begin(), result.end());
-        dataHolder->list.mItemsList.push_back(std::make_tuple("$UIHS_Nothing", nullptr, nullptr));
+        dataHolder->list->mItemsList.push_back(std::make_tuple("$UIHS_Nothing", nullptr, nullptr));
 
-        for (int i = 0; i < result.size(); i++) {
-            dataHolder->list.mItemsList.push_back(result[i]);
+        for (auto& elem : result) {
+            auto& name = std::get<0>(elem);
+            name = name == "" ? std::get<1>(elem)->GetName() : name;
+            dataHolder->list->mItemsList.push_back(elem);
         }
     }
 
@@ -307,7 +306,7 @@ namespace MCM {
     {
         std::vector<std::string> result;
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -324,12 +323,12 @@ namespace MCM {
             result.push_back(elem);
         }
 
-        dataHolder->list.mCycleItemsList = result;
+        dataHolder->list->mCycleItemsList = result;
     }
 
     void Init_FontList()
     {
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -344,42 +343,42 @@ namespace MCM {
 
         const Json::Value jValue = root["Font"];
         for (int i = 0; i < jValue.size(); ++i) {
-            dataHolder->list.mFontList.push_back(jValue[i].asString());
+            dataHolder->list->mFontList.push_back(jValue[i].asString());
         }
     }
 
     void SetSetting(std::vector<std::string> _data)
     {
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
 
         assert(_data.size() == 6);
 
-        dataHolder->setting.mModifier[0] = std::stoi(_data[0]);
-        dataHolder->setting.mModifier[1] = std::stoi(_data[1]);
-        dataHolder->setting.mModifier[2] = std::stoi(_data[2]);
-        dataHolder->setting.mSort = static_cast<eSortType>(std::stoi(_data[3]));
-        dataHolder->setting.mFavor = to_bool(_data[4]);
-        dataHolder->setting.mWidgetActive = to_bool(_data[5]);
+        dataHolder->setting->mModifier[0] = std::stoi(_data[0]);
+        dataHolder->setting->mModifier[1] = std::stoi(_data[1]);
+        dataHolder->setting->mModifier[2] = std::stoi(_data[2]);
+        dataHolder->setting->mSort = static_cast<eSortType>(std::stoi(_data[3]));
+        dataHolder->setting->mFavor = to_bool(_data[4]);
+        dataHolder->setting->mWidgetActive = to_bool(_data[5]);
     }
 
     void SetWidgetData(std::vector<std::string> _data)
     {
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
 
         assert(_data.size() == 6);
 
-        dataHolder->widget.mFont = dataHolder->list.mFontList[std::stoi(_data[0])];
-        dataHolder->widget.mFontSize = std::stoi(_data[1]);
-        dataHolder->widget.mSize = std::stoi(_data[2]);
-        dataHolder->widget.mAlpha = std::stoi(_data[3]);
-        dataHolder->widget.mDisplay = std::stoi(_data[4]);
-        dataHolder->widget.mDelay = std::stof(_data[5]);
+        dataHolder->widget->mFont = dataHolder->list->mFontList[std::stoi(_data[0])];
+        dataHolder->widget->mFontSize = std::stoi(_data[1]);
+        dataHolder->widget->mSize = std::stoi(_data[2]);
+        dataHolder->widget->mAlpha = std::stoi(_data[3]);
+        dataHolder->widget->mDisplay = std::stoi(_data[4]);
+        dataHolder->widget->mDelay = std::stof(_data[5]);
     }
 
     void SaveSetting(std::vector<std::string> _data)
@@ -442,7 +441,7 @@ namespace MCM {
 
     void ClearList()
     {
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             return;
         }
@@ -454,12 +453,12 @@ namespace MCM {
         std::vector<std::string> CycleItems;
         std::vector<std::string> font;
 
-        dataHolder->list.mWidgetList = widget;
-        dataHolder->list.mWeaponList = weapon;
-        dataHolder->list.mShoutList = shout;
-        dataHolder->list.mItemsList = items;
-        dataHolder->list.mCycleItemsList = CycleItems;
-        dataHolder->list.mFontList = font;
+        dataHolder->list->mWidgetList = widget;
+        dataHolder->list->mWeaponList = weapon;
+        dataHolder->list->mShoutList = shout;
+        dataHolder->list->mItemsList = items;
+        dataHolder->list->mCycleItemsList = CycleItems;
+        dataHolder->list->mFontList = font;
     }
 
     bool IsInventoryInit()
@@ -476,7 +475,7 @@ namespace MCM {
             return false;
         }
 
-        auto dataHolder = &MCM::DataHolder::GetSingleton();
+        auto dataHolder = MCM::DataHolder::GetSingleton();
         if (!dataHolder) {
             log::error("Unable to get DataHolder.");
             return false;
@@ -507,7 +506,7 @@ namespace MCM {
                 }
             }
         }
-
+        
         return true;
     }
 }
