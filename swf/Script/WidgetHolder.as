@@ -12,19 +12,31 @@ class Script.WidgetHolder extends MovieClip
 		IDHolder = 0;
 	}
 	
-	public function LoadWidget(_path:String, _xPos:Number, _yPos:Number) : String
+	public function LoadWidget(_path:String, _xPos:Number, _yPos:Number, _xWidth:Number, _yHeight:Number, _nAlpha:Number) : String
 	{
+		var mcHolder:MovieClip;
 		var id: String;
 		id = to_string(IDHolder);
 		IDHolder += 1;
-		this.createEmptyMovieClip(id, this.getNextHighestDepth());
+		mcHolder = this.createEmptyMovieClip(id, this.getNextHighestDepth());
 		this[id].createEmptyMovieClip(id, this.getNextHighestDepth());
 		this[id]._x = _xPos;
 		this[id]._y = _yPos;
-		this[id]._alpha = 0;
-		this[id][id].loadMovie(_path);
-		UpdateCenter(id);
+		this[id]._alpha = 100;
 		
+		var loader:MovieClipLoader = new MovieClipLoader();
+		var listener:Object = new Object();
+		loader.addListener(listener);
+		loader.loadClip(_path, this[id][id]);
+		listener.onLoadInit = function(mc:MovieClip, param:Number) {
+			mcHolder._width = _xWidth;
+			mcHolder._height = _yHeight;
+			mcHolder._alpha = _nAlpha;
+			
+			mc._x = 0-(mc._width/2);
+			mc._y = 0-(mc._height/2);
+		}
+
 		return(id);
 	}
 	
@@ -90,6 +102,11 @@ class Script.WidgetHolder extends MovieClip
 	{
 		var id = to_string(_id);
 		this[id]._alpha = _nAlpha;
+	}
+	
+	public function SetMenuAlpha(_nAlpha:Number) : Void
+	{
+		this._alpha = _nAlpha;
 	}
 	
 	public function Animate(_id:Number) : Void
