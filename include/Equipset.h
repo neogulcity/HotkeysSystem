@@ -77,22 +77,40 @@ public:
 class Equipment {
 public:
     Equipment() {
-        mLeft.option = 0;
-        mLeft.numEnch = 0;
-        mLeft.form = nullptr;
-        mLeft.xList = nullptr;
-        mLeft.hasExtra = std::make_pair(false, false);
-        mLeft.extraData = std::make_pair(nullptr, 0.0f);
+        mLeft = new Weapon;
+        mLeft->option = 0;
+        mLeft->numEnch = 0;
+        mLeft->form = nullptr;
+        mLeft->xList = nullptr;
+        mLeft->hasExtra = std::make_pair(false, false);
+        mLeft->extraData = std::make_pair(nullptr, 0.0f);
 
-        mRight.option = 0;
-        mRight.numEnch = 0;
-        mRight.form = nullptr;
-        mRight.xList = nullptr;
-        mRight.hasExtra = std::make_pair(false, false);
-        mRight.extraData = std::make_pair(nullptr, 0.0f);
+        mRight = new Weapon;
+        mRight->option = 0;
+        mRight->numEnch = 0;
+        mRight->form = nullptr;
+        mRight->xList = nullptr;
+        mRight->hasExtra = std::make_pair(false, false);
+        mRight->extraData = std::make_pair(nullptr, 0.0f);
 
-        mShout.option = 0;
-        mShout.form = nullptr;
+        mShout = new Shout;
+        mShout->option = 0;
+        mShout->form = nullptr;
+
+        assert(mLeft);
+        assert(mRight);
+        assert(mLeft);
+    }
+
+    ~Equipment() {
+        delete mLeft;
+        delete mRight;
+        delete mShout;
+        
+        for (auto elem : mItems) {
+            delete elem;
+        }
+        mItems.clear();
     }
 
     struct Weapon {
@@ -110,18 +128,17 @@ public:
     };
 
     struct Items {
-        uint32_t numItems;                                              // Number of items
-        std::vector<uint32_t> numEnch;                                  // Number of enchantment
-        std::vector<RE::TESForm*> form;                                 // Form
-        std::vector<RE::ExtraDataList*> xList;                          // ExtraDataList
-        std::vector<std::pair<bool, bool>> hasExtra;                    // first: Enchanted bool, second: Tempered bool
-        std::vector<std::pair<RE::EnchantmentItem*, float>> extraData;  // first: Enchantment, second: Tempered value
+        uint32_t numEnch;                                  // Number of enchantment
+        RE::TESForm* form;                                 // Form
+        RE::ExtraDataList* xList;                          // ExtraDataList
+        std::pair<bool, bool> hasExtra;                    // first: Enchanted bool, second: Tempered bool
+        std::pair<RE::EnchantmentItem*, float> extraData;  // first: Enchantment, second: Tempered value
     };
 
-    Weapon mLeft;
-    Weapon mRight;
-    Shout mShout;
-    Items mItems;
+    Weapon* mLeft;
+    Weapon* mRight;
+    Shout* mShout;
+    std::vector<Items*> mItems;
 };
 
 class Equipset {
