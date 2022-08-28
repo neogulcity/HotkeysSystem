@@ -13,8 +13,6 @@ namespace UIHS {
         void NewCycleEquipset(uint32_t _order, std::string _name, Hotkey* _hotkey, CycleOption* _option, Widget* _widget, std::vector<std::string> _cycleItems, std::pair<uint32_t, int32_t> _cycleIndex);
         void EditEquipset(std::string _name, std::vector<std::string> _data);
         void RemoveEquipset(std::string _name);
-        void Display();
-        void DisplayCycle();
         Equipset* SearchEquipsetByName(std::string _name);
         CycleEquipset* SearchCycleEquipsetByName(std::string _name);
         const RE::BSFixedString GetNamePrefix();
@@ -76,6 +74,8 @@ namespace UIHS {
          * @param serde  The serialization interface used to read data.
          */
         static void OnGameLoaded(SKSE::SerializationInterface* serde);
+
+    private:
 
     private:
         EquipsetManager() = default;
