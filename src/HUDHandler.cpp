@@ -15,8 +15,28 @@ void InitWidget()
 	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	auto manager = &UIHS::EquipsetManager::GetSingleton();
 	manager->InitWidget();
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	manager->InitWidgetNext();
+
+	auto widgetHandler = WidgetHandler::GetSingleton();
+	if (!widgetHandler) {
+		return;
+	}
+
+	auto dataHolder = &MCM::DataHolder::GetSingleton();
+	if (!dataHolder) {
+		return;
+	}
+
+	auto playerref = RE::PlayerCharacter::GetSingleton();
+	if (!playerref) {
+		return;
+	}
+
+	MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+	if (type == MCM::eWidgetDisplay::InCombat) {
+		if (!playerref->IsInCombat()) {
+			widgetHandler->SetMenuAlpha(0);
+		}
+	}
 }
 
 HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)

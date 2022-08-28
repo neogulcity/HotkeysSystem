@@ -15,6 +15,15 @@ RE::BSEventNotifyControl OnCombatEvent::ProcessEvent(const RE::TESCombatEvent* a
         return RE::BSEventNotifyControl::kContinue;
     }
 
+    auto playerref = RE::PlayerCharacter::GetSingleton();
+    if (!playerref) {
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
+    if (target->GetFormID() != playerref->GetFormID()) {
+        return RE::BSEventNotifyControl::kContinue;
+    }
+
     auto manager = &UIHS::EquipsetManager::GetSingleton();
     if (!manager) {
         return RE::BSEventNotifyControl::kContinue;
