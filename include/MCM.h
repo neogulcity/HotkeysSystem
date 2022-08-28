@@ -32,7 +32,11 @@ namespace MCM {
 
     class DataHolder {
     public:
-        [[nodiscard]] static DataHolder& GetSingleton() noexcept;
+        static DataHolder* GetSingleton()
+	    {
+		    static DataHolder singleton;
+		    return std::addressof(singleton);
+	    }
 
         struct Widget {
             std::string mFont;
@@ -59,13 +63,32 @@ namespace MCM {
             std::vector<std::string> mFontList;  // Font list
         };
 
-        Widget widget;
-
-        Setting setting;
-        List list;
+        Widget* widget;
+        Setting* setting;
+        List* list;
 
     private:
-        DataHolder() = default;
+        DataHolder() {
+            widget = new Widget;
+            setting = new Setting;
+            list = new List;
+
+            assert(widget);
+            assert(setting);
+            assert(list);
+        }
+
+        ~DataHolder() {
+            delete widget;
+            delete setting;
+            delete list;
+        }
+
+	    DataHolder(const DataHolder&) = delete;
+	    DataHolder(DataHolder&&) = delete;
+
+	    DataHolder& operator=(const DataHolder&) = delete;
+	    DataHolder& operator=(DataHolder&&) = delete;
     };
 
     void Init_WidgetList();
