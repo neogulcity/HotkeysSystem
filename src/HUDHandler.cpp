@@ -21,7 +21,7 @@ void InitWidget()
 		return;
 	}
 
-	auto dataHolder = &MCM::DataHolder::GetSingleton();
+	auto dataHolder = MCM::DataHolder::GetSingleton();
 	if (!dataHolder) {
 		return;
 	}
@@ -31,7 +31,7 @@ void InitWidget()
 		return;
 	}
 
-	MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+	MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
 	if (type == MCM::eWidgetDisplay::InCombat) {
 		if (!playerref->IsInCombat()) {
 			widgetHandler->SetMenuAlpha(0);
@@ -55,12 +55,12 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
 		return EventResult::kContinue;
 	}
 	
-	auto dataHolder = &MCM::DataHolder::GetSingleton();
+	auto dataHolder = MCM::DataHolder::GetSingleton();
 	if (!dataHolder) {
 		return EventResult::kContinue;
 	}
 
-	if (!dataHolder->setting.mWidgetActive) {
+	if (!dataHolder->setting->mWidgetActive) {
 		return EventResult::kContinue;
 	}
 
@@ -93,59 +93,3 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
 
 	return EventResult::kContinue;
 }
-
-
-
-
-
-//RE::BSEventNotifyControl ViewHandler::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
-//{
-//	auto widgetHandler = WidgetHandler::GetSingleton();
-//	if (!widgetHandler) {
-//		SKSE::log::error("Unable to get WidgetHandler.");
-//		return EventResult::kContinue;
-//	}
-//
-//	auto dataHolder = &MCM::DataHolder::GetSingleton();
-//    if (!dataHolder) {
-//		SKSE::log::error("Unable to get DataHolder.");
-//        return EventResult::kContinue;
-//    }
-//
-//
-//	//if (a_event && a_event->menuName == RE::HUDMenu::MENU_NAME) {
-//	//	
-//	//	if (dataHolder->setting.mWidgetActive) {
-//	//		SKSE::log::info("Widget Active.");
-//	//		if (a_event->opening) {
-//	//			SKSE::log::info("Opening hud.");
-//	//			widgetHandler->OpenWidgetMenu();
-//	//			auto manager = &UIHS::EquipsetManager::GetSingleton();
-//	//			if (!manager) {
-//	//				return EventResult::kContinue;
-//	//			}
-//
-//	//			manager->InitWidget();
-//	//		}
-//	//		else {
-//	//			widgetHandler->CloseWidgetMenu();
-//	//		}
-//	//	}
-//	//}
-//
-//	auto intfcStr = RE::InterfaceStrings::GetSingleton();
-//	if (intfcStr &&
-//		a_event &&
-//		a_event->menuName == intfcStr->mapMenu ||
-//		a_event->menuName == intfcStr->inventoryMenu ||
-//		a_event->menuName == intfcStr->magicMenu ||
-//		a_event->menuName == intfcStr->tweenMenu) {
-//		if (!a_event->opening) {
-//			Enable();
-//		} else {
-//			Disable();
-//		}
-//	}
-//
-//	return EventResult::kContinue;
-//}
