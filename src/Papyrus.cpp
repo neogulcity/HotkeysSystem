@@ -91,7 +91,7 @@ namespace Papyrus {
             return result;
         }
 
-        auto holder = &MCM::DataHolder::GetSingleton();
+        auto holder = MCM::DataHolder::GetSingleton();
         if (!holder) {
             return result;
         }
@@ -101,41 +101,41 @@ namespace Papyrus {
         auto type = static_cast<MCM::eListType>(_type);
         switch (type) {
             case MCM::eListType::Widget:
-                size = holder->list.mWidgetList.size();
+                size = holder->list->mWidgetList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = holder->list.mWidgetList[i].first;
+                    std::string name = holder->list->mWidgetList[i].first;
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::Weapon:
-                size = holder->list.mWeaponList.size();
+                size = holder->list->mWeaponList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = std::get<0>(holder->list.mWeaponList[i]);
+                    std::string name = std::get<0>(holder->list->mWeaponList[i]);
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::Shout:
-                size = holder->list.mShoutList.size();
+                size = holder->list->mShoutList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = holder->list.mShoutList[i].first;
+                    std::string name = holder->list->mShoutList[i].first;
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::Items:
-                size = holder->list.mItemsList.size();
+                size = holder->list->mItemsList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = std::get<0>(holder->list.mItemsList[i]);
+                    std::string name = std::get<0>(holder->list->mItemsList[i]);
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
 
             case MCM::eListType::CycleItems:
-                size = holder->list.mCycleItemsList.size();
+                size = holder->list->mCycleItemsList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = holder->list.mCycleItemsList[i];
+                    std::string name = holder->list->mCycleItemsList[i];
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
@@ -156,9 +156,9 @@ namespace Papyrus {
                 break;
 
              case MCM::eListType::Font:
-                size = holder->list.mFontList.size();
+                size = holder->list->mFontList.size();
                 for (int i = 0; i < size; i++) {
-                    std::string name = holder->list.mFontList[i];
+                    std::string name = holder->list->mFontList[i];
                     result.push_back(static_cast<RE::BSFixedString>(name));
                 }
                 break;
@@ -179,7 +179,7 @@ namespace Papyrus {
             return result;
         }
 
-        auto holder = &MCM::DataHolder::GetSingleton();
+        auto holder = MCM::DataHolder::GetSingleton();
         if (!holder) {
             return result;
         }
@@ -189,41 +189,41 @@ namespace Papyrus {
         auto type = static_cast<MCM::eListType>(_type);
         switch (type) {
             case MCM::eListType::Widget:
-                size = holder->list.mWidgetList.size();
+                size = holder->list->mWidgetList.size();
                 if (_index < size) {
-                    std::string name = holder->list.mWidgetList[_index].first;
+                    std::string name = holder->list->mWidgetList[_index].first;
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::Weapon:
-                size = holder->list.mWeaponList.size();
+                size = holder->list->mWeaponList.size();
                 if (_index < size) {
-                    std::string name = std::get<0>(holder->list.mWeaponList[_index]);
+                    std::string name = std::get<0>(holder->list->mWeaponList[_index]);
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::Shout:
-                size = holder->list.mShoutList.size();
+                size = holder->list->mShoutList.size();
                 if (_index < size) {
-                    std::string name = holder->list.mShoutList[_index].first;
+                    std::string name = holder->list->mShoutList[_index].first;
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::Items:
-                size = holder->list.mItemsList.size();
+                size = holder->list->mItemsList.size();
                 if (_index < size) {
-                    std::string name = std::get<0>(holder->list.mItemsList[_index]);
+                    std::string name = std::get<0>(holder->list->mItemsList[_index]);
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
 
             case MCM::eListType::CycleItems:
-                size = holder->list.mCycleItemsList.size();
+                size = holder->list->mCycleItemsList.size();
                 if (_index < size) {
-                    std::string name = holder->list.mCycleItemsList[_index];
+                    std::string name = holder->list->mCycleItemsList[_index];
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
@@ -245,9 +245,9 @@ namespace Papyrus {
                 break;
 
              case MCM::eListType::Font:
-                size = holder->list.mFontList.size();
+                size = holder->list->mFontList.size();
                 if (_index < size) {
-                    std::string name = holder->list.mFontList[_index];
+                    std::string name = holder->list->mFontList[_index];
                     result = static_cast<RE::BSFixedString>(name);
                 }
                 break;
@@ -266,7 +266,7 @@ namespace Papyrus {
             return false;
         }
 
-        auto holder = &MCM::DataHolder::GetSingleton();
+        auto holder = MCM::DataHolder::GetSingleton();
         if (!holder) {
             return false;
         }
@@ -292,7 +292,7 @@ namespace Papyrus {
         option->mBeast = to_bool(stringData[8]);
 
         Widget* widget = new Widget;
-        widget->mWidget = holder->list.mWidgetList[std::stoi(stringData[9])].second;
+        widget->mWidget = holder->list->mWidgetList[std::stoi(stringData[9])].second;
         widget->mHpos = std::stoi(stringData[10]);
         widget->mVpos = std::stoi(stringData[11]);
         widget->mDisplayWidget = to_bool(stringData[12]);
@@ -300,87 +300,91 @@ namespace Papyrus {
         widget->mDisplayHotkey = to_bool(stringData[14]);
 
         Equipment* equipment = new Equipment;
-        auto& left = equipment->mLeft;
+        auto left = equipment->mLeft;
         auto lAction = static_cast<MCM::eAction>(std::stoi(stringData[15]));
         switch (lAction) {
             case MCM::eAction::Nothing:
-                left.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                left->option = static_cast<int32_t>(MCM::eAction::Nothing);
                 break;
 
             case MCM::eAction::Unequip:
-                left.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                left->option = static_cast<int32_t>(MCM::eAction::Unequip);
                 break;
 
             default:
-                left.option = static_cast<int32_t>(MCM::eAction::Equip);
+                left->option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        left.form = std::get<1>(holder->list.mWeaponList[std::stoi(stringData[15])]);
-        auto xList = std::get<2>(holder->list.mWeaponList[std::stoi(stringData[15])]);
+        left->form = std::get<1>(holder->list->mWeaponList[std::stoi(stringData[15])]);
+        auto xList = std::get<2>(holder->list->mWeaponList[std::stoi(stringData[15])]);
         bool bEnch = xList && Extra::IsEnchanted(xList);
         bool bTemp = xList && Extra::IsTempered(xList);
-        left.hasExtra = std::make_pair(bEnch, bTemp);
-        left.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
-        left.numEnch = Extra::GetNumEnchantment(xList);
-        left.xList = xList;
+        left->hasExtra = std::make_pair(bEnch, bTemp);
+        left->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+        left->numEnch = Extra::GetNumEnchantment(xList);
+        left->xList = xList;
 
-        auto& right = equipment->mRight;
+        auto right = equipment->mRight;
         auto rAction = static_cast<MCM::eAction>(std::stoi(stringData[16]));
         switch (rAction) {
             case MCM::eAction::Nothing:
-                right.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                right->option = static_cast<int32_t>(MCM::eAction::Nothing);
                 break;
 
             case MCM::eAction::Unequip:
-                right.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                right->option = static_cast<int32_t>(MCM::eAction::Unequip);
                 break;
 
             default:
-                right.option = static_cast<int32_t>(MCM::eAction::Equip);
+                right->option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        right.form = std::get<1>(holder->list.mWeaponList[std::stoi(stringData[16])]);
+        right->form = std::get<1>(holder->list->mWeaponList[std::stoi(stringData[16])]);
         xList = nullptr;
-        xList = std::get<2>(holder->list.mWeaponList[std::stoi(stringData[16])]);
+        xList = std::get<2>(holder->list->mWeaponList[std::stoi(stringData[16])]);
         bEnch = xList && Extra::IsEnchanted(xList);
         bTemp = xList && Extra::IsTempered(xList);
-        right.hasExtra = std::make_pair(bEnch, bTemp);
-        right.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
-        right.numEnch = Extra::GetNumEnchantment(xList);
-        right.xList = xList;
+        right->hasExtra = std::make_pair(bEnch, bTemp);
+        right->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+        right->numEnch = Extra::GetNumEnchantment(xList);
+        right->xList = xList;
 
-        auto& shout = equipment->mShout;
+        auto shout = equipment->mShout;
         auto sAction = static_cast<MCM::eAction>(std::stoi(stringData[17]));
         switch (sAction) {
             case MCM::eAction::Nothing:
-                shout.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
                 break;
 
             case MCM::eAction::Unequip:
-                shout.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                shout->option = static_cast<int32_t>(MCM::eAction::Unequip);
                 break;
 
             default:
-                shout.option = static_cast<int32_t>(MCM::eAction::Equip);
+                shout->option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        shout.form = holder->list.mShoutList[std::stoi(stringData[17])].second;
+        shout->form = holder->list->mShoutList[std::stoi(stringData[17])].second;
 
         auto& items = equipment->mItems;
-        items.numItems = std::stoi(stringData[18]);
+        auto itemSize = std::stoi(stringData[18]);
 
-        for (int i = 0; i < items.numItems; i++) {
+        for (int i = 0; i < itemSize; i++) {
+            Equipment::Items* item = new Equipment::Items;
+
             int index = i + 19;
             int elem = std::stoi(stringData[index]);
 
-            auto form = std::get<1>(holder->list.mItemsList[elem]);
-            items.form.push_back(form);
+            auto form = std::get<1>(holder->list->mItemsList[elem]);
+            item->form = form;
 
             xList = nullptr;
-            xList = std::get<2>(holder->list.mItemsList[elem]);
+            xList = std::get<2>(holder->list->mItemsList[elem]);
             bEnch = xList && Extra::IsEnchanted(xList);
             bTemp = xList && Extra::IsTempered(xList);
-            items.hasExtra.push_back(std::make_pair(bEnch, bTemp));
-            items.extraData.push_back(std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList)));
-            items.numEnch.push_back(Extra::GetNumEnchantment(xList));
-            items.xList.push_back(xList);
+            item->hasExtra = std::make_pair(bEnch, bTemp);
+            item->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+            item->numEnch = Extra::GetNumEnchantment(xList);
+            item->xList = xList;
+
+            items.push_back(item);
         }
 
         manager->NewEquipset(order, name, hotkey, option, widget, equipment);
@@ -395,7 +399,7 @@ namespace Papyrus {
             return false;
         }
 
-        auto holder = &MCM::DataHolder::GetSingleton();
+        auto holder = MCM::DataHolder::GetSingleton();
         if (!holder) {
             return false;
         }
@@ -433,7 +437,7 @@ namespace Papyrus {
             int index = i + 15;
             int elem = std::stoi(stringData[index]);
 
-            items.push_back(holder->list.mCycleItemsList[elem]);
+            items.push_back(holder->list->mCycleItemsList[elem]);
         }
 
         manager->NewCycleEquipset(order, name, hotkey, option, widget, items, std::make_pair(0, -1));
