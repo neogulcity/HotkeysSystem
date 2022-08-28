@@ -29,24 +29,24 @@ RE::BSEventNotifyControl OnCombatEvent::ProcessEvent(const RE::TESCombatEvent* a
         return RE::BSEventNotifyControl::kContinue;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         return RE::BSEventNotifyControl::kContinue;
     }
 
-    if (!dataHolder->setting.mWidgetActive) {
+    if (!dataHolder->setting->mWidgetActive) {
         return RE::BSEventNotifyControl::kContinue;
     }
     
-    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
     if (type == MCM::eWidgetDisplay::InCombat) {
-        if (dataHolder->widget.mDelay != 0.0f) {
+        if (dataHolder->widget->mDelay != 0.0f) {
             manager->DissolveOut_Function();
             if (!manager->IsThreadWorking()) {
                 manager->SetDissolveTimer();
             }
             else {
-                manager->SetRemain(dataHolder->widget.mDelay + 1.0f);
+                manager->SetRemain(dataHolder->widget->mDelay + 1.0f);
             }
         }
     }
