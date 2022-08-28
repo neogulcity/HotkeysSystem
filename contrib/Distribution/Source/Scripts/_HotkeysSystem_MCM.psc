@@ -24,7 +24,6 @@ string[] Function UIHS_LoadSetting() Global Native
 Function UIHS_CalculateKeydown(int _code, bool _modifier1, bool _modifier2, bool modifier3, float _time) Global Native
 Function UIHS_InitWidget() Global Native
 Function UIHS_ClearWidget() Global Native
-Function UIHS_InitWidgetNext() Global Native
 Function UIHS_SaveEquipsetData() Global Native
 Function UIHS_LoadEquipsetData() Global Native
 Function UIHS_RemoveAllEquipset() Global Native
@@ -247,8 +246,6 @@ Event OnConfigClose()
 	if sMaintenance_Widget 
 		Utility.Wait(0.1)
 		UIHS_InitWidget()
-		Utility.Wait(0.1)
-		UIHS_InitWidgetNext()
 		bGenWidget = false
 	endif
 EndEvent
@@ -264,8 +261,6 @@ Event OnGameReload()
 	if sMaintenance_Widget 
 		Utility.Wait(0.1)
 		UIHS_InitWidget()
-		Utility.Wait(0.1)
-		UIHS_InitWidgetNext()
 	endif
 EndEvent
 

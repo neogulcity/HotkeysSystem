@@ -1,10 +1,10 @@
 #include "WidgetHandler.h"
 #include "Scaleform/WidgetMenu.h"
 
-void WidgetHandler::LoadWidget(std::string _path, int32_t _x, int32_t _y)
+void WidgetHandler::LoadWidget(std::string _path, int32_t _x, int32_t _y, int32_t _width, int32_t _height, int32_t _alpha)
 {
-    AddWidgetMenuTask([_path, _x, _y](WidgetMenu& a_menu) {
-		a_menu.LoadWidget(_path, _x, _y);
+    AddWidgetMenuTask([_path, _x, _y, _width, _height, _alpha](WidgetMenu& a_menu) {
+		a_menu.LoadWidget(_path, _x, _y, _width, _height, _alpha);
 	});
 }
 
@@ -123,6 +123,13 @@ void WidgetHandler::SetMenuVisible(bool _visible)
 {
     AddWidgetMenuTask([_visible](WidgetMenu& a_menu) {
 		a_menu.SetMenuVisible(_visible);
+	});
+}
+
+void WidgetHandler::SetMenuAlpha(int32_t _alpha)
+{
+    AddWidgetMenuTask([_alpha](WidgetMenu& a_menu) {
+		a_menu.SetMenuAlpha(_alpha);
 	});
 }
 

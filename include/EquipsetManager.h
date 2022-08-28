@@ -34,7 +34,6 @@ namespace UIHS {
         void Exec(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3);
         void CalculateKeydown(int32_t _code, bool _modifier1, bool _modifier2, bool _modifier3, float _time);
         void InitWidget();
-        void InitWidgetNext();
         void ClearWidget();
         void SaveEquipsetData();
         void LoadEquipsetData();

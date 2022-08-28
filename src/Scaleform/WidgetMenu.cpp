@@ -60,7 +60,7 @@ namespace Scaleform {
         _widget.Invoke("Clear");
     }
 
-    void WidgetMenu::LoadWidget(std::string _path, int32_t _x, int32_t _y)
+    void WidgetMenu::LoadWidget(std::string _path, int32_t _x, int32_t _y, int32_t _width, int32_t _height, int32_t _alpha)
     {
         auto widgetHandler = WidgetHandler::GetSingleton();
         if (!widgetHandler) {
@@ -72,11 +72,14 @@ namespace Scaleform {
         }
 
         RE::GFxValue result;
-        RE::GFxValue args[3];
+        RE::GFxValue args[6];
         args[0].SetString(_path);
         args[1].SetNumber(_x);
         args[2].SetNumber(_y);
-        _widget.Invoke("LoadWidget", &result, args, 3);
+        args[3].SetNumber(_width);
+        args[4].SetNumber(_height);
+        args[5].SetNumber(_alpha);
+        _widget.Invoke("LoadWidget", &result, args, 6);
         int32_t id = std::stoi(result.GetString());
         widgetHandler->AddID(id, WidgetHandler::eIDType::Widget);
     }
@@ -157,11 +160,6 @@ namespace Scaleform {
 
     void WidgetMenu::SetSize(int32_t _id, int32_t _width, int32_t _height)
     {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
-
         if (!uiMovie) {
             return;
         }
@@ -175,11 +173,6 @@ namespace Scaleform {
 
     void WidgetMenu::SetPos(int32_t _id, int32_t _x, int32_t _y)
     {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
-
         if (!uiMovie) {
             return;
         }
@@ -193,11 +186,6 @@ namespace Scaleform {
 
     void WidgetMenu::SetAlpha(int32_t _id, int32_t _alpha)
     {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
-
         if (!uiMovie) {
             return;
         }
@@ -214,5 +202,16 @@ namespace Scaleform {
 		if (prev != _visible) {
 			_view->SetVisible(_visible);
 		}
+    }
+
+    void WidgetMenu::SetMenuAlpha(int32_t _alpha)
+    {
+        if (!uiMovie) {
+            return;
+        }
+
+        RE::GFxValue arg[1];
+        arg[0].SetNumber(_alpha);
+        _widget.Invoke("SetMenuAlpha", nullptr, arg, 1);
     }
 }

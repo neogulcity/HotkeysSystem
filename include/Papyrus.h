@@ -64,7 +64,6 @@ namespace Papyrus {
     void UIHS_SaveSetting(RE::StaticFunctionTag*, std::vector<RE::BSFixedString> _data);
     std::vector<RE::BSFixedString> UIHS_LoadSetting(RE::StaticFunctionTag*);
     void UIHS_InitWidget(RE::StaticFunctionTag*);
-    void UIHS_InitWidgetNext(RE::StaticFunctionTag*);
     void UIHS_ClearWidget(RE::StaticFunctionTag*);
     void UIHS_SaveEquipsetData(RE::StaticFunctionTag*);
     void UIHS_LoadEquipsetData(RE::StaticFunctionTag*);

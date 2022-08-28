@@ -1038,17 +1038,18 @@ void EquipsetManager::InitWidget()
 
             auto widget = equipset->mWidget;
             if (widget->mDisplayWidget) {
-                widgetHandler->LoadWidget("UIHS/Background.dds", widget->mHpos, widget->mVpos);
+                widgetHandler->LoadWidget("UIHS/Background.dds", widget->mHpos, widget->mVpos, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100, dataHolder->widget.mAlpha);
                 widget->mBackgroundID = id;
                 ++id;
             }
             if (widget->mDisplayWidget) {
-                widgetHandler->LoadWidget(widget->mWidget, widget->mHpos, widget->mVpos);
+                widgetHandler->LoadWidget(widget->mWidget, widget->mHpos, widget->mVpos, 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100, 100);
                 widget->mWidgetID.push_back(id);
                 ++id;
             }
             if (widget->mDisplayName) {
                 widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos, widget->mVpos + (50 * dataHolder->widget.mSize / 100));
+                widgetHandler->SetAlpha(id, 100);
                 widget->mNameID.push_back(id);
                 ++id;
             }
@@ -1059,6 +1060,7 @@ void EquipsetManager::InitWidget()
                 name = equipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
                 name += GetStringFromKeycode(equipset->mHotkey->mKeyCode);
                 widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos, widget->mVpos - (50 * dataHolder->widget.mSize / 100));
+                widgetHandler->SetAlpha(id, 100);
                 widget->mHotkeyID = id;
                 ++id;
             }
@@ -1075,7 +1077,7 @@ void EquipsetManager::InitWidget()
 
             auto cycleWidget = cycleEquipset->mWidget;
             if (cycleWidget->mDisplayWidget) {
-                widgetHandler->LoadWidget("UIHS/Background.dds", cycleWidget->mHpos, cycleWidget->mVpos);
+                widgetHandler->LoadWidget("UIHS/Background.dds", cycleWidget->mHpos, cycleWidget->mVpos, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100, dataHolder->widget.mAlpha);
                 cycleWidget->mBackgroundID = id;
                 ++id;
             }
@@ -1086,8 +1088,12 @@ void EquipsetManager::InitWidget()
                         continue;
                     }
 
+                    int alpha = 0;
+                    if (cycleEquipset->mCycleIndex.first < cycleEquipset->mCycleItems.size()) {
+                        alpha = strItem == cycleEquipset->mCycleItems[cycleEquipset->mCycleIndex.first] ? 100 : 0;
+                    }
                     auto widget = equipset->mWidget;
-                    widgetHandler->LoadWidget(widget->mWidget, cycleWidget->mHpos, cycleWidget->mVpos);
+                    widgetHandler->LoadWidget(widget->mWidget, cycleWidget->mHpos, cycleWidget->mVpos, 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100, alpha);
                     cycleWidget->mWidgetID.push_back(id);
                     ++id;
                 }
@@ -1099,8 +1105,13 @@ void EquipsetManager::InitWidget()
                         continue;
                     }
 
+                    int alpha = 0;
+                    if (cycleEquipset->mCycleIndex.first < cycleEquipset->mCycleItems.size()) {
+                        alpha = strItem == cycleEquipset->mCycleItems[cycleEquipset->mCycleIndex.first] ? 100 : 0;
+                    }
                     auto widget = equipset->mWidget;
                     widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos + (50 * dataHolder->widget.mSize / 100));
+                    widgetHandler->SetAlpha(id, alpha);
                     cycleWidget->mNameID.push_back(id);
                     ++id;
                 }
@@ -1112,78 +1123,9 @@ void EquipsetManager::InitWidget()
                 name = cycleEquipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
                 name += GetStringFromKeycode(cycleEquipset->mHotkey->mKeyCode);
                 widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos - (50 * dataHolder->widget.mSize / 100));
+                widgetHandler->SetAlpha(id, 100);
                 cycleWidget->mHotkeyID = id;
                 ++id;
-            }
-        }
-    }
-}
-
-void EquipsetManager::InitWidgetNext()
-{
-    auto widgetHandler = WidgetHandler::GetSingleton();
-    if (!widgetHandler) {
-        return;
-    }
-
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
-    if (!dataHolder) {
-        return;
-    }
-
-    {
-        auto list = GetEquipsetList();
-        for (const auto& elem : list) {
-            auto equipset = SearchEquipsetByName(elem);
-            if (!equipset) {
-                continue;
-            }
-
-            auto widget = equipset->mWidget;
-            if (widget->mDisplayWidget && widget->mBackgroundID != -1) {
-                widgetHandler->SetSize(widget->mBackgroundID, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100);
-                widgetHandler->SetAlpha(widget->mBackgroundID, dataHolder->widget.mAlpha);
-            }
-            if (widget->mDisplayWidget && widget->mWidgetID.size() > 0) {
-                widgetHandler->SetSize(widget->mWidgetID[0], 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100);
-                widgetHandler->SetAlpha(widget->mWidgetID[0], 100);
-            }
-            if (widget->mDisplayName && widget->mNameID.size() > 0) {
-                widgetHandler->SetAlpha(widget->mNameID[0], 100);
-            }
-            if (widget->mDisplayHotkey && widget->mHotkeyID != -1) {
-                widgetHandler->SetAlpha(widget->mHotkeyID, 100);
-            }
-        }
-    }
-    
-    {
-        auto list = GetCycleEquipsetList();
-        for (const auto& elem : list) {
-            auto equipset = SearchCycleEquipsetByName(elem);
-            if (!equipset) {
-                continue;
-            }
-
-            auto widget = equipset->mWidget;
-            if (widget->mDisplayWidget && widget->mBackgroundID != -1) {
-                widgetHandler->SetSize(widget->mBackgroundID, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100);
-                widgetHandler->SetAlpha(widget->mBackgroundID, dataHolder->widget.mAlpha);
-            }
-            if (widget->mDisplayWidget && widget->mWidgetID.size() > 0) {
-                for (const auto& id : widget->mWidgetID) {
-                    widgetHandler->SetSize(id, 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100);
-                }
-                widgetHandler->SetAlpha(widget->mWidgetID[equipset->mCycleIndex.first], 100);
-            }
-            if (widget->mDisplayName && widget->mNameID.size() > 0) {
-                for (const auto& id : widget->mNameID) {
-                    //
-                }
-                widgetHandler->SetAlpha(widget->mNameID[equipset->mCycleIndex.first], 100);
-            }
-            if (widget->mDisplayHotkey && widget->mHotkeyID != -1) {
-                widgetHandler->SetAlpha(widget->mHotkeyID, 100);
             }
         }
     }

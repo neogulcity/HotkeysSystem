@@ -14,7 +14,7 @@ namespace Scaleform
 
 		static void Register();
 
-        void LoadWidget(std::string _path, int32_t _x, int32_t _y);
+        void LoadWidget(std::string _path, int32_t _x, int32_t _y, int32_t _width, int32_t _height, int32_t _alpha);
         void LoadText(std::string _text, std::string _font, int32_t _size, int32_t _x, int32_t _y);
         void UnloadWidget(int32_t _id);
         void UnloadText(int32_t _id);
@@ -24,6 +24,7 @@ namespace Scaleform
 		void SetAlpha(int32_t _id, int32_t _alpha);
 
 		void SetMenuVisible(bool _visible);
+		void SetMenuAlpha(int32_t _alpha);
 
 		void RefreshUI();
 

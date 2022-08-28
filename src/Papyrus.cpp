@@ -589,16 +589,6 @@ namespace Papyrus {
         manager->InitWidget();
     }
 
-    void UIHS_InitWidgetNext(RE::StaticFunctionTag*)
-    {
-        auto manager = &UIHS::EquipsetManager::GetSingleton();
-        if (!manager) {
-            return;
-        }
-
-        manager->InitWidgetNext();
-    }
-
     void UIHS_ClearWidget(RE::StaticFunctionTag*)
     {
         auto manager = &UIHS::EquipsetManager::GetSingleton();
@@ -669,7 +659,6 @@ namespace Papyrus {
         vm->RegisterFunction("UIHS_SaveSetting", "_HotkeysSystem_MCM", Papyrus::UIHS_SaveSetting);
         vm->RegisterFunction("UIHS_LoadSetting", "_HotkeysSystem_MCM", Papyrus::UIHS_LoadSetting);
         vm->RegisterFunction("UIHS_InitWidget", "_HotkeysSystem_MCM", Papyrus::UIHS_InitWidget);
-        vm->RegisterFunction("UIHS_InitWidgetNext", "_HotkeysSystem_MCM", Papyrus::UIHS_InitWidgetNext);
         vm->RegisterFunction("UIHS_ClearWidget", "_HotkeysSystem_MCM", Papyrus::UIHS_ClearWidget);
         vm->RegisterFunction("UIHS_SaveEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_SaveEquipsetData);
         vm->RegisterFunction("UIHS_LoadEquipsetData", "_HotkeysSystem_MCM", Papyrus::UIHS_LoadEquipsetData);
