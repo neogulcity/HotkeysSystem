@@ -139,12 +139,12 @@ void Equipset::Equip()
     
     bool UnequipLeft = false, UnequipRight = false, UnequipShout = false;
     bool EquipLeft = false, EquipRight = false, EquipShout = false;
-    std::vector<bool> UnequipItems(mEquipment->mItems.numItems, false);
-    std::vector<bool> EquipItems(mEquipment->mItems.numItems, false);
+    std::vector<bool> UnequipItems(mEquipment->mItems.size(), false);
+    std::vector<bool> EquipItems(mEquipment->mItems.size(), false);
 
-    UnequipLeft = mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipLeft;
-    UnequipRight = mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipRight;
-    UnequipShout = mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipShout;
+    UnequipLeft = mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipLeft;
+    UnequipRight = mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipRight;
+    UnequipShout = mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipShout;
     
     RE::TESForm* equippedRight = playerref->GetEquippedObject(false);
     RE::TESForm* equippedLeft = playerref->GetEquippedObject(true);
@@ -152,54 +152,54 @@ void Equipset::Equip()
 
     // Toggle equip/unequip option Off & Re equip option On
     if (!mOption->mToggleEquip && mOption->mReEquip) {
-        if (mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             UnequipLeft = true;
             EquipLeft = true;
         }
 
-        if (mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             UnequipRight = true;
             EquipRight = true;
         }
 
-        if (mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             UnequipShout = true;
             EquipShout = true;
         }
 
-        for (int i = 0; i < mEquipment->mItems.numItems; ++i) {
+        for (int i = 0; i < mEquipment->mItems.size(); ++i) {
             UnequipItems[i] = true;
             EquipItems[i] = true;
         }
     }
     else {
         // Toggle equip/unequip option Off & Re equip option Off
-        if (mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             if (!equippedLeft)
                 EquipLeft = true;
 
-            else if (equippedLeft->GetFormID() != mEquipment->mLeft.form->GetFormID())
+            else if (equippedLeft->GetFormID() != mEquipment->mLeft->form->GetFormID())
                 EquipLeft = true;
         }
-        if (mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             if (!equippedRight)
                 EquipRight = true;
 
-            else if (equippedRight->GetFormID() != mEquipment->mRight.form->GetFormID())
+            else if (equippedRight->GetFormID() != mEquipment->mRight->form->GetFormID())
                 EquipRight = true;
         }
-        if (mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             if (!equippedShout)
                 EquipShout = true;
 
-            else if (equippedShout->GetFormID() != mEquipment->mShout.form->GetFormID())
+            else if (equippedShout->GetFormID() != mEquipment->mShout->form->GetFormID())
                 EquipShout = true;
         }
         uint32_t count = 0;
-        if (mEquipment->mItems.numItems > 0) {
+        if (mEquipment->mItems.size() > 0) {
             std::vector<RE::TESForm*> items = GetAllEquippedItems();
-            std::vector<RE::FormID> itemsID(mEquipment->mItems.numItems, 0);
-            std::vector<bool> isEquipped(mEquipment->mItems.numItems, 0);
+            std::vector<RE::FormID> itemsID(mEquipment->mItems.size(), 0);
+            std::vector<bool> isEquipped(mEquipment->mItems.size(), 0);
 
             for (const auto& elem : items) {
                 if (elem) {
@@ -207,16 +207,16 @@ void Equipset::Equip()
                 }
             }
 
-            for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
+            for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
                 for (int j = 0; j < items.size(); ++j) {
-                    if (itemsID[j] == mEquipment->mItems.form[i]->GetFormID()) {
+                    if (itemsID[j] == mEquipment->mItems[j]->form->GetFormID()) {
                         isEquipped[i] = true;
                         ++count;
                     }
                 }
             }
 
-            for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
+            for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
                 if (!isEquipped[i]) {
                     EquipItems[i] = true;
                 }
@@ -224,11 +224,11 @@ void Equipset::Equip()
         }
         if (mOption->mToggleEquip) {
             // Toggle equip/unequip option On & Re equip option Off
-            if (!EquipRight && !EquipLeft && !EquipShout && count == mEquipment->mItems.numItems) {
+            if (!EquipRight && !EquipLeft && !EquipShout && count == mEquipment->mItems.size()) {
                 UnequipLeft = true;
                 UnequipRight = true;
                 UnequipShout = true;
-                for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
+                for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
                     UnequipItems[i] = true;
                 }
             }
@@ -241,7 +241,7 @@ void Equipset::Equip()
                 EquipLeft = true;
                 EquipRight = true;
                 EquipShout = true;
-                for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
+                for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
                     UnequipItems[i] = true;
                     EquipItems[i] = true;
                 }
@@ -273,26 +273,26 @@ void Equipset::Equip()
     }
     */
 
-    for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
+    for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
         if (UnequipItems[i]) {
-            UnequipItem(mEquipment->mItems.form[i], nullptr, mOption->mSound, mEquipment->mItems.xList[i]);
+            UnequipItem(mEquipment->mItems[i]->form, nullptr, mOption->mSound, mEquipment->mItems[i]->xList);
         }
     }
 
-    if (EquipLeft && mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip)) {
-        EquipItem(mEquipment->mLeft.form, GetLeftHandSlot(), mOption->mSound, mEquipment->mLeft.xList);
+    if (EquipLeft && mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        EquipItem(mEquipment->mLeft->form, GetLeftHandSlot(), mOption->mSound, mEquipment->mLeft->xList);
     }
 
-    if (EquipRight && mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip)) {
-        EquipItem(mEquipment->mRight.form, GetRightHandSlot(), mOption->mSound, mEquipment->mRight.xList);
+    if (EquipRight && mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        EquipItem(mEquipment->mRight->form, GetRightHandSlot(), mOption->mSound, mEquipment->mRight->xList);
     }
-    if (EquipShout && mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
-        EquipItem(mEquipment->mShout.form, nullptr, mOption->mSound, nullptr);
+    if (EquipShout && mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        EquipItem(mEquipment->mShout->form, nullptr, mOption->mSound, nullptr);
     }
 
-    for (uint32_t i = 0; i < mEquipment->mItems.numItems; i++) {
+    for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
         if (EquipItems[i]) {
-            if (mEquipment->mItems.form[i]->GetFormType() == RE::FormType::Light) {
+            if (mEquipment->mItems[i]->form->GetFormType() == RE::FormType::Light) {
                 RE::TESForm* form = playerref->GetEquippedObject(false);
                 if (form) {
                     RE::WEAPON_TYPE type = form->As<RE::TESObjectWEAP>()->GetWeaponType();
@@ -304,7 +304,7 @@ void Equipset::Equip()
                 }
             }
 
-            EquipItem(mEquipment->mItems.form[i], nullptr, mOption->mSound, mEquipment->mItems.xList[i]);
+            EquipItem(mEquipment->mItems[i]->form, nullptr, mOption->mSound, mEquipment->mItems[i]->xList);
         }
     }
 
@@ -320,25 +320,25 @@ void Equipset::Equip()
         return;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         log::error("Unable to get DataHolder.");
         return;
     }
 
-    if (!dataHolder->setting.mWidgetActive) {
+    if (!dataHolder->setting->mWidgetActive) {
         return;
     }
 
-    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
     if (type == MCM::eWidgetDisplay::InCombat) {
-        if (dataHolder->widget.mDelay != 0.0f) {
+        if (dataHolder->widget->mDelay != 0.0f) {
             manager->DissolveOut_Function();
             if (!manager->IsThreadWorking()) {
                 manager->SetDissolveTimer();
             }
             else {
-                manager->SetRemain(dataHolder->widget.mDelay + 1.0f);
+                manager->SetRemain(dataHolder->widget->mDelay + 1.0f);
             }
         }
     }   
@@ -392,9 +392,9 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (prevEquipset->mEquipment->mLeft.option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (prevEquipset->mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
             RE::TESForm* form = playerref->GetEquippedObject(true);
-            auto left = prevEquipset->mEquipment->mLeft.form;
+            auto left = prevEquipset->mEquipment->mLeft->form;
 
             if (!form) {
                 IsChanged = true;
@@ -405,9 +405,9 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (prevEquipset->mEquipment->mRight.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
+        if (prevEquipset->mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
             RE::TESForm* form = playerref->GetEquippedObject(false);
-            auto right = prevEquipset->mEquipment->mRight.form;
+            auto right = prevEquipset->mEquipment->mRight->form;
 
             if (!form) {
                 IsChanged = true;
@@ -418,9 +418,9 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (prevEquipset->mEquipment->mShout.option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
+        if (prevEquipset->mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
             RE::TESForm* form = Actor::GetEquippedShout(playerref);
-            auto shout = prevEquipset->mEquipment->mShout.form;
+            auto shout = prevEquipset->mEquipment->mShout->form;
 
             if (!form) {
                 IsChanged = true;
@@ -432,11 +432,11 @@ void CycleEquipset::Equip()
         }
 
         if (!IsChanged) {
-            for (uint32_t i = 0; i < prevEquipset->mEquipment->mItems.numItems; ++i) {
+            for (uint32_t i = 0; i < prevEquipset->mEquipment->mItems.size(); ++i) {
                 int count = 0;
 
                 for (int j = 0; j < items.size(); j++) {
-                    auto item = prevEquipset->mEquipment->mItems.form[i];
+                    auto item = prevEquipset->mEquipment->mItems[i]->form;
                     if (item && itemsID[j] == item->GetFormID()) {
                         ++count;
                     }
@@ -520,13 +520,13 @@ void CycleEquipset::Equip()
         return;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         log::error("Unable to get DataHolder.");
         return;
     }
 
-    if (!dataHolder->setting.mWidgetActive) {
+    if (!dataHolder->setting->mWidgetActive) {
         return;
     }
 
@@ -562,7 +562,7 @@ bool CycleEquipset::Expire_Function()
         return false;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         log::error("Unable to get DataHolder.");
         return false;
@@ -585,12 +585,12 @@ bool CycleEquipset::Expire_Function()
     }
 
     if (!IsExpireClosing()) {
-        MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+        MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
         if (type == MCM::eWidgetDisplay::InCombat) {
-            if (dataHolder->widget.mDelay != 0.0f) {
+            if (dataHolder->widget->mDelay != 0.0f) {
                 manager->DissolveOut_Function();
                 if (manager->IsThreadWorking()) {
-                    SetRemain(dataHolder->widget.mDelay + 1.0f);
+                    SetRemain(dataHolder->widget->mDelay + 1.0f);
                 }
                 else {
                     manager->SetDissolveTimer();

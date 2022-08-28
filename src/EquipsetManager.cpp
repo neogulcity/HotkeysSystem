@@ -22,7 +22,7 @@ void EquipsetManager::NewCycleEquipset(uint32_t _order, std::string _name, Hotke
 
 void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _data)
 {
-    auto holder = &MCM::DataHolder::GetSingleton();
+    auto holder = MCM::DataHolder::GetSingleton();
     if (!holder) {
         log::error("Unable to get DataHolder.");
         return;
@@ -48,7 +48,7 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
         option->mBeast = to_bool(_data[8]);
 
         Widget* widget = new Widget;
-        widget->mWidget = holder->list.mWidgetList[std::stoi(_data[9])].second;
+        widget->mWidget = holder->list->mWidgetList[std::stoi(_data[9])].second;
         widget->mHpos = std::stoi(_data[10]);
         widget->mVpos = std::stoi(_data[11]);
         widget->mDisplayWidget = to_bool(_data[12]);
@@ -56,86 +56,89 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
         widget->mDisplayHotkey = to_bool(_data[14]);
 
         Equipment* equipment = new Equipment;
-        auto& left = equipment->mLeft;
+        auto left = equipment->mLeft;
         auto lAction = static_cast<MCM::eAction>(std::stoi(_data[15]));
         switch (lAction) {
             case MCM::eAction::Nothing:
-                left.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                left->option = static_cast<int32_t>(MCM::eAction::Nothing);
                 break;
 
             case MCM::eAction::Unequip:
-                left.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                left->option = static_cast<int32_t>(MCM::eAction::Unequip);
                 break;
 
             default:
-                left.option = static_cast<int32_t>(MCM::eAction::Equip);
+                left->option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        left.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[15])]);
-        auto xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[15])]);
+        left->form = std::get<1>(holder->list->mWeaponList[std::stoi(_data[15])]);
+        auto xList = std::get<2>(holder->list->mWeaponList[std::stoi(_data[15])]);
         bool bEnch = xList && Extra::IsEnchanted(xList);
         bool bTemp = xList && Extra::IsTempered(xList);
-        left.hasExtra = std::make_pair(bEnch, bTemp);
-        left.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
-        left.numEnch = Extra::GetNumEnchantment(xList);
-        left.xList = xList;
+        left->hasExtra = std::make_pair(bEnch, bTemp);
+        left->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+        left->numEnch = Extra::GetNumEnchantment(xList);
+        left->xList = xList;
 
-        auto& right = equipment->mRight;
+        auto right = equipment->mRight;
         auto rAction = static_cast<MCM::eAction>(std::stoi(_data[16]));
         switch (rAction) {
             case MCM::eAction::Nothing:
-                right.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                right->option = static_cast<int32_t>(MCM::eAction::Nothing);
                 break;
 
             case MCM::eAction::Unequip:
-                right.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                right->option = static_cast<int32_t>(MCM::eAction::Unequip);
                 break;
 
             default:
-                right.option = static_cast<int32_t>(MCM::eAction::Equip);
+                right->option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        right.form = std::get<1>(holder->list.mWeaponList[std::stoi(_data[16])]);
+        right->form = std::get<1>(holder->list->mWeaponList[std::stoi(_data[16])]);
         xList = nullptr;
-        xList = std::get<2>(holder->list.mWeaponList[std::stoi(_data[16])]);
+        xList = std::get<2>(holder->list->mWeaponList[std::stoi(_data[16])]);
         bEnch = xList && Extra::IsEnchanted(xList);
         bTemp = xList && Extra::IsTempered(xList);
-        right.hasExtra = std::make_pair(bEnch, bTemp);
-        right.extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
-        right.numEnch = Extra::GetNumEnchantment(xList);
-        right.xList = xList;
+        right->hasExtra = std::make_pair(bEnch, bTemp);
+        right->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+        right->numEnch = Extra::GetNumEnchantment(xList);
+        right->xList = xList;
 
-        auto& shout = equipment->mShout;
+        auto shout = equipment->mShout;
         auto sAction = static_cast<MCM::eAction>(std::stoi(_data[17]));
         switch (sAction) {
             case MCM::eAction::Nothing:
-                shout.option = static_cast<int32_t>(MCM::eAction::Nothing);
+                shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
                 break;
 
             case MCM::eAction::Unequip:
-                shout.option = static_cast<int32_t>(MCM::eAction::Unequip);
+                shout->option = static_cast<int32_t>(MCM::eAction::Unequip);
                 break;
 
             default:
-                shout.option = static_cast<int32_t>(MCM::eAction::Equip);
+                shout->option = static_cast<int32_t>(MCM::eAction::Equip);
         }
-        shout.form = holder->list.mShoutList[std::stoi(_data[17])].second;
+        shout->form = holder->list->mShoutList[std::stoi(_data[17])].second;
 
         auto& items = equipment->mItems;
-        items.numItems = std::stoi(_data[18]);
-        for (int i = 0; i < items.numItems; i++) {
+        auto itemSize = std::stoi(_data[18]);
+        for (int i = 0; i < itemSize; i++) {
+            Equipment::Items* item = new Equipment::Items;
             int index = i + 19;
             int elem = std::stoi(_data[index]);
 
-            auto form = std::get<1>(holder->list.mItemsList[elem]);
-            items.form.push_back(form);
+            auto form = std::get<1>(holder->list->mItemsList[elem]);
+            item->form = form;
 
             xList = nullptr;
-            xList = std::get<2>(holder->list.mItemsList[elem]);
+            xList = std::get<2>(holder->list->mItemsList[elem]);
             bEnch = xList && Extra::IsEnchanted(xList);
             bTemp = xList && Extra::IsTempered(xList);
-            items.hasExtra.push_back(std::make_pair(bEnch, bTemp));
-            items.extraData.push_back(std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList)));
-            items.numEnch.push_back(Extra::GetNumEnchantment(xList));
-            items.xList.push_back(xList);
+            item->hasExtra = std::make_pair(bEnch, bTemp);
+            item->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
+            item->numEnch = Extra::GetNumEnchantment(xList);
+            item->xList = xList;
+
+            items.push_back(item);
         }
 
         delete elem->mHotkey;
@@ -200,7 +203,7 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
             int index = i + 15;
             int elem = std::stoi(_data[index]);
 
-            items.push_back(holder->list.mCycleItemsList[elem]);
+            items.push_back(holder->list->mCycleItemsList[elem]);
         }
 
         delete elem->mHotkey;
@@ -296,39 +299,39 @@ uint32_t EquipsetManager::GetIndexFromList(std::string _name, MCM::eListType _ty
 {
     uint32_t result = 0;
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         return result;
     }
 
     switch (_type) {
         case MCM::eListType::Widget:
-            for (int i = 0; i < dataHolder->list.mWidgetList.size(); i++) {
-                if (_name == dataHolder->list.mWidgetList[i].second) {
+            for (int i = 0; i < dataHolder->list->mWidgetList.size(); i++) {
+                if (_name == dataHolder->list->mWidgetList[i].second) {
                     result = i;
                 }
             }
             break;
 
         case MCM::eListType::Shout:
-            for (int i = 0; i < dataHolder->list.mShoutList.size(); i++) {
-                if (_name == dataHolder->list.mShoutList[i].first) {
+            for (int i = 0; i < dataHolder->list->mShoutList.size(); i++) {
+                if (_name == dataHolder->list->mShoutList[i].first) {
                     result = i;
                 }
             }
             break;
 
         case MCM::eListType::CycleItems:
-            for (int i = 0; i < dataHolder->list.mCycleItemsList.size(); i++) {
-                if (_name == dataHolder->list.mCycleItemsList[i]) {
+            for (int i = 0; i < dataHolder->list->mCycleItemsList.size(); i++) {
+                if (_name == dataHolder->list->mCycleItemsList[i]) {
                     result = i;
                 }
             }
             break;
 
         case MCM::eListType::Font:
-            for (int i = 0; i < dataHolder->list.mFontList.size(); i++) {
-                if (_name == dataHolder->list.mFontList[i]) {
+            for (int i = 0; i < dataHolder->list->mFontList.size(); i++) {
+                if (_name == dataHolder->list->mFontList[i]) {
                     result = i;
                 }
             }
@@ -343,38 +346,38 @@ uint32_t EquipsetManager::GetIndexFromList(RE::TESForm* _form, RE::ExtraDataList
 {
     uint32_t result = 0;
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         return result;
     }
 
     if (_type == MCM::eListType::Weapon) {
-        for (int i = 0; i < dataHolder->list.mWeaponList.size(); i++) {
+        for (int i = 0; i < dataHolder->list->mWeaponList.size(); i++) {
             RE::FormID ID = 0, compareID = 0;
-            RE::TESForm* compareForm = std::get<1>(dataHolder->list.mWeaponList[i]);
+            RE::TESForm* compareForm = std::get<1>(dataHolder->list->mWeaponList[i]);
             if (_form) {
                 ID = _form->GetFormID();
             }
             if (compareForm) {
                 compareID = compareForm->GetFormID();
             }
-            RE::ExtraDataList* comparexList = std::get<2>(dataHolder->list.mWeaponList[i]);
+            RE::ExtraDataList* comparexList = std::get<2>(dataHolder->list->mWeaponList[i]);
             if (ID == compareID && _xList == comparexList) {
                 result = i;
             }
         }
     }
     else if (_type == MCM::eListType::Items) {
-        for (int i = 0; i < dataHolder->list.mItemsList.size(); i++) {
+        for (int i = 0; i < dataHolder->list->mItemsList.size(); i++) {
             RE::FormID ID = 0, compareID = 0;
-            RE::TESForm* compareForm = std::get<1>(dataHolder->list.mItemsList[i]);
+            RE::TESForm* compareForm = std::get<1>(dataHolder->list->mItemsList[i]);
             if (_form) {
                 ID = _form->GetFormID();
             }
             if (compareForm) {
                 compareID = compareForm->GetFormID();
             }
-            RE::ExtraDataList* comparexList = std::get<2>(dataHolder->list.mItemsList[i]);
+            RE::ExtraDataList* comparexList = std::get<2>(dataHolder->list->mItemsList[i]);
             if (ID == compareID && _xList == comparexList) {
                 result = i;
             }
@@ -411,8 +414,8 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
             result.push_back(std::to_string(elem->mWidget->mDisplayHotkey));
 
             uint32_t leftIndex;
-            auto& left = elem->mEquipment->mLeft;
-            MCM::eAction lAction = static_cast<MCM::eAction>(left.option);
+            auto left = elem->mEquipment->mLeft;
+            MCM::eAction lAction = static_cast<MCM::eAction>(left->option);
             switch (lAction) {
                 case MCM::eAction::Nothing:
                     result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Nothing)));
@@ -423,14 +426,14 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
                     break;
 
                 default:
-                    leftIndex = GetIndexFromList(left.form, left.xList, MCM::eListType::Weapon);
+                    leftIndex = GetIndexFromList(left->form, left->xList, MCM::eListType::Weapon);
                     result.push_back(std::to_string(leftIndex));
                     break;
             }
 
             uint32_t rightIndex;
-            auto& right = elem->mEquipment->mRight;
-            MCM::eAction rAction = static_cast<MCM::eAction>(right.option);
+            auto right = elem->mEquipment->mRight;
+            MCM::eAction rAction = static_cast<MCM::eAction>(right->option);
             switch (rAction) {
                 case MCM::eAction::Nothing:
                     result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Nothing)));
@@ -441,14 +444,14 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
                     break;
 
                 default:
-                    rightIndex = GetIndexFromList(right.form, right.xList, MCM::eListType::Weapon);
+                    rightIndex = GetIndexFromList(right->form, right->xList, MCM::eListType::Weapon);
                     result.push_back(std::to_string(rightIndex));
                     break;
             }
 
             uint32_t shoutIndex;
-            auto& shout = elem->mEquipment->mShout;
-            MCM::eAction sAction = static_cast<MCM::eAction>(shout.option);
+            auto shout = elem->mEquipment->mShout;
+            MCM::eAction sAction = static_cast<MCM::eAction>(shout->option);
             switch (sAction) {
                 case MCM::eAction::Nothing:
                     result.push_back(std::to_string(static_cast<uint32_t>(MCM::eAction::Nothing)));
@@ -459,7 +462,7 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
                     break;
 
                 default:
-                    auto form = shout.form;
+                    auto form = shout->form;
                     if (form) {
                         shoutIndex = GetIndexFromList(form->GetName(), MCM::eListType::Shout);
                         result.push_back(std::to_string(shoutIndex));
@@ -468,10 +471,10 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
             }
 
             auto& items = elem->mEquipment->mItems;
-            result.push_back(std::to_string(items.numItems));
-            for (int i = 0; i < items.numItems; i++) {
+            result.push_back(std::to_string(items.size()));
+            for (const auto item : items) {
                 uint32_t itemIndex;
-                itemIndex = GetIndexFromList(items.form[i], items.xList[i], MCM::eListType::Items);
+                itemIndex = GetIndexFromList(item->form, item->xList, MCM::eListType::Items);
                 result.push_back(std::to_string(itemIndex));
             }
         }
@@ -519,137 +522,6 @@ std::vector<RE::BSFixedString> EquipsetManager::GetEquipsetData(RE::BSFixedStrin
     }
 
     return strReturn;
-}
-
-void EquipsetManager::Display()
-{
-    auto equipsetSize = mEquipset.size();
-
-    log::debug("equipsetSize: {}", mEquipset.size());
-    for (auto& equipset : mEquipset) {
-        log::debug("Equipset Name: {}", equipset->mName);
-
-        auto hotkey = equipset->mHotkey;
-        log::debug("KeyCode: {}", hotkey->mKeyCode);
-        log::debug("Modifier Key 1: {}", hotkey->mModifier[0]);
-        log::debug("Modifier Key 2: {}", hotkey->mModifier[1]);
-        log::debug("Modifier Key 3: {}", hotkey->mModifier[2]);
-
-        auto option = equipset->mOption;
-        log::debug("Equip Sound: {}", option->mSound);
-        log::debug("Toggle Equip/Unequip: {}", option->mToggleEquip);
-        log::debug("Re Equip: {}", option->mReEquip);
-        log::debug("Beast Hotkey: {}", option->mBeast);
-
-        auto widget = equipset->mWidget;
-        log::debug("Widget Type: {}", widget->mWidget);
-        log::debug("H Pos: {}", widget->mHpos);
-        log::debug("V Pos: {}", widget->mVpos);
-        log::debug("Display Widget: {}", widget->mDisplayWidget);
-        log::debug("Display Name: {}", widget->mDisplayName);
-        log::debug("Display Hotkey: {}", widget->mDisplayHotkey);
-
-        auto equipment = equipset->mEquipment;
-        auto& left = equipment->mLeft;
-        log::debug("Lefthand Option: {}", left.option);
-        if (left.option == static_cast<int32_t>(MCM::eAction::Equip)) {
-            auto leftForm = left.form;
-            bool IsEnchanted = left.hasExtra.first;
-            bool IsTempered = left.hasExtra.second;
-            auto name = Extra::HasDisplayName(left.xList) ? Extra::GetDisplayName(left.xList) : leftForm->GetName();
-            if (IsEnchanted && IsTempered) {
-                log::debug("[Lefthand] {}({:X}) - {}: {} - {}", name, leftForm->formID, left.numEnch, left.extraData.first->GetName(), left.extraData.second);
-            } else if (!IsEnchanted && IsTempered) {
-                log::debug("[Lefthand] {}({:X}) - None - {}", name, leftForm->formID, left.extraData.second);
-            } else if (IsEnchanted && !IsTempered) {
-                log::debug("[Lefthand] {}({:X}) - {}: {} - None", name, leftForm->formID, left.numEnch, left.extraData.first->GetName());
-            } else {
-                log::debug("[Lefthand] {}({:X}) - None - None", name, leftForm->formID);
-            }
-        }
-
-        auto& right = equipment->mRight;
-        log::debug("Righthand Option: {}", right.option);
-        if (right.option == static_cast<int32_t>(MCM::eAction::Equip)) {
-            auto rightForm = right.form;
-            bool IsEnchanted = right.hasExtra.first;
-            bool IsTempered = right.hasExtra.second;
-            auto name = Extra::HasDisplayName(right.xList) ? Extra::GetDisplayName(right.xList) : rightForm->GetName();
-            if (IsEnchanted && IsTempered) {
-                log::debug("[Righthand] {}({:X}) - {}: {} - {}", name, rightForm->formID, right.numEnch, right.extraData.first->GetName(), right.extraData.second);
-            } else if (!IsEnchanted && IsTempered) {
-                log::debug("[Righthand] {}({:X}) - None - {}", name, rightForm->formID, right.extraData.second);
-            } else if (IsEnchanted && !IsTempered) {
-                log::debug("[Righthand] {}({:X}) - {}: {} - None", name, rightForm->formID, right.numEnch, right.extraData.first->GetName());
-            } else {
-                log::debug("[Righthand] {}({:X}) - None - None", name, rightForm->formID);
-            }
-        }
-
-        auto& shout = equipment->mShout;
-        log::debug("Shout Option: {}", shout.option);
-        if (shout.option == static_cast<int32_t>(MCM::eAction::Equip)) {
-            log::debug("Shout: {}({:X})", shout.form->GetName(), shout.form->formID);
-        }
-
-        log::debug("Contained Items");
-
-        auto& items = equipment->mItems;
-        uint32_t size = items.numItems;
-        log::debug("Items size: {}", size);
-        for (int i = 0; i < size; i++) {
-            auto itemsForm = items.form[i];
-            bool IsEnchanted = items.hasExtra[i].first;
-            bool IsTempered = items.hasExtra[i].second;
-            auto name = Extra::HasDisplayName(items.xList[i]) ? Extra::GetDisplayName(items.xList[i]) : itemsForm->GetName();
-            if (IsEnchanted && IsTempered) {
-                log::debug("[Items] {}({:X}) - {}: {} - {}", name, itemsForm->formID, items.numEnch[i], items.extraData[i].first->GetName(), items.extraData[i].second);
-            } else if (!IsEnchanted && IsTempered) {
-                log::debug("[Items] {}({:X}) - None - {}", name, itemsForm->formID, items.extraData[i].second);
-            } else if (IsEnchanted && !IsTempered) {
-                log::debug("[Items] {}({:X}) - {}: {} - None", name, itemsForm->formID, items.numEnch[i], items.extraData[i].first->GetName());
-            } else {
-                log::debug("[Items] {}({:X}) - None - None", name, itemsForm->formID);
-            }
-        }
-    }
-}
-
-void EquipsetManager::DisplayCycle()
-{
-    auto equipsetSize = mCycleEquipset.size();
-
-    log::debug("equipsetSize: {}", mCycleEquipset.size());
-    for (auto& equipset : mCycleEquipset) {
-        log::debug("Equipset Name: {}", equipset->mName);
-
-        auto hotkey = equipset->mHotkey;
-        log::debug("KeyCode: {}", hotkey->mKeyCode);
-        log::debug("Modifier Key 1: {}", hotkey->mModifier[0]);
-        log::debug("Modifier Key 2: {}", hotkey->mModifier[1]);
-        log::debug("Modifier Key 3: {}", hotkey->mModifier[2]);
-
-        auto option = equipset->mOption;
-        log::debug("Cycle Persist: {}", option->mPersist);
-        log::debug("Cycle Expire: {}sec", option->mExpire);
-        log::debug("Cycle Reset: {}sec", option->mReset);
-        log::debug("Beast Hotkey: {}", option->mBeast);
-
-        auto widget = equipset->mWidget;
-        log::debug("H Pos: {}", widget->mHpos);
-        log::debug("V Pos: {}", widget->mVpos);
-        log::debug("Display Widget: {}", widget->mDisplayWidget);
-        log::debug("Display Name: {}", widget->mDisplayName);
-        log::debug("Display Hotkey: {}", widget->mDisplayHotkey);
-
-        log::debug("Contained Equipsets");
-
-        uint32_t size = equipset->mCycleItems.size();
-        log::debug("Equipsets size: {}", size);
-        for (int i = 0; i < size; i++) {
-            log::debug("Equipset #{}: {}", i, equipset->mCycleItems[i]);
-        }
-    }
 }
 
 Equipset* EquipsetManager::SearchEquipsetByName(std::string _name)
@@ -823,7 +695,7 @@ std::vector<std::string> EquipsetManager::GetSortedEquipsetList()
 {
     std::vector<std::string> result;
 
-    auto holder = &MCM::DataHolder::GetSingleton();
+    auto holder = MCM::DataHolder::GetSingleton();
     if (!holder) {
         return result;
     }
@@ -834,7 +706,7 @@ std::vector<std::string> EquipsetManager::GetSortedEquipsetList()
         pairList.push_back(std::make_pair(elem->mOrder, elem->mName));
     }
 
-    switch (holder->setting.mSort) {
+    switch (holder->setting->mSort) {
         case MCM::eSortType::CreateAsc:
             std::sort(pairList.begin(), pairList.end());
             break;
@@ -863,7 +735,7 @@ std::vector<std::string> EquipsetManager::GetAllSortedEquipsetList()
 {
     std::vector<std::string> result;
 
-    auto holder = &MCM::DataHolder::GetSingleton();
+    auto holder = MCM::DataHolder::GetSingleton();
     if (!holder) {
         return result;
     }
@@ -878,7 +750,7 @@ std::vector<std::string> EquipsetManager::GetAllSortedEquipsetList()
         pairList.push_back(std::make_pair(elem->mOrder, elem->mName));
     }
 
-    switch (holder->setting.mSort) {
+    switch (holder->setting->mSort) {
         case MCM::eSortType::CreateAsc:
             std::sort(pairList.begin(), pairList.end());
             break;
@@ -1019,7 +891,7 @@ void EquipsetManager::InitWidget()
         return;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         return;
     }
@@ -1038,28 +910,28 @@ void EquipsetManager::InitWidget()
 
             auto widget = equipset->mWidget;
             if (widget->mDisplayWidget) {
-                widgetHandler->LoadWidget("UIHS/Background.dds", widget->mHpos, widget->mVpos, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100, dataHolder->widget.mAlpha);
+                widgetHandler->LoadWidget("UIHS/Background.dds", widget->mHpos, widget->mVpos, 70 * dataHolder->widget->mSize / 100, 70 * dataHolder->widget->mSize / 100, dataHolder->widget->mAlpha);
                 widget->mBackgroundID = id;
                 ++id;
             }
             if (widget->mDisplayWidget) {
-                widgetHandler->LoadWidget(widget->mWidget, widget->mHpos, widget->mVpos, 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100, 100);
+                widgetHandler->LoadWidget(widget->mWidget, widget->mHpos, widget->mVpos, 50 * dataHolder->widget->mSize / 100, 50 * dataHolder->widget->mSize / 100, 100);
                 widget->mWidgetID.push_back(id);
                 ++id;
             }
             if (widget->mDisplayName) {
-                widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos, widget->mVpos + (50 * dataHolder->widget.mSize / 100));
+                widgetHandler->LoadText(equipset->mName, dataHolder->widget->mFont, 15 * dataHolder->widget->mFontSize / 100, widget->mHpos, widget->mVpos + (50 * dataHolder->widget->mSize / 100));
                 widgetHandler->SetAlpha(id, 100);
                 widget->mNameID.push_back(id);
                 ++id;
             }
             if (widget->mDisplayHotkey) {
                 std::string name = "";
-                name = equipset->mHotkey->mModifier[0] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[0]) + " + " : name;
-                name = equipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[1]) + " + " : name;
-                name = equipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
+                name = equipset->mHotkey->mModifier[0] ? name + GetStringFromKeycode(dataHolder->setting->mModifier[0]) + " + " : name;
+                name = equipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting->mModifier[1]) + " + " : name;
+                name = equipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting->mModifier[2]) + " + " : name;
                 name += GetStringFromKeycode(equipset->mHotkey->mKeyCode);
-                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, widget->mHpos, widget->mVpos - (50 * dataHolder->widget.mSize / 100));
+                widgetHandler->LoadText(name, dataHolder->widget->mFont, 15 * dataHolder->widget->mFontSize / 100, widget->mHpos, widget->mVpos - (50 * dataHolder->widget->mSize / 100));
                 widgetHandler->SetAlpha(id, 100);
                 widget->mHotkeyID = id;
                 ++id;
@@ -1077,7 +949,7 @@ void EquipsetManager::InitWidget()
 
             auto cycleWidget = cycleEquipset->mWidget;
             if (cycleWidget->mDisplayWidget) {
-                widgetHandler->LoadWidget("UIHS/Background.dds", cycleWidget->mHpos, cycleWidget->mVpos, 70 * dataHolder->widget.mSize / 100, 70 * dataHolder->widget.mSize / 100, dataHolder->widget.mAlpha);
+                widgetHandler->LoadWidget("UIHS/Background.dds", cycleWidget->mHpos, cycleWidget->mVpos, 70 * dataHolder->widget->mSize / 100, 70 * dataHolder->widget->mSize / 100, dataHolder->widget->mAlpha);
                 cycleWidget->mBackgroundID = id;
                 ++id;
             }
@@ -1093,7 +965,7 @@ void EquipsetManager::InitWidget()
                         alpha = strItem == cycleEquipset->mCycleItems[cycleEquipset->mCycleIndex.first] ? 100 : 0;
                     }
                     auto widget = equipset->mWidget;
-                    widgetHandler->LoadWidget(widget->mWidget, cycleWidget->mHpos, cycleWidget->mVpos, 50 * dataHolder->widget.mSize / 100, 50 * dataHolder->widget.mSize / 100, alpha);
+                    widgetHandler->LoadWidget(widget->mWidget, cycleWidget->mHpos, cycleWidget->mVpos, 50 * dataHolder->widget->mSize / 100, 50 * dataHolder->widget->mSize / 100, alpha);
                     cycleWidget->mWidgetID.push_back(id);
                     ++id;
                 }
@@ -1110,7 +982,7 @@ void EquipsetManager::InitWidget()
                         alpha = strItem == cycleEquipset->mCycleItems[cycleEquipset->mCycleIndex.first] ? 100 : 0;
                     }
                     auto widget = equipset->mWidget;
-                    widgetHandler->LoadText(equipset->mName, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos + (50 * dataHolder->widget.mSize / 100));
+                    widgetHandler->LoadText(equipset->mName, dataHolder->widget->mFont, 15 * dataHolder->widget->mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos + (50 * dataHolder->widget->mSize / 100));
                     widgetHandler->SetAlpha(id, alpha);
                     cycleWidget->mNameID.push_back(id);
                     ++id;
@@ -1118,11 +990,11 @@ void EquipsetManager::InitWidget()
             }
             if (cycleWidget->mDisplayHotkey) {
                 std::string name = "";
-                name = cycleEquipset->mHotkey->mModifier[0] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[0]) + " + " : name;
-                name = cycleEquipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[1]) + " + " : name;
-                name = cycleEquipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting.mModifier[2]) + " + " : name;
+                name = cycleEquipset->mHotkey->mModifier[0] ? name + GetStringFromKeycode(dataHolder->setting->mModifier[0]) + " + " : name;
+                name = cycleEquipset->mHotkey->mModifier[1] ? name + GetStringFromKeycode(dataHolder->setting->mModifier[1]) + " + " : name;
+                name = cycleEquipset->mHotkey->mModifier[2] ? name + GetStringFromKeycode(dataHolder->setting->mModifier[2]) + " + " : name;
                 name += GetStringFromKeycode(cycleEquipset->mHotkey->mKeyCode);
-                widgetHandler->LoadText(name, dataHolder->widget.mFont, 15 * dataHolder->widget.mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos - (50 * dataHolder->widget.mSize / 100));
+                widgetHandler->LoadText(name, dataHolder->widget->mFont, 15 * dataHolder->widget->mFontSize / 100, cycleWidget->mHpos, cycleWidget->mVpos - (50 * dataHolder->widget->mSize / 100));
                 widgetHandler->SetAlpha(id, 100);
                 cycleWidget->mHotkeyID = id;
                 ++id;
@@ -1130,17 +1002,17 @@ void EquipsetManager::InitWidget()
         }
     }
 
-    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget.mDisplay);
+    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
     if (type != MCM::eWidgetDisplay::InCombat) {
         return;
     }
 
-    if (dataHolder->widget.mDelay == 0.0f) {
+    if (dataHolder->widget->mDelay == 0.0f) {
         return;
     }
 
     if (IsThreadWorking()) {
-        SetRemain(dataHolder->widget.mDelay + 1.0f);
+        SetRemain(dataHolder->widget->mDelay + 1.0f);
     }
     else {
         SetDissolveTimer();
@@ -1156,7 +1028,7 @@ bool EquipsetManager::DissolveIn_Function()
         return false;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         return false;
     }
@@ -1171,7 +1043,7 @@ bool EquipsetManager::DissolveIn_Function()
         return false;
     }
 
-    SetRemain(dataHolder->widget.mDelay + 1.0f);
+    SetRemain(dataHolder->widget->mDelay + 1.0f);
     while (!IsThreadClosing() && GetRemain() > 0.0f) {
         float remain = GetRemain();
         remain = !UI->GameIsPaused() && !playerref->IsInCombat() ? remain - 0.1f : remain;
@@ -1201,7 +1073,7 @@ void EquipsetManager::DissolveOut_Function()
         return;
     }
 
-    auto dataHolder = &MCM::DataHolder::GetSingleton();
+    auto dataHolder = MCM::DataHolder::GetSingleton();
     if (!dataHolder) {
         return;
     }
