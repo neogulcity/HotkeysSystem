@@ -57,18 +57,18 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
 
         Equipment* equipment = new Equipment;
         auto left = equipment->mLeft;
-        auto lAction = static_cast<MCM::eAction>(std::stoi(_data[15]));
+        auto lAction = std::stoi(_data[15]);
         switch (lAction) {
             case MCM::eAction::Nothing:
-                left->option = static_cast<int32_t>(MCM::eAction::Nothing);
+                left->option = MCM::eAction::Nothing;
                 break;
 
             case MCM::eAction::Unequip:
-                left->option = static_cast<int32_t>(MCM::eAction::Unequip);
+                left->option = MCM::eAction::Unequip;
                 break;
 
             default:
-                left->option = static_cast<int32_t>(MCM::eAction::Equip);
+                left->option = MCM::eAction::Equip;
         }
         left->form = std::get<1>(holder->list->mWeaponList[std::stoi(_data[15])]);
         auto xList = std::get<2>(holder->list->mWeaponList[std::stoi(_data[15])]);
@@ -78,20 +78,28 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
         left->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
         left->numEnch = Extra::GetNumEnchantment(xList);
         left->xList = xList;
+        if (!left->form) {
+            logger::error("[{}] Failed to Edit Lefthand data.", name);
+            left->option = MCM::eAction::Nothing;
+        }
+        else if (left->hasExtra.first && !left->extraData.first) {
+            logger::error("[{}] Failed to Edit Lefthand data.", name);
+            left->option = MCM::eAction::Nothing;
+        }
 
         auto right = equipment->mRight;
-        auto rAction = static_cast<MCM::eAction>(std::stoi(_data[16]));
+        auto rAction = std::stoi(_data[16]);
         switch (rAction) {
             case MCM::eAction::Nothing:
-                right->option = static_cast<int32_t>(MCM::eAction::Nothing);
+                right->option = MCM::eAction::Nothing;
                 break;
 
             case MCM::eAction::Unequip:
-                right->option = static_cast<int32_t>(MCM::eAction::Unequip);
+                right->option = MCM::eAction::Unequip;
                 break;
 
             default:
-                right->option = static_cast<int32_t>(MCM::eAction::Equip);
+                right->option = MCM::eAction::Equip;
         }
         right->form = std::get<1>(holder->list->mWeaponList[std::stoi(_data[16])]);
         xList = nullptr;
@@ -102,22 +110,34 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
         right->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
         right->numEnch = Extra::GetNumEnchantment(xList);
         right->xList = xList;
+        if (!right->form) {
+            logger::error("[{}] Failed to Edit Righthand data.", name);
+            right->option = MCM::eAction::Nothing;
+        }
+        else if (right->hasExtra.first && !right->extraData.first) {
+            logger::error("[{}] Failed to Edit Righthand data.", name);
+            right->option = MCM::eAction::Nothing;
+        }
 
         auto shout = equipment->mShout;
-        auto sAction = static_cast<MCM::eAction>(std::stoi(_data[17]));
+        auto sAction = std::stoi(_data[17]);
         switch (sAction) {
             case MCM::eAction::Nothing:
-                shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
+                shout->option = MCM::eAction::Nothing;
                 break;
 
             case MCM::eAction::Unequip:
-                shout->option = static_cast<int32_t>(MCM::eAction::Unequip);
+                shout->option = MCM::eAction::Unequip;
                 break;
 
             default:
-                shout->option = static_cast<int32_t>(MCM::eAction::Equip);
+                shout->option = MCM::eAction::Equip;
         }
         shout->form = holder->list->mShoutList[std::stoi(_data[17])].second;
+        if (!shout->form) {
+            logger::error("[{}] Failed to Edit Shout/Power data.", name);
+            shout->option = MCM::eAction::Nothing;
+        }
 
         auto& items = equipment->mItems;
         auto itemSize = std::stoi(_data[18]);
@@ -126,7 +146,11 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
             int index = i + 19;
             int elem = std::stoi(_data[index]);
 
-            auto form = std::get<1>(holder->list->mItemsList[elem]);
+            RE::TESForm* form = nullptr;
+            if (elem < holder->list->mItemsList.size()) {
+                form = std::get<1>(holder->list->mItemsList[elem]);
+            }
+            
             item->form = form;
 
             xList = nullptr;
@@ -138,7 +162,17 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
             item->numEnch = Extra::GetNumEnchantment(xList);
             item->xList = xList;
 
-            items.push_back(item);
+            if (!item->form) {
+                logger::error("[{}] Failed to Edit items.", name);
+                delete item;
+            }
+            else if (item->hasExtra.first && !item->extraData.first) {
+                logger::error("[{}] Failed to Edit items.", name);
+                delete item;
+            }
+            else {
+                items.push_back(item);
+            }
         }
 
         delete elem->mHotkey;
@@ -203,7 +237,9 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
             int index = i + 15;
             int elem = std::stoi(_data[index]);
 
-            items.push_back(holder->list->mCycleItemsList[elem]);
+            if (elem < holder->list->mCycleItemsList.size()) {
+                items.push_back(holder->list->mCycleItemsList[elem]);
+            }
         }
 
         delete elem->mHotkey;

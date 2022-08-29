@@ -50,17 +50,13 @@ namespace Papyrus {
 
     void UIHS_Init(RE::StaticFunctionTag*)
     {
+        MCM::ClearList();
         MCM::Init_WidgetList();
         MCM::Init_WeaponList();
         MCM::Init_ShoutList();
         MCM::Init_ItemsList();
         MCM::Init_CycleItemsList();
         MCM::Init_FontList();
-    }
-
-    void UIHS_Clear(RE::StaticFunctionTag*)
-    {
-        MCM::ClearList();
     }
 
     RE::BSFixedString UIHS_GetNamePrefix(RE::StaticFunctionTag*)
@@ -644,7 +640,6 @@ namespace Papyrus {
         vm->RegisterFunction("UIHS_Exec", "_HotkeysSystem_MCM", Papyrus::UIHS_Exec);
         vm->RegisterFunction("UIHS_CalculateKeydown", "_HotkeysSystem_MCM", Papyrus::UIHS_CalculateKeydown);
         vm->RegisterFunction("UIHS_Init", "_HotkeysSystem_MCM", Papyrus::UIHS_Init);
-        vm->RegisterFunction("UIHS_Clear", "_HotkeysSystem_MCM", Papyrus::UIHS_Clear);
         vm->RegisterFunction("UIHS_GetNamePrefix", "_HotkeysSystem_MCM", Papyrus::UIHS_GetNamePrefix);
         vm->RegisterFunction("UIHS_GetStringFromKeycode", "_HotkeysSystem_MCM", Papyrus::UIHS_GetStringFromKeycode);
         vm->RegisterFunction("UIHS_GetList", "_HotkeysSystem_MCM", Papyrus::UIHS_GetList);

@@ -3,7 +3,6 @@ Scriptname _HotkeysSystem_MCM extends SKI_ConfigBase
 ; Global Native Functions
 Function UIHS_Exec(int _code, bool _modifier1, bool _modifier2, bool _modifier3) Global Native
 Function UIHS_Init() Global Native
-Function UIHS_Clear() Global Native
 string Function UIHS_GetNamePrefix() Global Native
 string Function UIHS_GetStringFromKeycode(int _key) Global Native
 string[] Function UIHS_GetList(int _type) Global Native
@@ -221,7 +220,6 @@ EndEvent
 
 Event OnConfigOpen()
 	ClearProperties()
-	UIHS_Clear()
 	UIHS_SendSettingData(ZipSettingData())
 	UIHS_Init()
 	Init_MCMOpt()
@@ -235,7 +233,6 @@ Event OnConfigClose()
 	UIHS_SendWidgetData(ZipWidgetData())
 
 	; ClearProperties()
-	; UIHS_Clear()
 	UnregisterForAllKeys()
 	if sMaintenance_Mod
 		RegisterForAllKeys()
@@ -277,7 +274,6 @@ Event OnPageReset(string _page)
 
 	if _page == "$UIHS_Page_Managing"
 		if CurPage != ePage_Managing
-			UIHS_Clear()
 			UIHS_SendSettingData(ZipSettingData())
 			UIHS_Init()
 			Init_MCMOpt()
@@ -287,7 +283,6 @@ Event OnPageReset(string _page)
 		OnPage_Managing()
 	elseif _page == "$UIHS_Page_Overview"
 		if CurPage != ePage_Overview
-			UIHS_Clear()
 			UIHS_SendSettingData(ZipSettingData())
 			UIHS_Init()
 			Init_MCMOpt()
@@ -1123,7 +1118,6 @@ Function OnOptionSelect(int _opt)
 					UIHS_RemoveEquipset(sManaging_OName)
 				endif
 				SetTextOptionValue(_opt, "$UIHS_Removing", false)
-				UIHS_Clear()
 				UIHS_SendSettingData(ZipSettingData())
 				UIHS_Init()
 				Init_MCMOpt()
@@ -1242,7 +1236,6 @@ Function OnOptionSelect_New(Int _opt)
 				ShowMessage("$UIHS_MSG_PREFIX6{" + conflictName + "}", false, "$OK", "")
 			elseif UIHS_NewEquipset(ZipData(false))
 				ShowMessage("$UIHS_MSG_PREFIX7", false, "$OK", "")
-				UIHS_Clear()
 				UIHS_SendSettingData(ZipSettingData())
 				UIHS_Init()
 				Init_MCMOpt()
@@ -1265,7 +1258,6 @@ Function OnOptionSelect_New(Int _opt)
 				ShowMessage("$UIHS_MSG_PREFIX6{" + conflictName + "}", false, "$OK", "")
 			elseif UIHS_EditEquipset(sManaging_OName, ZipData(false))
 				ShowMessage("$UIHS_MSG_PREFIX7", false, "$OK", "")
-				UIHS_Clear()
 				UIHS_SendSettingData(ZipSettingData())
 				UIHS_Init()
 				Init_MCMOpt()
@@ -1451,7 +1443,6 @@ Function OnOptionMenuAccept(int _opt, int _index)
 				if _index != 0
 					string name = UIHS_GetStringFromList(_index, eType_SelectList)
 					UIHS_RemoveEquipset(name)
-					UIHS_Clear()
 					UIHS_SendSettingData(ZipSettingData())
 					UIHS_Init()
 					Init_MCMOpt()

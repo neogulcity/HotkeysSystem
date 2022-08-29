@@ -1,20 +1,20 @@
 #pragma once
 
 namespace MCM {
-    enum class eAction {
+    enum eAction {
         Nothing,
         Unequip,
         Equip
     };
 
-    enum class eSortType {
+    enum eSortType {
         CreateAsc,
         CreateDesc,
         NameAsc,
         NameDesc
     };
 
-    enum class eListType {
+    enum eListType {
         Widget,
         Weapon,
         Shout,
@@ -25,7 +25,7 @@ namespace MCM {
         Font
     };
 
-    enum class eWidgetDisplay {
+    enum eWidgetDisplay {
         Always,
         InCombat
     };

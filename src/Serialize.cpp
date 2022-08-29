@@ -14,438 +14,762 @@ namespace UIHS {
     inline const auto CycleEquipsetRecord = _byteswap_ulong('HSCR');
 }
 
-void SaveOrder(SerializationInterface* _serde, const uint32_t& _order)
-{
-    _serde->WriteRecordData(&_order, sizeof(_order));
-}
-
-void SaveName(SerializationInterface* _serde, const std::string& _name)
-{
-    size_t nameSize = _name.length();
-    _serde->WriteRecordData(&nameSize, sizeof(nameSize));
-    for (auto& elem : _name) {
-        _serde->WriteRecordData(&elem, sizeof(elem));
-    }
-}
-
-void SaveHotkey(SerializationInterface* _serde, Hotkey* _hotkey)
-{
-    _serde->WriteRecordData(&_hotkey->mKeyCode, sizeof(_hotkey->mKeyCode));
-    _serde->WriteRecordData(&_hotkey->mModifier[0], sizeof(_hotkey->mModifier[0]));
-    _serde->WriteRecordData(&_hotkey->mModifier[1], sizeof(_hotkey->mModifier[1]));
-    _serde->WriteRecordData(&_hotkey->mModifier[2], sizeof(_hotkey->mModifier[2]));
-}
-
-void SaveOption(SerializationInterface* _serde, Option* _option)
-{
-    _serde->WriteRecordData(&_option->mSound, sizeof(_option->mSound));
-    _serde->WriteRecordData(&_option->mToggleEquip, sizeof(_option->mToggleEquip));
-    _serde->WriteRecordData(&_option->mReEquip, sizeof(_option->mReEquip));
-    _serde->WriteRecordData(&_option->mBeast, sizeof(_option->mBeast));
-}
-
-void SaveWidget(SerializationInterface* _serde, Widget* _widget)
-{
-    size_t widgetSize = _widget->mWidget.length();
-    _serde->WriteRecordData(&widgetSize, sizeof(widgetSize));
-    for (auto& elem : _widget->mWidget) {
-        _serde->WriteRecordData(&elem, sizeof(elem));
-    }
-    _serde->WriteRecordData(&_widget->mHpos, sizeof(_widget->mHpos));
-    _serde->WriteRecordData(&_widget->mVpos, sizeof(_widget->mVpos));
-    _serde->WriteRecordData(&_widget->mDisplayWidget, sizeof(_widget->mDisplayWidget));
-    _serde->WriteRecordData(&_widget->mDisplayName, sizeof(_widget->mDisplayName));
-    _serde->WriteRecordData(&_widget->mDisplayHotkey, sizeof(_widget->mDisplayHotkey));
-}
-
-bool SaveEquipment_Hand(SerializationInterface* _serde, Equipment::Weapon* _hand)
-{
-    auto action = static_cast<MCM::eAction>(_hand->option);
-    if (action != MCM::eAction::Equip) {
-        _serde->WriteRecordData(&_hand->option, sizeof(_hand->option));
-
-        return true;
+namespace SKSE {
+    void SaveOrder(SerializationInterface* _serde, const uint32_t& _order)
+    {
+        _serde->WriteRecordData(&_order, sizeof(_order));
     }
 
-    if (!_hand->form) {
-        uint32_t option = 0;
-        _serde->WriteRecordData(&option, sizeof(option));
-
-        return false;
-    }
-
-    if (_hand->hasExtra.first && !_hand->extraData.first) {
-        uint32_t option = 0;
-        _serde->WriteRecordData(&option, sizeof(option));
-
-        return false;
-    }
-
-    _serde->WriteRecordData(&_hand->option, sizeof(_hand->option));
-    _serde->WriteRecordData(&_hand->form->formID, sizeof(_hand->form->formID));
-    _serde->WriteRecordData(&_hand->hasExtra.first, sizeof(_hand->hasExtra.first));
-    if (_hand->hasExtra.first) {
-        _serde->WriteRecordData(&_hand->numEnch, sizeof(_hand->numEnch));
-        RE::FormID ID = _hand->extraData.first->GetFormID();
-        _serde->WriteRecordData(&ID, sizeof(ID));
-    }
-    _serde->WriteRecordData(&_hand->hasExtra.second, sizeof(_hand->hasExtra.second));
-    if (_hand->hasExtra.second) {
-        _serde->WriteRecordData(&_hand->extraData.second, sizeof(_hand->extraData.second));
-    }
-
-    return true;
-}
-
-bool SaveEquipment_Shout(SerializationInterface* _serde, Equipment::Shout* _shout)
-{
-    auto action = static_cast<MCM::eAction>(_shout->option);
-    if (action != MCM::eAction::Equip) {
-        _serde->WriteRecordData(&_shout->option, sizeof(_shout->option));
-
-        return true;
-    }
-
-    if (!_shout->form) {
-         uint32_t option = 0;
-        _serde->WriteRecordData(&option, sizeof(option));
-
-        return false;
-    }
-
-    _serde->WriteRecordData(&_shout->option, sizeof(_shout->option));
-    _serde->WriteRecordData(&_shout->form->formID, sizeof(_shout->form->formID));
-
-    return true;
-}
-
-bool SaveEquipment_Items(SerializationInterface* _serde, std::vector<Equipment::Items*> _items)
-{
-    for (const auto item : _items) {
-        if (!item->form) {
-            uint32_t size = 0;
-            _serde->WriteRecordData(&size, sizeof(size));
-
-            return false;
-        }
-
-        if (item->hasExtra.first && !item->extraData.first) {
-            uint32_t size = 0;
-            _serde->WriteRecordData(&size, sizeof(size));
-
-            return false;
-        }
-    }
-
-    uint32_t itemsSize = _items.size();
-    _serde->WriteRecordData(&itemsSize, sizeof(itemsSize));
-    for (const auto item : _items) {
-        _serde->WriteRecordData(&item->form->formID, sizeof(item->form->formID));
-        _serde->WriteRecordData(&item->hasExtra.first, sizeof(item->hasExtra.first));
-        if (item->hasExtra.first) {
-            _serde->WriteRecordData(&item->numEnch, sizeof(item->numEnch));
-            RE::FormID ID = item->extraData.first->GetFormID();
-            _serde->WriteRecordData(&ID, sizeof(ID));
-        }
-        _serde->WriteRecordData(&item->hasExtra.second, sizeof(item->hasExtra.second));
-        if (item->hasExtra.second) {
-            _serde->WriteRecordData(&item->extraData.second, sizeof(item->extraData.second));
-        }
-    }
-
-    return true;
-}
-
-void SaveCycleOption(SerializationInterface* _serde, CycleOption* _option)
-{
-    _serde->WriteRecordData(&_option->mPersist, sizeof(_option->mPersist));
-    _serde->WriteRecordData(&_option->mExpire, sizeof(_option->mExpire));
-    _serde->WriteRecordData(&_option->mReset, sizeof(_option->mReset));
-    _serde->WriteRecordData(&_option->mBeast, sizeof(_option->mBeast));
-}
-
-void SaveCycleWidget(SerializationInterface* _serde, Widget* _widget)
-{
-    _serde->WriteRecordData(&_widget->mHpos, sizeof(_widget->mHpos));
-    _serde->WriteRecordData(&_widget->mVpos, sizeof(_widget->mVpos));
-    _serde->WriteRecordData(&_widget->mDisplayWidget, sizeof(_widget->mDisplayWidget));
-    _serde->WriteRecordData(&_widget->mDisplayName, sizeof(_widget->mDisplayName));
-    _serde->WriteRecordData(&_widget->mDisplayHotkey, sizeof(_widget->mDisplayHotkey));
-}
-
-void SaveCycleItems(SerializationInterface* _serde, std::vector<std::string> _items)
-{
-    size_t itemsSize = _items.size();
-    _serde->WriteRecordData(&itemsSize, sizeof(itemsSize));
-    for (const auto& item : _items) {
-        size_t size = item.length();
-        _serde->WriteRecordData(&size, sizeof(size));
-        for (const auto& elem : item) {
+    void SaveName(SerializationInterface* _serde, const std::string& _name)
+    {
+        size_t nameSize = _name.length();
+        _serde->WriteRecordData(&nameSize, sizeof(nameSize));
+        for (auto& elem : _name) {
             _serde->WriteRecordData(&elem, sizeof(elem));
         }
     }
-}
 
-void SaveCycleIndex(SerializationInterface* _serde, std::pair<uint32_t, int32_t> _cycleIndex)
-{
-    _serde->WriteRecordData(&_cycleIndex.first, sizeof(_cycleIndex.first));
-    _serde->WriteRecordData(&_cycleIndex.second, sizeof(_cycleIndex.second));
-}
-
-uint32_t LoadOrder(SerializationInterface* _serde)
-{
-    uint32_t order;
-    _serde->ReadRecordData(&order, sizeof(order));
-    return order;
-}
-
-std::string LoadName(SerializationInterface* _serde)
-{
-    std::string mName;
-    size_t nameSize;
-    _serde->ReadRecordData(&nameSize, sizeof(nameSize));
-    for (; nameSize > 0; --nameSize) {
-        char name;
-        _serde->ReadRecordData(&name, sizeof(name));
-        mName += name;
+    void SaveHotkey(SerializationInterface* _serde, Hotkey* _hotkey)
+    {
+        _serde->WriteRecordData(&_hotkey->mKeyCode, sizeof(_hotkey->mKeyCode));
+        _serde->WriteRecordData(&_hotkey->mModifier[0], sizeof(_hotkey->mModifier[0]));
+        _serde->WriteRecordData(&_hotkey->mModifier[1], sizeof(_hotkey->mModifier[1]));
+        _serde->WriteRecordData(&_hotkey->mModifier[2], sizeof(_hotkey->mModifier[2]));
     }
 
-    return mName;
-}
-
-Hotkey* LoadHotkey(SerializationInterface* _serde)
-{
-    Hotkey* hotkey = new Hotkey;
-    _serde->ReadRecordData(&hotkey->mKeyCode, sizeof(hotkey->mKeyCode));
-    _serde->ReadRecordData(&hotkey->mModifier[0], sizeof(hotkey->mModifier[0]));
-    _serde->ReadRecordData(&hotkey->mModifier[1], sizeof(hotkey->mModifier[1]));
-    _serde->ReadRecordData(&hotkey->mModifier[2], sizeof(hotkey->mModifier[2]));
-
-    return hotkey;
-}
-
-Option* LoadOption(SerializationInterface* _serde)
-{
-    Option* option = new Option;
-    _serde->ReadRecordData(&option->mSound, sizeof(option->mSound));
-    _serde->ReadRecordData(&option->mToggleEquip, sizeof(option->mToggleEquip));
-    _serde->ReadRecordData(&option->mReEquip, sizeof(option->mReEquip));
-    _serde->ReadRecordData(&option->mBeast, sizeof(option->mBeast));
-
-    return option;
-}
-
-Widget* LoadWidget(SerializationInterface* _serde)
-{
-    Widget* widget = new Widget;
-
-    size_t WidgetSize;
-    _serde->ReadRecordData(&WidgetSize, sizeof(WidgetSize));
-    for (; WidgetSize > 0; --WidgetSize) {
-        char name;
-        _serde->ReadRecordData(&name, sizeof(name));
-        widget->mWidget += name;
-    }
-    _serde->ReadRecordData(&widget->mHpos, sizeof(widget->mHpos));
-    _serde->ReadRecordData(&widget->mVpos, sizeof(widget->mVpos));
-    _serde->ReadRecordData(&widget->mDisplayWidget, sizeof(widget->mDisplayWidget));
-    _serde->ReadRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));
-    _serde->ReadRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));
-
-    return widget;
-}
-
-bool LoadEquipment_Hand(SerializationInterface* _serde, Equipment::Weapon* _hand)
-{
-    bool result = true;
-
-    _serde->ReadRecordData(&_hand->option, sizeof(_hand->option));
-
-    auto action = static_cast<MCM::eAction>(_hand->option);
-    if (action != MCM::eAction::Equip) {
-        return true;
+    void SaveOption(SerializationInterface* _serde, Option* _option)
+    {
+        _serde->WriteRecordData(&_option->mSound, sizeof(_option->mSound));
+        _serde->WriteRecordData(&_option->mToggleEquip, sizeof(_option->mToggleEquip));
+        _serde->WriteRecordData(&_option->mReEquip, sizeof(_option->mReEquip));
+        _serde->WriteRecordData(&_option->mBeast, sizeof(_option->mBeast));
     }
 
-    RE::FormID ID, newID;
-    _serde->ReadRecordData(&ID, sizeof(ID));
-    if (!_serde->ResolveFormID(ID, newID)) {
-        log::warn("Form ID {:X} could not be found after loading the save.", ID);
-        _hand->option = static_cast<int32_t>(MCM::eAction::Nothing);
-        newID = 0;
-        result = false;
-    }
-    _hand->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
-
-    bool hasEnch, hasTemp;
-    RE::EnchantmentItem* enchItem;
-    float tempItem;
-    _serde->ReadRecordData(&hasEnch, sizeof(hasEnch));
-    if (hasEnch) {
-        _serde->ReadRecordData(&_hand->numEnch, sizeof(_hand->numEnch));
-        RE::FormID ExtraID, newExtraID;
-        _serde->ReadRecordData(&ExtraID, sizeof(ExtraID));
-        if (!_serde->ResolveFormID(ExtraID, newExtraID)) {
-            log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-            hasEnch = false;
-            _hand->numEnch = 0;
-            newExtraID = 0;
-            result = false;
+    void SaveWidget(SerializationInterface* _serde, Widget* _widget)
+    {
+        size_t widgetSize = _widget->mWidget.length();
+        _serde->WriteRecordData(&widgetSize, sizeof(widgetSize));
+        for (auto& elem : _widget->mWidget) {
+            _serde->WriteRecordData(&elem, sizeof(elem));
         }
-        enchItem = newExtraID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID) : nullptr;
+        _serde->WriteRecordData(&_widget->mHpos, sizeof(_widget->mHpos));
+        _serde->WriteRecordData(&_widget->mVpos, sizeof(_widget->mVpos));
+        _serde->WriteRecordData(&_widget->mDisplayWidget, sizeof(_widget->mDisplayWidget));
+        _serde->WriteRecordData(&_widget->mDisplayName, sizeof(_widget->mDisplayName));
+        _serde->WriteRecordData(&_widget->mDisplayHotkey, sizeof(_widget->mDisplayHotkey));
     }
 
-    _serde->ReadRecordData(&hasTemp, sizeof(hasTemp));
-    if (hasTemp) {
-        _serde->ReadRecordData(&tempItem, sizeof(tempItem));
-    }
+    bool SaveEquipment_Hand(SerializationInterface* _serde, Equipment::Weapon* _hand)
+    {
+        auto action = static_cast<MCM::eAction>(_hand->option);
+        if (action != MCM::eAction::Equip) {
+            _serde->WriteRecordData(&_hand->option, sizeof(_hand->option));
 
-    _hand->hasExtra = std::make_pair(hasEnch, hasTemp);
-    _hand->extraData = std::make_pair(enchItem, tempItem);
+            return true;
+        }
 
-    RE::ExtraDataList* xList;
-    xList = Extra::SearchExtraList(_hand->form, _hand->numEnch, _hand->extraData.first, _hand->extraData.second);
-    _hand->xList = xList;
+        if (!_hand->form) {
+            uint32_t option = 0;
+            _serde->WriteRecordData(&option, sizeof(option));
 
-    return result;
-}
+            return false;
+        }
 
-bool LoadEquipment_Shout(SerializationInterface* _serde, Equipment::Shout* _shout)
-{
-    bool result = true;
+        if (_hand->hasExtra.first && !_hand->extraData.first) {
+            uint32_t option = 0;
+            _serde->WriteRecordData(&option, sizeof(option));
 
-    _serde->ReadRecordData(&_shout->option, sizeof(_shout->option));
+            return false;
+        }
 
-    auto action = static_cast<MCM::eAction>(_shout->option);
-    if (action != MCM::eAction::Equip) {
+        _serde->WriteRecordData(&_hand->option, sizeof(_hand->option));
+        _serde->WriteRecordData(&_hand->form->formID, sizeof(_hand->form->formID));
+        _serde->WriteRecordData(&_hand->hasExtra.first, sizeof(_hand->hasExtra.first));
+        if (_hand->hasExtra.first) {
+            _serde->WriteRecordData(&_hand->numEnch, sizeof(_hand->numEnch));
+            RE::FormID ID = _hand->extraData.first->GetFormID();
+            _serde->WriteRecordData(&ID, sizeof(ID));
+        }
+        _serde->WriteRecordData(&_hand->hasExtra.second, sizeof(_hand->hasExtra.second));
+        if (_hand->hasExtra.second) {
+            _serde->WriteRecordData(&_hand->extraData.second, sizeof(_hand->extraData.second));
+        }
+
         return true;
     }
 
-    RE::FormID ID, newID;
-    _serde->ReadRecordData(&ID, sizeof(ID));
-    if (!_serde->ResolveFormID(ID, newID)) {
-        log::warn("Form ID {:X} could not be found after loading the save.", ID);
-        _shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
-        newID = 0;
-        result = false;
+    bool SaveEquipment_Shout(SerializationInterface* _serde, Equipment::Shout* _shout)
+    {
+        auto action = static_cast<MCM::eAction>(_shout->option);
+        if (action != MCM::eAction::Equip) {
+            _serde->WriteRecordData(&_shout->option, sizeof(_shout->option));
+
+            return true;
+        }
+
+        if (!_shout->form) {
+            uint32_t option = 0;
+            _serde->WriteRecordData(&option, sizeof(option));
+
+            return false;
+        }
+
+        _serde->WriteRecordData(&_shout->option, sizeof(_shout->option));
+        _serde->WriteRecordData(&_shout->form->formID, sizeof(_shout->form->formID));
+
+        return true;
     }
-    _shout->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
 
-    return result;
-}
+    bool SaveEquipment_Items(SerializationInterface* _serde, std::vector<Equipment::Items*> _items)
+    {
+        for (const auto item : _items) {
+            if (!item->form) {
+                uint32_t size = 0;
+                _serde->WriteRecordData(&size, sizeof(size));
 
-bool LoadEquipment_Items(SerializationInterface* _serde, std::vector<Equipment::Items*>& _items)
-{
-    uint32_t itemsSize;
-    _serde->ReadRecordData(&itemsSize, sizeof(itemsSize));
+                return false;
+            }
 
-    for (; itemsSize > 0; --itemsSize) {
+            if (item->hasExtra.first && !item->extraData.first) {
+                uint32_t size = 0;
+                _serde->WriteRecordData(&size, sizeof(size));
+
+                return false;
+            }
+        }
+
+        uint32_t itemsSize = _items.size();
+        _serde->WriteRecordData(&itemsSize, sizeof(itemsSize));
+        for (const auto item : _items) {
+            _serde->WriteRecordData(&item->form->formID, sizeof(item->form->formID));
+            _serde->WriteRecordData(&item->hasExtra.first, sizeof(item->hasExtra.first));
+            if (item->hasExtra.first) {
+                _serde->WriteRecordData(&item->numEnch, sizeof(item->numEnch));
+                RE::FormID ID = item->extraData.first->GetFormID();
+                _serde->WriteRecordData(&ID, sizeof(ID));
+            }
+            _serde->WriteRecordData(&item->hasExtra.second, sizeof(item->hasExtra.second));
+            if (item->hasExtra.second) {
+                _serde->WriteRecordData(&item->extraData.second, sizeof(item->extraData.second));
+            }
+        }
+
+        return true;
+    }
+
+    void SaveCycleOption(SerializationInterface* _serde, CycleOption* _option)
+    {
+        _serde->WriteRecordData(&_option->mPersist, sizeof(_option->mPersist));
+        _serde->WriteRecordData(&_option->mExpire, sizeof(_option->mExpire));
+        _serde->WriteRecordData(&_option->mReset, sizeof(_option->mReset));
+        _serde->WriteRecordData(&_option->mBeast, sizeof(_option->mBeast));
+    }
+
+    void SaveCycleWidget(SerializationInterface* _serde, Widget* _widget)
+    {
+        _serde->WriteRecordData(&_widget->mHpos, sizeof(_widget->mHpos));
+        _serde->WriteRecordData(&_widget->mVpos, sizeof(_widget->mVpos));
+        _serde->WriteRecordData(&_widget->mDisplayWidget, sizeof(_widget->mDisplayWidget));
+        _serde->WriteRecordData(&_widget->mDisplayName, sizeof(_widget->mDisplayName));
+        _serde->WriteRecordData(&_widget->mDisplayHotkey, sizeof(_widget->mDisplayHotkey));
+    }
+
+    void SaveCycleItems(SerializationInterface* _serde, std::vector<std::string> _items)
+    {
+        size_t itemsSize = _items.size();
+        _serde->WriteRecordData(&itemsSize, sizeof(itemsSize));
+        for (const auto& item : _items) {
+            size_t size = item.length();
+            _serde->WriteRecordData(&size, sizeof(size));
+            for (const auto& elem : item) {
+                _serde->WriteRecordData(&elem, sizeof(elem));
+            }
+        }
+    }
+
+    void SaveCycleIndex(SerializationInterface* _serde, std::pair<uint32_t, int32_t> _cycleIndex)
+    {
+        _serde->WriteRecordData(&_cycleIndex.first, sizeof(_cycleIndex.first));
+        _serde->WriteRecordData(&_cycleIndex.second, sizeof(_cycleIndex.second));
+    }
+
+    uint32_t LoadOrder(SerializationInterface* _serde)
+    {
+        uint32_t order;
+        _serde->ReadRecordData(&order, sizeof(order));
+        return order;
+    }
+
+    std::string LoadName(SerializationInterface* _serde)
+    {
+        std::string mName;
+        size_t nameSize;
+        _serde->ReadRecordData(&nameSize, sizeof(nameSize));
+        for (; nameSize > 0; --nameSize) {
+            char name;
+            _serde->ReadRecordData(&name, sizeof(name));
+            mName += name;
+        }
+
+        return mName;
+    }
+
+    Hotkey* LoadHotkey(SerializationInterface* _serde)
+    {
+        Hotkey* hotkey = new Hotkey;
+        _serde->ReadRecordData(&hotkey->mKeyCode, sizeof(hotkey->mKeyCode));
+        _serde->ReadRecordData(&hotkey->mModifier[0], sizeof(hotkey->mModifier[0]));
+        _serde->ReadRecordData(&hotkey->mModifier[1], sizeof(hotkey->mModifier[1]));
+        _serde->ReadRecordData(&hotkey->mModifier[2], sizeof(hotkey->mModifier[2]));
+
+        return hotkey;
+    }
+
+    Option* LoadOption(SerializationInterface* _serde)
+    {
+        Option* option = new Option;
+        _serde->ReadRecordData(&option->mSound, sizeof(option->mSound));
+        _serde->ReadRecordData(&option->mToggleEquip, sizeof(option->mToggleEquip));
+        _serde->ReadRecordData(&option->mReEquip, sizeof(option->mReEquip));
+        _serde->ReadRecordData(&option->mBeast, sizeof(option->mBeast));
+
+        return option;
+    }
+
+    Widget* LoadWidget(SerializationInterface* _serde)
+    {
+        Widget* widget = new Widget;
+
+        size_t WidgetSize;
+        _serde->ReadRecordData(&WidgetSize, sizeof(WidgetSize));
+        for (; WidgetSize > 0; --WidgetSize) {
+            char name;
+            _serde->ReadRecordData(&name, sizeof(name));
+            widget->mWidget += name;
+        }
+        _serde->ReadRecordData(&widget->mHpos, sizeof(widget->mHpos));
+        _serde->ReadRecordData(&widget->mVpos, sizeof(widget->mVpos));
+        _serde->ReadRecordData(&widget->mDisplayWidget, sizeof(widget->mDisplayWidget));
+        _serde->ReadRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));
+        _serde->ReadRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));
+
+        return widget;
+    }
+
+    bool LoadEquipment_Hand(SerializationInterface* _serde, Equipment::Weapon* _hand)
+    {
         bool result = true;
-        Equipment::Items* items = new Equipment::Items;
+
+        _serde->ReadRecordData(&_hand->option, sizeof(_hand->option));
+
+        auto action = static_cast<MCM::eAction>(_hand->option);
+        if (action != MCM::eAction::Equip) {
+            return true;
+        }
 
         RE::FormID ID, newID;
         _serde->ReadRecordData(&ID, sizeof(ID));
         if (!_serde->ResolveFormID(ID, newID)) {
             log::warn("Form ID {:X} could not be found after loading the save.", ID);
+            _hand->option = static_cast<int32_t>(MCM::eAction::Nothing);
             newID = 0;
             result = false;
         }
-        items->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
-        
-        bool hasItemsExtraEnch, hasItemsExtraTemp;
-        RE::EnchantmentItem* itemsExtraEnch;
-        float itemsExtraTemp;
+        _hand->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
 
-        _serde->ReadRecordData(&hasItemsExtraEnch, sizeof(hasItemsExtraEnch));
-        if (hasItemsExtraEnch) {
-            uint32_t numItemsEnch;
-            _serde->ReadRecordData(&numItemsEnch, sizeof(numItemsEnch));
-            items->numEnch = numItemsEnch;
-
+        bool hasEnch, hasTemp;
+        RE::EnchantmentItem* enchItem;
+        float tempItem;
+        _serde->ReadRecordData(&hasEnch, sizeof(hasEnch));
+        if (hasEnch) {
+            _serde->ReadRecordData(&_hand->numEnch, sizeof(_hand->numEnch));
             RE::FormID ExtraID, newExtraID;
             _serde->ReadRecordData(&ExtraID, sizeof(ExtraID));
             if (!_serde->ResolveFormID(ExtraID, newExtraID)) {
                 log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
+                hasEnch = false;
+                _hand->numEnch = 0;
                 newExtraID = 0;
                 result = false;
             }
-            itemsExtraEnch = newID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID) : nullptr;
+            enchItem = newExtraID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID) : nullptr;
         }
 
-        _serde->ReadRecordData(&hasItemsExtraTemp, sizeof(hasItemsExtraTemp));
-        if (hasItemsExtraTemp) {
-            _serde->ReadRecordData(&itemsExtraTemp, sizeof(itemsExtraTemp));
+        _serde->ReadRecordData(&hasTemp, sizeof(hasTemp));
+        if (hasTemp) {
+            _serde->ReadRecordData(&tempItem, sizeof(tempItem));
         }
 
-        items->hasExtra = std::make_pair(hasItemsExtraEnch, hasItemsExtraTemp);
-        items->extraData = std::make_pair(itemsExtraEnch, itemsExtraTemp);
+        _hand->hasExtra = std::make_pair(hasEnch, hasTemp);
+        _hand->extraData = std::make_pair(enchItem, tempItem);
 
         RE::ExtraDataList* xList;
-        xList = Extra::SearchExtraList(items->form, items->numEnch, items->extraData.first, items->extraData.second);
-        items->xList = xList;
+        xList = Extra::SearchExtraList(_hand->form, _hand->numEnch, _hand->extraData.first, _hand->extraData.second);
+        _hand->xList = xList;
 
-        if (result) {
-            _items.push_back(items);
+        return result;
+    }
+
+    bool LoadEquipment_Shout(SerializationInterface* _serde, Equipment::Shout* _shout)
+    {
+        bool result = true;
+
+        _serde->ReadRecordData(&_shout->option, sizeof(_shout->option));
+
+        auto action = static_cast<MCM::eAction>(_shout->option);
+        if (action != MCM::eAction::Equip) {
+            return true;
         }
-        else {
-            delete items;
+
+        RE::FormID ID, newID;
+        _serde->ReadRecordData(&ID, sizeof(ID));
+        if (!_serde->ResolveFormID(ID, newID)) {
+            log::warn("Form ID {:X} could not be found after loading the save.", ID);
+            _shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
+            newID = 0;
+            result = false;
+        }
+        _shout->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
+
+        return result;
+    }
+
+    bool LoadEquipment_Items(SerializationInterface* _serde, std::vector<Equipment::Items*>& _items)
+    {
+        uint32_t itemsSize;
+        _serde->ReadRecordData(&itemsSize, sizeof(itemsSize));
+
+        for (; itemsSize > 0; --itemsSize) {
+            bool result = true;
+            Equipment::Items* items = new Equipment::Items;
+
+            RE::FormID ID, newID;
+            _serde->ReadRecordData(&ID, sizeof(ID));
+            if (!_serde->ResolveFormID(ID, newID)) {
+                log::warn("Form ID {:X} could not be found after loading the save.", ID);
+                newID = 0;
+                result = false;
+            }
+            items->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
+
+            bool hasItemsExtraEnch, hasItemsExtraTemp;
+            RE::EnchantmentItem* itemsExtraEnch;
+            float itemsExtraTemp;
+
+            _serde->ReadRecordData(&hasItemsExtraEnch, sizeof(hasItemsExtraEnch));
+            if (hasItemsExtraEnch) {
+                uint32_t numItemsEnch;
+                _serde->ReadRecordData(&numItemsEnch, sizeof(numItemsEnch));
+                items->numEnch = numItemsEnch;
+
+                RE::FormID ExtraID, newExtraID;
+                _serde->ReadRecordData(&ExtraID, sizeof(ExtraID));
+                if (!_serde->ResolveFormID(ExtraID, newExtraID)) {
+                    log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
+                    newExtraID = 0;
+                    result = false;
+                }
+                itemsExtraEnch = newID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID) : nullptr;
+            }
+
+            _serde->ReadRecordData(&hasItemsExtraTemp, sizeof(hasItemsExtraTemp));
+            if (hasItemsExtraTemp) {
+                _serde->ReadRecordData(&itemsExtraTemp, sizeof(itemsExtraTemp));
+            }
+
+            items->hasExtra = std::make_pair(hasItemsExtraEnch, hasItemsExtraTemp);
+            items->extraData = std::make_pair(itemsExtraEnch, itemsExtraTemp);
+
+            RE::ExtraDataList* xList;
+            xList = Extra::SearchExtraList(items->form, items->numEnch, items->extraData.first, items->extraData.second);
+            items->xList = xList;
+
+            if (result) {
+                _items.push_back(items);
+            }
+            else {
+                delete items;
+            }
+        }
+
+        return true;
+    }
+
+    CycleOption* LoadCycleOption(SerializationInterface* _serde)
+    {
+        CycleOption* option = new CycleOption;
+        _serde->ReadRecordData(&option->mPersist, sizeof(option->mPersist));
+        _serde->ReadRecordData(&option->mExpire, sizeof(option->mExpire));
+        _serde->ReadRecordData(&option->mReset, sizeof(option->mReset));
+        _serde->ReadRecordData(&option->mBeast, sizeof(option->mBeast));
+
+        return option;
+    }
+
+    Widget* LoadCycleWidget(SerializationInterface* _serde)
+    {
+        Widget* widget = new Widget;
+
+        _serde->ReadRecordData(&widget->mHpos, sizeof(widget->mHpos));
+        _serde->ReadRecordData(&widget->mVpos, sizeof(widget->mVpos));
+        _serde->ReadRecordData(&widget->mDisplayWidget, sizeof(widget->mDisplayWidget));
+        _serde->ReadRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));
+        _serde->ReadRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));
+
+        return widget;
+    }
+
+    std::vector<std::string> LoadCycleItems(SerializationInterface* _serde)
+    {
+        std::vector<std::string> items;
+        size_t itemsSize;
+        _serde->ReadRecordData(&itemsSize, sizeof(itemsSize));
+        for (; itemsSize > 0; --itemsSize) {
+            std::string itemsName;
+            size_t inameSize;
+            _serde->ReadRecordData(&inameSize, sizeof(inameSize));
+            for (; inameSize > 0; --inameSize) {
+                char name;
+                _serde->ReadRecordData(&name, sizeof(name));
+                itemsName += name;
+            }
+            items.push_back(itemsName);
+        }
+
+        return items;
+    }
+
+    std::pair<uint32_t, int32_t> LoadCycleIndex(SerializationInterface* _serde)
+    {
+        uint32_t index;
+        int32_t prevIndex;
+        _serde->ReadRecordData(&index, sizeof(index));
+        _serde->ReadRecordData(&prevIndex, sizeof(prevIndex));
+
+        return std::make_pair(index, prevIndex);
+    }
+}
+namespace Json {
+    void SaveOrder(Json::Value& _root, const std::string& _name, const uint32_t _order)
+    {
+        _root[_name]["mOrder"] = _order;
+    }
+
+    void SaveName(Json::Value& _root, const std::string& _name, const std::string _mName)
+    {
+        _root[_name]["mName"] = _mName;
+    }
+
+    void SaveHotkey(Json::Value& _root, const std::string& _name, const Hotkey* _hotkey)
+    {
+        _root[_name]["mKeyCode"] = _hotkey->mKeyCode;
+        _root[_name]["mModifier1"] = _hotkey->mModifier[0];
+        _root[_name]["mModifier2"] = _hotkey->mModifier[1];
+        _root[_name]["mModifier3"] = _hotkey->mModifier[2];
+    }
+
+    void SaveOption(Json::Value& _root, const std::string& _name, const Option* _option)
+    {
+        _root[_name]["mSound"] = _option->mSound;
+        _root[_name]["mToggleEquip"] = _option->mToggleEquip;
+        _root[_name]["mReEquip"] = _option->mReEquip;
+        _root[_name]["mBeast"] = _option->mBeast;
+    }
+
+    void SaveWidget(Json::Value& _root, const std::string& _name, const Widget* _widget)
+    {
+        _root[_name]["mWidget"] = _widget->mWidget;
+        _root[_name]["mHpos"] = _widget->mHpos;
+        _root[_name]["mVpos"] = _widget->mVpos;
+        _root[_name]["mDisplayWidget"] = _widget->mDisplayWidget;
+        _root[_name]["mDisplayName"] = _widget->mDisplayName;
+        _root[_name]["mDisplayHotkey"] = _widget->mDisplayHotkey;
+    }
+
+    bool SaveEquipment_Hand(Json::Value& _root, const std::string& _name, const Equipment::Weapon* _hand, bool isLeft)
+    {
+        std::string strOption = isLeft ? "lOption" : "rOption";
+        std::string strForm = isLeft ? "lForm" : "rForm";
+        std::string strHasExtra_first = isLeft ? "lHasExtra_first" : "rHasExtra_first";
+        std::string strNumEnch = isLeft ? "lNumEnch" : "rNumEnch";
+        std::string strExtraData_first = isLeft ? "lExtraData_first" : "rExtraData_first";
+        std::string strHasExtra_second = isLeft ? "lHasExtra_second" : "rHasExtra_second";
+        std::string strExtraData_second = isLeft ? "lExtraData_second" : "rExtraData_second";
+
+        _root[_name][strOption] = _hand->option;
+        _root[_name][strForm] = _hand->option == MCM::eAction::Equip && _hand->form ? _hand->form->formID : 0;
+        _root[_name][strHasExtra_first] = _hand->hasExtra.first;
+        _root[_name][strNumEnch] = _hand->numEnch;
+        _root[_name][strExtraData_first] = _hand->hasExtra.first && _hand->extraData.first ? _hand->extraData.first->GetFormID() : 0;
+        _root[_name][strHasExtra_second] = _hand->hasExtra.second;
+        _root[_name][strExtraData_second] = _hand->extraData.second;
+
+        if (_hand->option != MCM::eAction::Equip) {
+            return true;
+        }
+
+        if (!_hand->form) {
+            _root[_name][strOption] = MCM::eAction::Nothing;
+            return false;
+        }
+
+        if (_hand->hasExtra.first && !_hand->extraData.first) {
+            _root[_name][strOption] = MCM::eAction::Nothing;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool SaveEquipment_Shout(Json::Value& _root, const std::string& _name, const Equipment::Shout* _shout)
+    {
+        _root[_name]["sOption"] = _shout->option;
+        _root[_name]["sForm"] = _shout->option == MCM::eAction::Equip && _shout->form ? _shout->form->formID : 0;
+
+        if (_shout->option != MCM::eAction::Equip) {
+            return true;
+        }
+
+        if (!_shout->form) {
+            _root[_name]["sOption"] = MCM::eAction::Nothing;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool SaveEquipment_Items(Json::Value& _root, const std::string& _name, std::vector<Equipment::Items*> _items)
+    {
+        for (const auto& item : _items) {
+            if (!item->form) {
+                _root[_name]["mNumItems"] = 0;
+                return false;
+            }
+
+            if (item->hasExtra.first && !item->extraData.first) {
+                _root[_name]["mNumItems"] = 0;
+                return false;
+            }
+        }
+
+        _root[_name]["mNumItems"] = _items.size();
+        for (int i = 0; i < _items.size(); i++) {
+            auto itemName = "Item_" + std::to_string(i);
+            _root[_name]["Items"][itemName]["form"] = _items[i]->form ? _items[i]->form->formID : 0;
+            _root[_name]["Items"][itemName]["hasExtra_first"] = _items[i]->hasExtra.first;
+            _root[_name]["Items"][itemName]["numEnch"] = _items[i]->numEnch;
+            _root[_name]["Items"][itemName]["extraData_first"] = _items[i]->hasExtra.first && _items[i]->extraData.first ? _items[i]->extraData.first->GetFormID() : 0;
+            _root[_name]["Items"][itemName]["hasExtra_second"] = _items[i]->hasExtra.second;
+            _root[_name]["Items"][itemName]["extraData_second"] = _items[i]->extraData.second;
+        }
+
+        return true;
+    }
+
+    void SaveCycleOption(Json::Value& _root, const std::string& _name, const CycleOption* _option)
+    {
+        _root[_name]["mPersist"] = _option->mPersist;
+        _root[_name]["mExpire"] = _option->mExpire;
+        _root[_name]["mReset"] = _option->mReset;
+        _root[_name]["mBeast"] = _option->mBeast;
+    }
+
+    void SaveCycleWidget(Json::Value& _root, const std::string& _name, const Widget* _widget)
+    {
+        _root[_name]["mHpos"] = _widget->mHpos;
+        _root[_name]["mVpos"] = _widget->mVpos;
+        _root[_name]["mDisplayWidget"] = _widget->mDisplayWidget;
+        _root[_name]["mDisplayName"] = _widget->mDisplayName;
+        _root[_name]["mDisplayHotkey"] = _widget->mDisplayHotkey;
+    }
+
+    void SaveCycleItems(Json::Value& _root, const std::string& _name, std::vector<std::string> _items)
+    {
+        _root[_name]["mNumItems"] = _items.size();
+        for (int i = 0; i < _items.size(); i++) {
+            auto itemName = "Item_" + std::to_string(i);
+            _root[_name]["Items"][itemName]["name"] = _items[i];
         }
     }
 
-    return true;
-}
-
-CycleOption* LoadCycleOption(SerializationInterface* _serde)
-{
-    CycleOption* option = new CycleOption;
-    _serde->ReadRecordData(&option->mPersist, sizeof(option->mPersist));
-    _serde->ReadRecordData(&option->mExpire, sizeof(option->mExpire));
-    _serde->ReadRecordData(&option->mReset, sizeof(option->mReset));
-    _serde->ReadRecordData(&option->mBeast, sizeof(option->mBeast));
-
-    return option;
-}
-
-Widget* LoadCycleWidget(SerializationInterface* _serde)
-{
-    Widget* widget = new Widget;
-
-    _serde->ReadRecordData(&widget->mHpos, sizeof(widget->mHpos));
-    _serde->ReadRecordData(&widget->mVpos, sizeof(widget->mVpos));
-    _serde->ReadRecordData(&widget->mDisplayWidget, sizeof(widget->mDisplayWidget));
-    _serde->ReadRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));
-    _serde->ReadRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));
-
-    return widget;
-}
-
-std::vector<std::string> LoadCycleItems(SerializationInterface* _serde)
-{
-    std::vector<std::string> items;
-    size_t itemsSize;
-    _serde->ReadRecordData(&itemsSize, sizeof(itemsSize));
-    for (; itemsSize > 0; --itemsSize) {
-        std::string itemsName;
-        size_t inameSize;
-        _serde->ReadRecordData(&inameSize, sizeof(inameSize));
-        for (; inameSize > 0; --inameSize) {
-            char name;
-            _serde->ReadRecordData(&name, sizeof(name));
-            itemsName += name;
-        }
-        items.push_back(itemsName);
+    int32_t LoadOrder(Json::Value& _root, const std::string& _name)
+    {
+        return _root[_name].get("mOrder", 0).asInt();
     }
 
-    return items;
-}
+    std::string LoadName(Json::Value& _root, const std::string& _name)
+    {
+        return _root[_name].get("mName", "").asString();
+    }
 
-std::pair<uint32_t, int32_t> LoadCycleIndex(SerializationInterface* _serde)
-{
-    uint32_t index;
-    int32_t prevIndex;
-    _serde->ReadRecordData(&index, sizeof(index));
-    _serde->ReadRecordData(&prevIndex, sizeof(prevIndex));
+    Hotkey* LoadHotkey(Json::Value& _root, const std::string& _name)
+    {
+        Hotkey* hotkey = new Hotkey;
+        hotkey->mKeyCode = _root[_name].get("mKeyCode", -1).asInt();
+        hotkey->mModifier[0] = _root[_name].get("mModifier1", false).asBool();
+        hotkey->mModifier[1] = _root[_name].get("mModifier2", false).asBool();
+        hotkey->mModifier[2] = _root[_name].get("mModifier3", false).asBool();
 
-    return std::make_pair(index, prevIndex);
+        return hotkey;
+    }
+
+    Option* LoadOption(Json::Value& _root, const std::string& _name)
+    {
+        Option* option = new Option;
+        option->mSound = _root[_name].get("mSound", false).asBool();
+        option->mToggleEquip = _root[_name].get("mToggleEquip", false).asBool();
+        option->mReEquip = _root[_name].get("mReEquip", false).asBool();
+        option->mBeast = _root[_name].get("mBeast", false).asBool();
+
+        return option;
+    }
+
+    Widget* LoadWidget(Json::Value& _root, const std::string& _name)
+    {
+        Widget* widget = new Widget;
+        widget->mWidget = _root[_name].get("mWidget", "").asString();
+        widget->mHpos = _root[_name].get("mHpos", 0).asInt();
+        widget->mVpos = _root[_name].get("mVpos", 0).asInt();
+        widget->mDisplayWidget = _root[_name].get("mDisplayWidget", false).asBool();
+        widget->mDisplayName = _root[_name].get("mDisplayName", false).asBool();
+        widget->mDisplayHotkey = _root[_name].get("mDisplayHotkey", false).asBool();
+
+        return widget;
+    }
+
+    bool LoadEquipment_Hand(Json::Value& _root, const std::string& _name, Equipment::Weapon* _hand, bool isLeft)
+    {
+        std::string strOption = isLeft ? "lOption" : "rOption";
+        std::string strForm = isLeft ? "lForm" : "rForm";
+        std::string strHasExtra_first = isLeft ? "lHasExtra_first" : "rHasExtra_first";
+        std::string strNumEnch = isLeft ? "lNumEnch" : "rNumEnch";
+        std::string strExtraData_first = isLeft ? "lExtraData_first" : "rExtraData_first";
+        std::string strHasExtra_second = isLeft ? "lHasExtra_second" : "rHasExtra_second";
+        std::string strExtraData_second = isLeft ? "lExtraData_second" : "rExtraData_second";
+
+        _hand->option = _root[_name].get(strOption, 0).asInt();
+        RE::FormID formID = _root[_name].get(strForm, 0).asInt64();
+        _hand->form = _hand->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
+        _hand->hasExtra.first = _root[_name].get(strHasExtra_first, false).asBool();
+        _hand->numEnch = _root[_name].get(strNumEnch, 0).asInt();
+        RE::FormID enchantID = _root[_name].get(strExtraData_first, 0).asInt64();
+        RE::EnchantmentItem* enchantForm = _hand->hasExtra.first && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
+        _hand->extraData.first = _hand->hasExtra.first && enchantForm ? enchantForm : nullptr;
+        _hand->hasExtra.second = _root[_name].get(strHasExtra_second, false).asBool();
+        _hand->extraData.second = _root[_name].get(strExtraData_second, 0.0f).asFloat();
+        RE::ExtraDataList* xList;
+        xList = Extra::SearchExtraList(_hand->form, _hand->numEnch, _hand->extraData.first, _hand->extraData.second);
+        _hand->xList = xList;
+
+        if (_hand->option != MCM::eAction::Equip) {
+            return true;
+        }
+
+        if (!_hand->form) {
+            _hand->option = MCM::eAction::Nothing;
+            return false;
+        }
+
+        if (_hand->hasExtra.first && !_hand->extraData.first) {
+            _hand->option = MCM::eAction::Nothing;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool LoadEquipment_Shout(Json::Value& _root, const std::string& _name, Equipment::Shout* _shout)
+    {
+        _shout->option = _root[_name].get("sOption", 0).asInt();
+        RE::FormID formID = _root[_name].get("sForm", 0).asInt64();
+        _shout->form = _shout->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
+
+        if (_shout->option != MCM::eAction::Equip) {
+            return true;
+        }
+
+        if (!_shout->form) {
+            _shout->option = MCM::eAction::Nothing;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool LoadEquipment_Items(Json::Value& _root, const std::string& _name, std::vector<Equipment::Items*>& _Items)
+    {
+        int numItems = _root[_name].get("mNumItems", 0).asInt();
+        for (int j = 0; j < numItems; j++) {
+            bool result = true;
+
+            Equipment::Items* item = new Equipment::Items;
+            auto itemName = "Item_" + std::to_string(j);
+
+            RE::FormID formID = _root[_name]["Items"][itemName].get("form", 0).asInt64();
+            item->form = formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
+            item->hasExtra.first = _root[_name]["Items"][itemName].get("hasExtra_first", false).asBool();
+            item->numEnch = _root[_name]["Items"][itemName].get("numEnch", 0).asInt();
+            RE::FormID enchantID = _root[_name]["Items"][itemName].get("extraData_first", 0).asInt64();
+            RE::EnchantmentItem* enchantForm = item->hasExtra.first && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
+            item->extraData.first = item->hasExtra.first && enchantForm ? enchantForm : nullptr;
+            item->hasExtra.second = _root[_name]["Items"][itemName].get("hasExtra_second", false).asBool();
+            item->extraData.second = _root[_name]["Items"][itemName].get("extraData_second", 0.0f).asFloat();
+            RE::ExtraDataList* xList;
+            xList = Extra::SearchExtraList(item->form, item->numEnch, item->extraData.first, item->extraData.second);
+            item->xList = xList;
+
+            if (!item->form) {
+                delete item;
+                continue;
+            }
+
+            if (item->hasExtra.first && !item->extraData.first) {
+                delete item;
+                continue;
+            }
+
+            _Items.push_back(item);
+        }
+
+        return true;
+    }
+
+    CycleOption* LoadCycleOption(Json::Value& _root, const std::string& _name)
+    {
+        CycleOption* option = new CycleOption;
+        option->mPersist = _root[_name].get("mPersist", false).asBool();
+        option->mExpire = _root[_name].get("mExpire", false).asBool();
+        option->mReset = _root[_name].get("mReset", false).asBool();
+        option->mBeast = _root[_name].get("mBeast", false).asBool();
+
+        return option;
+    }
+
+    Widget* LoadCycleWidget(Json::Value& _root, const std::string& _name)
+    {
+        Widget* widget = new Widget;
+        widget->mHpos = _root[_name].get("mHpos", 0).asInt();
+        widget->mVpos = _root[_name].get("mVpos", 0).asInt();
+        widget->mDisplayWidget = _root[_name].get("mDisplayWidget", false).asBool();
+        widget->mDisplayName = _root[_name].get("mDisplayName", false).asBool();
+        widget->mDisplayHotkey = _root[_name].get("mDisplayHotkey", false).asBool();
+
+        return widget;
+    }
+
+    std::vector<std::string> LoadCycleItems(Json::Value& _root, const std::string& _name)
+    {
+        std::vector<std::string> items;
+
+        size_t itemsSize = _root[_name].get("mNumItems", 0).asInt();
+        for (int j = 0; j < itemsSize; j++) {
+            auto itemName = "Item_" + std::to_string(j);
+            std::string cycleItemsName = _root[_name]["Items"][itemName].get("name", 0).asString();
+            items.push_back(cycleItemsName);
+        }
+
+        return items;
+    }
 }
 
 void EquipsetManager::OnRevert(SerializationInterface*)
@@ -651,64 +975,24 @@ void EquipsetManager::SaveEquipsetData()
 
             logger::trace("Exporting '{}'...", equipset->mName);
             
-            root[name]["mOrder"] = equipset->mOrder;
-            root[name]["mName"] = equipset->mName;
-
-            auto hotkey = equipset->mHotkey;
-            root[name]["mKeyCode"] = hotkey->mKeyCode;
-            root[name]["mModifier1"] = hotkey->mModifier[0];
-            root[name]["mModifier2"] = hotkey->mModifier[1];
-            root[name]["mModifier3"] = hotkey->mModifier[2];
-
-            auto option = equipset->mOption;
-            root[name]["mSound"] = option->mSound;
-            root[name]["mToggleEquip"] = option->mToggleEquip;
-            root[name]["mReEquip"] = option->mReEquip;
-            root[name]["mBeast"] = option->mBeast;
-
-            auto widget = equipset->mWidget;
-            root[name]["mWidget"] = widget->mWidget;
-            root[name]["mHpos"] = widget->mHpos;
-            root[name]["mVpos"] = widget->mVpos;
-            root[name]["mDisplayWidget"] = widget->mDisplayWidget;
-            root[name]["mDisplayName"] = widget->mDisplayName;
-            root[name]["mDisplayHotkey"] = widget->mDisplayHotkey;
+            Json::SaveOrder(root, name, equipset->mOrder);
+            Json::SaveName(root, name, equipset->mName);
+            Json::SaveHotkey(root, name, equipset->mHotkey);
+            Json::SaveOption(root, name, equipset->mOption);
+            Json::SaveWidget(root, name, equipset->mWidget);
 
             auto equipment = equipset->mEquipment;
-
-            auto left = equipment->mLeft;
-            root[name]["lOption"] = left->option;
-            root[name]["lForm"] = left->option == 2 && left->form ? left->form->formID : 0;
-            root[name]["lHasExtra_first"] = left->hasExtra.first;
-            root[name]["lNumEnch"] = left->numEnch;
-            root[name]["lExtraData_first"] = left->hasExtra.first ? left->extraData.first->GetFormID() : 0;
-
-            root[name]["lHasExtra_second"] = left->hasExtra.second;
-            root[name]["lExtraData_second"] = left->extraData.second;
-
-            auto right = equipment->mRight;
-            root[name]["rOption"] = right->option;
-            root[name]["rForm"] = right->option == 2 && right->form ? right->form->formID : 0;
-            root[name]["rHasExtra_first"] = right->hasExtra.first;
-            root[name]["rNumEnch"] = right->numEnch;
-            root[name]["rExtraData_first"] = right->hasExtra.first ? right->extraData.first->GetFormID() : 0;
-            root[name]["rHasExtra_second"] = right->hasExtra.second;
-            root[name]["rExtraData_second"] = right->extraData.second;
-
-            auto shout = equipment->mShout;
-            root[name]["sOption"] = shout->option;
-            root[name]["sForm"] = shout->option == 2 && shout->form ? shout->form->formID : 0;
-
-            auto& items = equipment->mItems;
-            root[name]["mNumItems"] = items.size();
-            for (int j = 0; j < items.size(); j++) {
-                auto itemName = "Item_" + std::to_string(j);
-                root[name]["Items"][itemName]["form"] = items[j]->form ? items[j]->form->formID : 0;
-                root[name]["Items"][itemName]["hasExtra_first"] = items[j]->hasExtra.first;
-                root[name]["Items"][itemName]["numEnch"] = items[j]->numEnch;
-                root[name]["Items"][itemName]["extraData_first"] = items[j]->hasExtra.first ? items[j]->extraData.first->GetFormID() : 0;
-                root[name]["Items"][itemName]["hasExtra_second"] = items[j]->hasExtra.second;
-                root[name]["Items"][itemName]["extraData_second"] = items[j]->extraData.second;
+            if (!Json::SaveEquipment_Hand(root, name, equipment->mLeft, true)) {
+                logger::error("[{}] Failed to export Lefthand data.", equipset->mName);
+            }
+            if (!Json::SaveEquipment_Hand(root, name, equipment->mRight, false)) {
+                logger::error("[{}] Failed to export Righthand data.", equipset->mName);
+            }
+            if (!Json::SaveEquipment_Shout(root, name, equipment->mShout)) {
+                logger::error("[{}] Failed to export Shout/Power data.", equipset->mName);
+            }
+            if (!Json::SaveEquipment_Items(root, name, equipment->mItems)) {
+                logger::error("[{}] Failed to export Items data.", equipset->mName);
             }
 
             logger::debug("'{}' exported.", equipset->mName);
@@ -729,39 +1013,17 @@ void EquipsetManager::SaveEquipsetData()
 
             logger::trace("Exporting '{}'...", equipset->mName);
             
-            root[name]["mOrder"] = equipset->mOrder;
-            root[name]["mName"] = equipset->mName;
-
-            auto hotkey = equipset->mHotkey;
-            root[name]["mKeyCode"] = hotkey->mKeyCode;
-            root[name]["mModifier1"] = hotkey->mModifier[0];
-            root[name]["mModifier2"] = hotkey->mModifier[1];
-            root[name]["mModifier3"] = hotkey->mModifier[2];
-
-            auto option = equipset->mOption;
-            root[name]["mPersist"] = option->mPersist;
-            root[name]["mExpire"] = option->mExpire;
-            root[name]["mReset"] = option->mReset;
-            root[name]["mBeast"] = option->mBeast;
-
-            auto widget = equipset->mWidget;
-            root[name]["mHpos"] = widget->mHpos;
-            root[name]["mVpos"] = widget->mVpos;
-            root[name]["mDisplayWidget"] = widget->mDisplayWidget;
-            root[name]["mDisplayName"] = widget->mDisplayName;
-            root[name]["mDisplayHotkey"] = widget->mDisplayHotkey;
-
-            auto& items = equipset->mCycleItems;
-            root[name]["mNumItems"] = items.size();
-            for (int j = 0; j < items.size(); j++) {
-                auto itemName = "Item_" + std::to_string(j);
-                root[name]["Items"][itemName]["name"] = items[j];
-            }
+            Json::SaveOrder(root, name, equipset->mOrder);
+            Json::SaveName(root, name, equipset->mName);
+            Json::SaveHotkey(root, name, equipset->mHotkey);
+            Json::SaveCycleOption(root, name, equipset->mOption);
+            Json::SaveCycleWidget(root, name, equipset->mWidget);
+            Json::SaveCycleItems(root, name, equipset->mCycleItems);
 
             logger::debug("'{}' exported.", equipset->mName);
         }
 
-        logger::info("Total {} Equipsets exported.", size);
+        logger::info("Total {} Cycle Equipsets exported.", size);
     }
 
     Json::StyledWriter writer;
@@ -782,8 +1044,9 @@ void EquipsetManager::LoadEquipsetData()
     std::ifstream file("Data/SKSE/Plugins/UIHS/Equipset.json", std::ifstream::binary);
     if (!file.is_open()) {
         log::error("Unable to open Equipset.json file.");
-        return ;
+        return;
     }
+
     Json::Value root;
     file >> root;
     file.close();
@@ -797,119 +1060,28 @@ void EquipsetManager::LoadEquipsetData()
         for (int i = 0; i < size; i++) {
             std::string name = "Equipset_" + std::to_string(i);
 
-            int32_t mOrder = root[name].get("mOrder", 0).asInt();
-            std::string mName = root[name].get("mName", "").asString();
+            int32_t mOrder = Json::LoadOrder(root, name);
+            std::string mName = Json::LoadName(root, name);
 
             logger::trace("Loading '{}'...", mName);
 
-            Hotkey* hotkey = new Hotkey;
-            hotkey->mKeyCode = root[name].get("mKeyCode", -1).asInt();
-            hotkey->mModifier[0] = root[name].get("mModifier1", false).asBool();
-            hotkey->mModifier[1] = root[name].get("mModifier2", false).asBool();
-            hotkey->mModifier[2] = root[name].get("mModifier3", false).asBool();
-
-            Option* option = new Option;
-            option->mSound = root[name].get("mSound", false).asBool();
-            option->mToggleEquip = root[name].get("mToggleEquip", false).asBool();
-            option->mReEquip = root[name].get("mReEquip", false).asBool();
-            option->mBeast = root[name].get("mBeast", false).asBool();
-
-            Widget* widget = new Widget;
-            widget->mWidget = root[name].get("mWidget", "").asString();
-            widget->mHpos = root[name].get("mHpos", 0).asInt();
-            widget->mVpos = root[name].get("mVpos", 0).asInt();
-            widget->mDisplayWidget = root[name].get("mDisplayWidget", false).asBool();
-            widget->mDisplayName = root[name].get("mDisplayName", false).asBool();
-            widget->mDisplayHotkey = root[name].get("mDisplayHotkey", false).asBool();
+            Hotkey* hotkey = Json::LoadHotkey(root, name);
+            Option* option = Json::LoadOption(root, name);
+            Widget* widget = Json::LoadWidget(root, name);
 
             Equipment* equipment = new Equipment;
-            {
-                auto left = equipment->mLeft;
-                left->option = root[name].get("lOption", 0).asInt();
-                RE::FormID formID = root[name].get("lForm", 0).asInt64();
-                left->form = left->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-                left->hasExtra.first = root[name].get("lHasExtra_first", false).asBool();
-                left->numEnch = root[name].get("lNumEnch", 0).asInt();
-                RE::FormID enchantID = root[name].get("lExtraData_first", 0).asInt64();
-                RE::EnchantmentItem* enchantForm = left->hasExtra.first && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
-                left->extraData.first = left->hasExtra.first && enchantForm ? enchantForm : nullptr;
-                left->hasExtra.second = root[name].get("lHasExtra_second", false).asBool();
-                left->extraData.second = root[name].get("lExtraData_second", 0.0f).asFloat();
-                RE::ExtraDataList* xList;
-                xList = Extra::SearchExtraList(left->form, left->numEnch, left->extraData.first, left->extraData.second);
-                left->xList = xList;
-
-                if (!left->form) {
-                    left->option = static_cast<int32_t>(MCM::eAction::Nothing);
-                    logger::error("[{}] Failed to load Lefthand data.", mName);
-                }
+            if (!Json::LoadEquipment_Hand(root, name, equipment->mLeft, true)) {
+                logger::error("[{}] Failed to load Lefthand data.", mName);
             }
-            {
-                auto right = equipment->mRight;
-                right->option = root[name].get("rOption", 0).asInt();
-                RE::FormID formID = root[name].get("rForm", 0).asInt64();
-                right->form = right->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-                right->hasExtra.first = root[name].get("rHasExtra_first", false).asBool();
-                right->numEnch = root[name].get("rNumEnch", 0).asInt();
-                RE::FormID enchantID = root[name].get("rExtraData_first", 0).asInt64();
-                RE::EnchantmentItem* enchantForm = right->hasExtra.first && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
-                right->extraData.first = right->hasExtra.first && enchantForm  ? enchantForm : nullptr;
-                right->hasExtra.second = root[name].get("rHasExtra_second", false).asBool();
-                right->extraData.second = root[name].get("rExtraData_second", 0.0f).asFloat();
-                RE::ExtraDataList* xList;
-                xList = Extra::SearchExtraList(right->form, right->numEnch, right->extraData.first, right->extraData.second);
-                right->xList = xList;
-
-                if (!right->form) {
-                    right->option = static_cast<int32_t>(MCM::eAction::Nothing);
-                    logger::error("[{}] Failed to load Righthand data.", mName);
-                }
+            if (!Json::LoadEquipment_Hand(root, name, equipment->mRight, false)) {
+                logger::error("[{}] Failed to load Righthand data.", mName);
             }
-            {
-                auto shout = equipment->mShout;
-                shout->option = root[name].get("sOption", 0).asInt();
-                RE::FormID formID = root[name].get("sForm", 0).asInt();
-                shout->form = shout->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-
-                if (!shout->form) {
-                    shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
-                    logger::error("[{}] Failed to load Shout data.", mName);
-                }
+            if (!Json::LoadEquipment_Shout(root, name, equipment->mShout)) {
+                logger::error("[{}] Failed to load Shout/Power data.", mName);
             }
-
-            auto& items = equipment->mItems;
-            int numItems = root[name].get("mNumItems", 0).asInt();
-            for (int j = 0; j < numItems; j++) {
-                Equipment::Items* item = new Equipment::Items;
-
-                auto itemName = "Item_" + std::to_string(j);
-                RE::FormID formID = root[name]["Items"][itemName].get("form", 0).asInt64();
-                RE::TESForm* form = formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-                if (form) {
-                    item->form = form;
-                }
-                bool hasItemsExtraEnch = root[name]["Items"][itemName].get("hasExtra_first", false).asBool();
-                uint32_t numItemsEnch = root[name]["Items"][itemName].get("numEnch", 0).asInt();
-                item->numEnch = numItemsEnch;
-                RE::FormID enchantID = root[name]["Items"][itemName].get("extraData_first", 0).asInt64();
-                RE::EnchantmentItem* enchantForm = hasItemsExtraEnch && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
-                bool hasItemsExtraTemp = root[name]["Items"][itemName].get("hasExtra_second", false).asBool();
-                item->hasExtra = std::make_pair(hasItemsExtraEnch, hasItemsExtraTemp);
-                float itemsExtraTemp = hasItemsExtraTemp ? root[name]["Items"][itemName].get("extraData_second", 0).asFloat() : 0.0f;
-                item->extraData = std::make_pair(enchantForm, itemsExtraTemp);
-                RE::ExtraDataList* xList;
-                xList = Extra::SearchExtraList(item->form, item->numEnch, item->extraData.first, item->extraData.second);
-                item->xList = xList;
-
-                if (form) {
-                    items.push_back(item);
-                }
-                else {
-                    delete item;
-                    logger::error("[{}] Failed to load Items data.", mName);
-                }
+            if (!Json::LoadEquipment_Items(root, name, equipment->mItems)) {
+                logger::error("[{}] Failed to load Items data.", mName);
             }
-            
 
             manager->NewEquipset(mOrder, mName, hotkey, option, widget, equipment);
 
@@ -927,37 +1099,15 @@ void EquipsetManager::LoadEquipsetData()
         for (int i = 0; i < size; i++) {
             std::string name = "CycleEquipset_" + std::to_string(i);
 
-            int32_t mOrder = root[name].get("mOrder", 0).asInt();
-            std::string mName = root[name].get("mName", "").asString();
+            int32_t mOrder = Json::LoadOrder(root, name);
+            std::string mName = Json::LoadName(root, name);
 
             logger::trace("Loading '{}'...", mName);
 
-            Hotkey* hotkey = new Hotkey;
-            hotkey->mKeyCode = root[name].get("mKeyCode", -1).asInt();
-            hotkey->mModifier[0] = root[name].get("mModifier1", false).asBool();
-            hotkey->mModifier[1] = root[name].get("mModifier2", false).asBool();
-            hotkey->mModifier[2] = root[name].get("mModifier3", false).asBool();
-
-            CycleOption* option = new CycleOption;
-            option->mPersist = root[name].get("mPersist", false).asBool();
-            option->mExpire = root[name].get("mExpire", false).asBool();
-            option->mReset = root[name].get("mReset", false).asBool();
-            option->mBeast = root[name].get("mBeast", false).asBool();
-
-            Widget* widget = new Widget;
-            widget->mHpos = root[name].get("mHpos", 0).asInt();
-            widget->mVpos = root[name].get("mVpos", 0).asInt();
-            widget->mDisplayWidget = root[name].get("mDisplayWidget", false).asBool();
-            widget->mDisplayName = root[name].get("mDisplayName", false).asBool();
-            widget->mDisplayHotkey = root[name].get("mDisplayHotkey", false).asBool();
-
-            std::vector<std::string> items;
-            size_t itemsSize = root[name].get("mNumItems", 0).asInt();
-            for (int j = 0; j < itemsSize; j++) {
-                auto itemName = "Item_" + std::to_string(j);
-                std::string cycleItemsName = root[name]["Items"][itemName].get("name", 0).asString();
-                items.push_back(cycleItemsName);
-            }
+            Hotkey* hotkey = Json::LoadHotkey(root, name);
+            CycleOption* option = Json::LoadCycleOption(root, name);
+            Widget* widget = Json::LoadCycleWidget(root, name);
+            std::vector<std::string> items = Json::LoadCycleItems(root, name);
 
             manager->NewCycleEquipset(mOrder, mName, hotkey, option, widget, items, std::make_pair(0, -1));
 

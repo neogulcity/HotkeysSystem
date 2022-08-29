@@ -142,9 +142,9 @@ void Equipset::Equip()
     std::vector<bool> UnequipItems(mEquipment->mItems.size(), false);
     std::vector<bool> EquipItems(mEquipment->mItems.size(), false);
 
-    UnequipLeft = mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipLeft;
-    UnequipRight = mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipRight;
-    UnequipShout = mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Unequip) ? true : UnequipShout;
+    UnequipLeft = mEquipment->mLeft->option == MCM::eAction::Unequip ? true : UnequipLeft;
+    UnequipRight = mEquipment->mRight->option == MCM::eAction::Unequip ? true : UnequipRight;
+    UnequipShout = mEquipment->mShout->option == MCM::eAction::Unequip ? true : UnequipShout;
     
     RE::TESForm* equippedRight = playerref->GetEquippedObject(false);
     RE::TESForm* equippedLeft = playerref->GetEquippedObject(true);
@@ -152,43 +152,43 @@ void Equipset::Equip()
 
     // Toggle equip/unequip option Off & Re equip option On
     if (!mOption->mToggleEquip && mOption->mReEquip) {
-        if (mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mLeft->option == MCM::eAction::Equip) {
             UnequipLeft = true;
             EquipLeft = true;
         }
 
-        if (mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mRight->option == MCM::eAction::Equip) {
             UnequipRight = true;
             EquipRight = true;
         }
 
-        if (mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mShout->option == MCM::eAction::Equip) {
             UnequipShout = true;
             EquipShout = true;
         }
 
-        for (int i = 0; i < mEquipment->mItems.size(); ++i) {
+        for (int i = 0; i < mEquipment->mItems.size(); i++) {
             UnequipItems[i] = true;
             EquipItems[i] = true;
         }
     }
     else {
         // Toggle equip/unequip option Off & Re equip option Off
-        if (mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mLeft->option == MCM::eAction::Equip) {
             if (!equippedLeft)
                 EquipLeft = true;
 
             else if (equippedLeft->GetFormID() != mEquipment->mLeft->form->GetFormID())
                 EquipLeft = true;
         }
-        if (mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mRight->option == MCM::eAction::Equip) {
             if (!equippedRight)
                 EquipRight = true;
 
             else if (equippedRight->GetFormID() != mEquipment->mRight->form->GetFormID())
                 EquipRight = true;
         }
-        if (mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (mEquipment->mShout->option == MCM::eAction::Equip) {
             if (!equippedShout)
                 EquipShout = true;
 
@@ -196,27 +196,32 @@ void Equipset::Equip()
                 EquipShout = true;
         }
         uint32_t count = 0;
+
         if (mEquipment->mItems.size() > 0) {
-            std::vector<RE::TESForm*> items = GetAllEquippedItems();
-            std::vector<RE::FormID> itemsID(mEquipment->mItems.size(), 0);
+            std::vector<RE::FormID> itemsID;
             std::vector<bool> isEquipped(mEquipment->mItems.size(), 0);
 
+            std::vector<RE::TESForm*> items = GetAllEquippedItems();
             for (const auto& elem : items) {
                 if (elem) {
                     itemsID.push_back(elem->GetFormID());
                 }
+                else {
+                    itemsID.push_back(0);
+                    logger::warn("While getting equipped items, nullptr sent.");
+                }
             }
 
-            for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
-                for (int j = 0; j < items.size(); ++j) {
-                    if (itemsID[j] == mEquipment->mItems[j]->form->GetFormID()) {
+            for (int i = 0; i < mEquipment->mItems.size(); i++) {
+                for (int j = 0; j < itemsID.size(); ++j) {
+                    if (!mEquipment->mItems[i]->form && itemsID[j] == mEquipment->mItems[i]->form->GetFormID()) {
                         isEquipped[i] = true;
                         ++count;
                     }
                 }
             }
 
-            for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
+            for (int i = 0; i < mEquipment->mItems.size(); i++) {
                 if (!isEquipped[i]) {
                     EquipItems[i] = true;
                 }
@@ -274,24 +279,24 @@ void Equipset::Equip()
     */
 
     for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
-        if (UnequipItems[i]) {
+        if (UnequipItems[i] && mEquipment->mItems[i]->form) {
             UnequipItem(mEquipment->mItems[i]->form, nullptr, mOption->mSound, mEquipment->mItems[i]->xList);
         }
     }
 
-    if (EquipLeft && mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+    if (EquipLeft && mEquipment->mLeft->form && mEquipment->mLeft->option == MCM::eAction::Equip ) {
         EquipItem(mEquipment->mLeft->form, GetLeftHandSlot(), mOption->mSound, mEquipment->mLeft->xList);
     }
 
-    if (EquipRight && mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+    if (EquipRight && mEquipment->mRight->form && mEquipment->mRight->option == MCM::eAction::Equip) {
         EquipItem(mEquipment->mRight->form, GetRightHandSlot(), mOption->mSound, mEquipment->mRight->xList);
     }
-    if (EquipShout && mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+    if (EquipShout && mEquipment->mShout->form && mEquipment->mShout->option == MCM::eAction::Equip) {
         EquipItem(mEquipment->mShout->form, nullptr, mOption->mSound, nullptr);
     }
 
     for (uint32_t i = 0; i < mEquipment->mItems.size(); i++) {
-        if (EquipItems[i]) {
+        if (EquipItems[i] && mEquipment->mItems[i]->form) {
             if (mEquipment->mItems[i]->form->GetFormType() == RE::FormType::Light) {
                 RE::TESForm* form = playerref->GetEquippedObject(false);
                 if (form) {
@@ -330,8 +335,7 @@ void Equipset::Equip()
         return;
     }
 
-    MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
-    if (type == MCM::eWidgetDisplay::InCombat) {
+    if (dataHolder->widget->mDisplay == MCM::eWidgetDisplay::InCombat) {
         if (dataHolder->widget->mDelay != 0.0f) {
             manager->DissolveOut_Function();
             if (!manager->IsThreadWorking()) {
@@ -374,7 +378,13 @@ void CycleEquipset::Equip()
 
     // Cycle persist option On and it's not first time to execute cycle EquipSet
     if (mOption->mPersist && mCycleIndex.second != -1) {
-        auto prevEquipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.second]);
+        uint32_t searchIndex = mCycleIndex.second;
+        if (searchIndex > mCycleItems.size() - 1) {
+            logger::warn("[{}] Cycle index out of vector bounds.", this->mName);
+            return;
+        }
+
+        auto prevEquipset = manager->SearchEquipsetByName(mCycleItems[searchIndex]);
         if (!prevEquipset) {
             log::warn("Failed to search Equipest by name.");
             return;
@@ -392,7 +402,7 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (prevEquipset->mEquipment->mLeft->option == static_cast<int32_t>(MCM::eAction::Equip)) {
+        if (prevEquipset->mEquipment->mLeft->option == MCM::eAction::Equip) {
             RE::TESForm* form = playerref->GetEquippedObject(true);
             auto left = prevEquipset->mEquipment->mLeft->form;
 
@@ -405,7 +415,7 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (prevEquipset->mEquipment->mRight->option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
+        if (prevEquipset->mEquipment->mRight->option == MCM::eAction::Equip && !IsChanged) {
             RE::TESForm* form = playerref->GetEquippedObject(false);
             auto right = prevEquipset->mEquipment->mRight->form;
 
@@ -418,7 +428,7 @@ void CycleEquipset::Equip()
             }
         }
 
-        if (prevEquipset->mEquipment->mShout->option == static_cast<int32_t>(MCM::eAction::Equip) && !IsChanged) {
+        if (prevEquipset->mEquipment->mShout->option == MCM::eAction::Equip && !IsChanged) {
             RE::TESForm* form = Actor::GetEquippedShout(playerref);
             auto shout = prevEquipset->mEquipment->mShout->form;
 
@@ -432,12 +442,11 @@ void CycleEquipset::Equip()
         }
 
         if (!IsChanged) {
-            for (uint32_t i = 0; i < prevEquipset->mEquipment->mItems.size(); ++i) {
+            for (const auto& item : prevEquipset->mEquipment->mItems) {
                 int count = 0;
 
-                for (int j = 0; j < items.size(); j++) {
-                    auto item = prevEquipset->mEquipment->mItems[i]->form;
-                    if (item && itemsID[j] == item->GetFormID()) {
+                for (int i = 0; i < items.size(); i++) {
+                    if (item->form && itemsID[i] == item->form->GetFormID()) {
                         ++count;
                     }
                 }
@@ -452,7 +461,13 @@ void CycleEquipset::Equip()
         if (IsChanged) {
             mCycleIndex.first = mCycleIndex.first <= 0 ? mCycleItems.size() - 1 : --mCycleIndex.first;
 
-            auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
+            searchIndex = mCycleIndex.first;
+            if (searchIndex > mCycleItems.size() - 1) {
+                logger::warn("[{}] Cycle index out of vector bounds.", this->mName);
+                return;
+            }
+
+            auto equipset = manager->SearchEquipsetByName(mCycleItems[searchIndex]);
             if (!equipset) {
                 log::warn("Failed to search Equipset by name");
             }
@@ -474,7 +489,13 @@ void CycleEquipset::Equip()
 
         // Equipped weapons, spells, shout, items are not changed so, Go forward.
         else {
-            auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
+            searchIndex = mCycleIndex.first;
+            if (searchIndex > mCycleItems.size() - 1) {
+                logger::warn("[{}] Cycle index out of vector bounds.", this->mName);
+                return;
+            }
+
+            auto equipset = manager->SearchEquipsetByName(mCycleItems[searchIndex]);
             if (!equipset) {
                 log::warn("Failed to search Equipset by name");
             }
@@ -495,7 +516,13 @@ void CycleEquipset::Equip()
     }
     // Cycle persist option Off or It's first time to execute cycle EquipSet
     else {
-        auto equipset = manager->SearchEquipsetByName(mCycleItems[mCycleIndex.first]);
+        uint32_t searchIndex = mCycleIndex.first;
+        if (searchIndex > mCycleItems.size() - 1) {
+            logger::warn("[{}] Cycle index out of vector bounds.", this->mName);
+            return;
+        }
+
+        auto equipset = manager->SearchEquipsetByName(mCycleItems[searchIndex]);
         if (!equipset) {
             log::warn("Failed to search Equipset by name");
         }
@@ -585,8 +612,7 @@ bool CycleEquipset::Expire_Function()
     }
 
     if (!IsExpireClosing()) {
-        MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
-        if (type == MCM::eWidgetDisplay::InCombat) {
+        if (dataHolder->widget->mDisplay == MCM::eWidgetDisplay::InCombat) {
             if (dataHolder->widget->mDelay != 0.0f) {
                 manager->DissolveOut_Function();
                 if (manager->IsThreadWorking()) {
@@ -598,12 +624,12 @@ bool CycleEquipset::Expire_Function()
             }
         }
 
-        if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
+        if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0 && mCycleIndex.first < mWidget->mWidgetID.size()) {
             widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.first], 0);
             widgetHandler->SetAlpha(mWidget->mWidgetID[0], 100);
             widgetHandler->Animate(mWidget->mWidgetID[0]);
         }
-        if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
+        if (mWidget->mDisplayName && mWidget->mNameID.size() > 0 && mCycleIndex.first < mWidget->mNameID.size()) {
             widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.first], 0);
             widgetHandler->SetAlpha(mWidget->mNameID[0], 100);
             widgetHandler->Animate(mWidget->mNameID[0]);
@@ -651,12 +677,12 @@ bool CycleEquipset::Reset_Function()
     }
  
     if (!IsResetClosing()) {
-        if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0) {
+        if (mWidget->mDisplayWidget && mWidget->mWidgetID.size() > 0  && mCycleIndex.first < mWidget->mWidgetID.size()) {
             widgetHandler->SetAlpha(mWidget->mWidgetID[mCycleIndex.first], 0);
             widgetHandler->SetAlpha(mWidget->mWidgetID[0], 100);
             widgetHandler->Animate(mWidget->mWidgetID[0]);
         }
-        if (mWidget->mDisplayName && mWidget->mNameID.size() > 0) {
+        if (mWidget->mDisplayName && mWidget->mNameID.size() > 0  && mCycleIndex.first < mWidget->mNameID.size()) {
             widgetHandler->SetAlpha(mWidget->mNameID[mCycleIndex.first], 0);
             widgetHandler->SetAlpha(mWidget->mNameID[0], 100);
             widgetHandler->Animate(mWidget->mNameID[0]);

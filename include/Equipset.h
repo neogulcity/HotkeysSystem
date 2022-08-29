@@ -1,7 +1,7 @@
 #pragma once
 
 namespace MCM {
-    enum class eAction;
+    enum eAction;
 }
 
 using namespace SKSE;

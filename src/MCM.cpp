@@ -30,7 +30,7 @@ namespace MCM {
         for (int i = 0; i < jValue.size(); ++i) {
             std::string name = jValue[i].asString();
             std::string path = root["Path"].get(name, "").asString();
-            if (path != "") {
+            if (path != "" && name != "") {
                 dataHolder->list->mWidgetList.push_back(std::make_pair(name, path));
             }
         }
@@ -142,6 +142,7 @@ namespace MCM {
         for (auto& elem : result) {
             auto& name = std::get<0>(elem);
             name = name == "" ? std::get<1>(elem)->GetName() : name;
+            name = name == "" ? "_HIDDEN_" : name;
             dataHolder->list->mWeaponList.push_back(elem);
         }
     }
@@ -208,6 +209,8 @@ namespace MCM {
         dataHolder->list->mShoutList.push_back(std::make_pair("$UIHS_Unequip", nullptr));
 
         for (int i = 0; i < result.size(); i++) {
+            auto& name = result[i].first;
+            name = name == "" ? "_HIDDEN_" : name;
             dataHolder->list->mShoutList.push_back(result[i]);
         }
     }
@@ -298,6 +301,7 @@ namespace MCM {
         for (auto& elem : result) {
             auto& name = std::get<0>(elem);
             name = name == "" ? std::get<1>(elem)->GetName() : name;
+            name = name == "" ? "_HIDDEN_" : name;
             dataHolder->list->mItemsList.push_back(elem);
         }
     }
@@ -320,7 +324,9 @@ namespace MCM {
 
         auto list = manager->GetSortedEquipsetList();
         for (const auto& elem : list) {
-            result.push_back(elem);
+            if (elem != "") {
+                result.push_back(elem);
+            }
         }
 
         dataHolder->list->mCycleItemsList = result;
@@ -343,7 +349,9 @@ namespace MCM {
 
         const Json::Value jValue = root["Font"];
         for (int i = 0; i < jValue.size(); ++i) {
-            dataHolder->list->mFontList.push_back(jValue[i].asString());
+            if (jValue[i].asString() != "") {
+                dataHolder->list->mFontList.push_back(jValue[i].asString());
+            }
         }
     }
 
@@ -446,19 +454,12 @@ namespace MCM {
             return;
         }
 
-        std::vector<std::pair<std::string, std::string>> widget;
-        std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> weapon;
-        std::vector<std::pair<std::string, RE::TESForm*>> shout;
-        std::vector<std::tuple<std::string, RE::TESForm*, RE::ExtraDataList*>> items;
-        std::vector<std::string> CycleItems;
-        std::vector<std::string> font;
-
-        dataHolder->list->mWidgetList = widget;
-        dataHolder->list->mWeaponList = weapon;
-        dataHolder->list->mShoutList = shout;
-        dataHolder->list->mItemsList = items;
-        dataHolder->list->mCycleItemsList = CycleItems;
-        dataHolder->list->mFontList = font;
+        dataHolder->list->mWidgetList.clear();
+        dataHolder->list->mWeaponList.clear();
+        dataHolder->list->mShoutList.clear();
+        dataHolder->list->mItemsList.clear();
+        dataHolder->list->mCycleItemsList.clear();
+        dataHolder->list->mFontList.clear();
     }
 
     bool IsInventoryInit()
