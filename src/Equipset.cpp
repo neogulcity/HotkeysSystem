@@ -199,7 +199,7 @@ void Equipset::Equip()
 
         if (mEquipment->mItems.size() > 0) {
             std::vector<RE::FormID> itemsID;
-            std::vector<bool> isEquipped(mEquipment->mItems.size(), 0);
+            std::vector<bool> isEquipped(mEquipment->mItems.size(), false);
 
             std::vector<RE::TESForm*> items = GetAllEquippedItems();
             for (const auto& elem : items) {
@@ -208,13 +208,12 @@ void Equipset::Equip()
                 }
                 else {
                     itemsID.push_back(0);
-                    logger::warn("While getting equipped items, nullptr sent.");
                 }
             }
 
             for (int i = 0; i < mEquipment->mItems.size(); i++) {
                 for (int j = 0; j < itemsID.size(); ++j) {
-                    if (!mEquipment->mItems[i]->form && itemsID[j] == mEquipment->mItems[i]->form->GetFormID()) {
+                    if (mEquipment->mItems[i]->form && itemsID[j] == mEquipment->mItems[i]->form->GetFormID()) {
                         isEquipped[i] = true;
                         ++count;
                     }
