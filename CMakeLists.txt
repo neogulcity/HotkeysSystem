@@ -6,7 +6,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ########################################################################################################################
 project(
         HotkeysSystem
-        VERSION 1.0.3
+        VERSION 1.0.4
         DESCRIPTION "A SKSE plugin built with CommonLibSSE."
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
