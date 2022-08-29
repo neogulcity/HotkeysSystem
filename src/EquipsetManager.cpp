@@ -78,13 +78,15 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
         left->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
         left->numEnch = Extra::GetNumEnchantment(xList);
         left->xList = xList;
-        if (!left->form) {
-            logger::error("[{}] Failed to Edit Lefthand data.", name);
-            left->option = MCM::eAction::Nothing;
-        }
-        else if (left->hasExtra.first && !left->extraData.first) {
-            logger::error("[{}] Failed to Edit Lefthand data.", name);
-            left->option = MCM::eAction::Nothing;
+        if (left->option == MCM::eAction::Equip) {
+            if (!left->form) {
+                logger::error("[{}] Failed to Edit Lefthand data.", name);
+                left->option = MCM::eAction::Nothing;
+            }
+            else if (left->hasExtra.first && !left->extraData.first) {
+                logger::error("[{}] Failed to Edit Lefthand data.", name);
+                left->option = MCM::eAction::Nothing;
+            }
         }
 
         auto right = equipment->mRight;
@@ -110,13 +112,15 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
         right->extraData = std::make_pair(Extra::GetEnchantment(xList), Extra::GetHealth(xList));
         right->numEnch = Extra::GetNumEnchantment(xList);
         right->xList = xList;
-        if (!right->form) {
-            logger::error("[{}] Failed to Edit Righthand data.", name);
-            right->option = MCM::eAction::Nothing;
-        }
-        else if (right->hasExtra.first && !right->extraData.first) {
-            logger::error("[{}] Failed to Edit Righthand data.", name);
-            right->option = MCM::eAction::Nothing;
+        if (right->option == MCM::eAction::Equip) {
+            if (!right->form) {
+                logger::error("[{}] Failed to Edit Righthand data.", name);
+                right->option = MCM::eAction::Nothing;
+            }
+            else if (right->hasExtra.first && !right->extraData.first) {
+                logger::error("[{}] Failed to Edit Righthand data.", name);
+                right->option = MCM::eAction::Nothing;
+            }
         }
 
         auto shout = equipment->mShout;
@@ -134,9 +138,11 @@ void EquipsetManager::EditEquipset(std::string _name, std::vector<std::string> _
                 shout->option = MCM::eAction::Equip;
         }
         shout->form = holder->list->mShoutList[std::stoi(_data[17])].second;
-        if (!shout->form) {
-            logger::error("[{}] Failed to Edit Shout/Power data.", name);
-            shout->option = MCM::eAction::Nothing;
+        if (shout->option == MCM::eAction::Equip) {
+            if (!shout->form) {
+                logger::error("[{}] Failed to Edit Shout/Power data.", name);
+                shout->option = MCM::eAction::Nothing;
+            }
         }
 
         auto& items = equipment->mItems;
