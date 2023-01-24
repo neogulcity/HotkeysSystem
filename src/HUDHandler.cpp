@@ -1,95 +1,69 @@
 #include "HUDHandler.h"
-#include "EquipsetManager.h"
 #include "WidgetHandler.h"
-#include "MCM.h"
+#include "EquipsetManager.h"
+#include "Equipment.h"
+#include "Config.h"
 
-void HUDHandler::Register()
-{
-	auto ui = RE::UI::GetSingleton();
-	ui->AddEventSink<RE::MenuOpenCloseEvent>(HUDHandler::GetSingleton());
-	logger::info("Registered MenuOpenCloseEvent");
+void HUDHandler::Register() {
+    auto ui = RE::UI::GetSingleton();
+    if(!ui) return;
+
+    auto hud = HUDHandler::GetSingleton();
+    if (!hud) return;
+
+    ui->AddEventSink<RE::MenuOpenCloseEvent>(hud);
+    logger::info("{} Registered.", typeid(RE::MenuOpenCloseEvent).name());
 }
 
-void InitWidget()
-{
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
-	auto manager = &UIHS::EquipsetManager::GetSingleton();
-	manager->InitWidget();
+HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _event,
+                                                 RE::BSTEventSource<RE::MenuOpenCloseEvent>* _eventSource) {
+    if (!_event) {
+        return EventResult::kContinue;
+    }
 
-	auto widgetHandler = WidgetHandler::GetSingleton();
-	if (!widgetHandler) {
-		return;
-	}
+    auto intfcStr = RE::InterfaceStrings::GetSingleton();
+    if (!intfcStr) return EventResult::kContinue;
 
-	auto dataHolder = MCM::DataHolder::GetSingleton();
-	if (!dataHolder) {
-		return;
-	}
+    auto widgetHandler = WidgetHandler::GetSingleton();
+    if (!widgetHandler) return EventResult::kContinue;
 
-	auto playerref = RE::PlayerCharacter::GetSingleton();
-	if (!playerref) {
-		return;
-	}
+    auto config = ConfigHandler::GetSingleton();
+    if (!config) return EventResult::kContinue;
 
-	MCM::eWidgetDisplay type = static_cast<MCM::eWidgetDisplay>(dataHolder->widget->mDisplay);
-	if (type == MCM::eWidgetDisplay::InCombat) {
-		if (!playerref->IsInCombat()) {
-			widgetHandler->SetMenuAlpha(0);
-		}
-	}
-}
+    if (_event->menuName == intfcStr->loadingMenu && !(_event->opening)) {
+        auto equipment = EquipmentManager::GetSingleton();
+        if (!equipment) return EventResult::kContinue;
 
-HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _event, RE::BSTEventSource<RE::MenuOpenCloseEvent>*)
-{
-	if (!_event) {
-		return EventResult::kContinue;
-	}
+        auto equipset = EquipsetManager::GetSingleton();
+        if (!equipset) return EventResult::kContinue;
 
-	auto intfcStr = RE::InterfaceStrings::GetSingleton();
-	if (!intfcStr) {
-		return EventResult::kContinue;
-	}
+        widgetHandler->OpenWidgetMenu();
+        
+        if (config->Widget.General.animDelay != 0.0f &&
+            config->Widget.General.displayMode == (uint32_t)Config::DisplayType::INCOMBAT) {
+            widgetHandler->SetMenuAlpha(0);
+        }
 
-	auto widgetHandler = WidgetHandler::GetSingleton();
-	if (!widgetHandler) {
-		return EventResult::kContinue;
-	}
-	
-	auto dataHolder = MCM::DataHolder::GetSingleton();
-	if (!dataHolder) {
-		return EventResult::kContinue;
-	}
+        equipment->RemoveAllArmorWidget();
+        equipment->RemoveAllWeaponWidget();
+        equipment->RemoveAllShoutWidget();
+        equipset->RemoveAllWidget();
+        equipment->CreateAllArmorWidget();
+        equipment->CreateAllWeaponWidget();
+        equipment->CreateAllShoutWidget();
+        equipset->CreateAllWidget();
+    }
 
-	if (!dataHolder->setting->mWidgetActive) {
-		return EventResult::kContinue;
-	}
+    if (_event->menuName == intfcStr->mapMenu || _event->menuName == intfcStr->inventoryMenu ||
+        _event->menuName == intfcStr->magicMenu || _event->menuName == intfcStr->tweenMenu ||
+        _event->menuName == intfcStr->dialogueMenu || _event->menuName == intfcStr->barterMenu ||
+        _event->menuName == intfcStr->craftingMenu || _event->menuName == intfcStr->containerMenu) {
+        if (_event->opening) {
+            widgetHandler->SetMenuVisible(false);
+        } else {
+            widgetHandler->SetMenuVisible(true);
+        }
+    }
 
-	if (!RE::UI::GetSingleton()->IsMenuOpen(RE::HUDMenu::MENU_NAME)) {
-		return EventResult::kContinue;
-	}
-
-	if (_event->menuName == intfcStr->loadingMenu) {
-		if (!_event->opening) {
-			auto thread = std::thread(InitWidget);
-			thread.detach();
-		}
-	}
-
-	if (_event->menuName == intfcStr->mapMenu ||
-		_event->menuName == intfcStr->inventoryMenu ||
-		_event->menuName == intfcStr->magicMenu ||
-		_event->menuName == intfcStr->tweenMenu ||
-		_event->menuName == intfcStr->dialogueMenu ||
-		_event->menuName == intfcStr->barterMenu ||
-		_event->menuName == intfcStr->craftingMenu) {
-	
-		if (_event->opening) {
-			widgetHandler->SetMenuVisible(false);
-		}
-		else {
-			widgetHandler->SetMenuVisible(true);
-		}
-	}
-
-	return EventResult::kContinue;
+    return EventResult::kContinue;
 }

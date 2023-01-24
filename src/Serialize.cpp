@@ -1,1119 +1,376 @@
-#include <fstream>
-#include "json/json.h"
-
+#include "Serialize.h"
 #include "EquipsetManager.h"
-#include "ExtraData.h"
+#include "Equipment.h"
 
-using namespace UIHS;
+#include <filesystem>
+#include <toml++/toml.h>
 
-namespace UIHS {
-    // These four-character record types, which store data in the SKSE cosave, are little-endian. That means they are
-    // reversed from the character order written here. Using the byteswap functions reverses them back to the order
-    // the characters are written in the source code.
-    inline const auto EquipsetRecord = _byteswap_ulong('HSER');
-    inline const auto CycleEquipsetRecord = _byteswap_ulong('HSCR');
+static void WriteString(SKSE::SerializationInterface* serde, const std::string& _data) {
+    if (!serde) return;
+
+    uint32_t length = _data.length();
+    serde->WriteRecordData(&length, sizeof(length));
+    serde->WriteRecordData(_data.c_str(), length);
 }
 
-namespace SKSE {
-    void SaveOrder(SerializationInterface* _serde, const uint32_t& _order)
-    {
-        _serde->WriteRecordData(&_order, sizeof(_order));
-    }
+static void ReadString(SKSE::SerializationInterface* serde, std::string* _dataOut) {
+    if (!serde) return;
 
-    void SaveName(SerializationInterface* _serde, const std::string& _name)
-    {
-        size_t nameSize = _name.length();
-        _serde->WriteRecordData(&nameSize, sizeof(nameSize));
-        for (auto& elem : _name) {
-            _serde->WriteRecordData(&elem, sizeof(elem));
+    uint32_t length;
+    serde->ReadRecordData(&length, sizeof(length));
+
+    _dataOut->resize(length);
+    serde->ReadRecordData(const_cast<char*>(_dataOut->c_str()), length);
+}
+
+static uint16_t GetVersionMajor() {
+    auto plugin = SKSE::PluginDeclaration::GetSingleton();
+    if (!plugin) return 0;
+
+    return plugin->GetVersion().major();
+}
+
+namespace Serialize {
+    const auto EquipsetRecord = _byteswap_ulong('HSER');
+    const std::filesystem::path equipset_path = "Data/SKSE/Plugins/UIHS/Equipset.toml";
+
+    bool ExportEquipset(Type _type, SKSE::SerializationInterface* serde) {
+        auto manager = EquipsetManager::GetSingleton();
+        if (!manager) return false;
+
+        if (_type == Type::SAVE && !serde) return false;
+
+        const auto& equipsetVec = manager->equipsetVec;
+
+        auto mainTbl = toml::table{
+            {"Init",
+             toml::table{
+                 {"equipset_count", (uint32_t)equipsetVec.size()},
+             }},
+        };
+
+        for (int i = 0; i < equipsetVec.size(); i++) {
+            if (equipsetVec[i]->type == Equipset::TYPE::NORMAL) {
+                auto equipset = static_cast<NormalSet*>(equipsetVec[i]);
+
+                toml::array itemsArr;
+                for (auto item : equipset->items) {
+                    itemsArr.push_back(item.Pack());
+                }
+
+                auto tbl = toml::table{
+                    {"equipset_type", static_cast<uint32_t>(equipset->type)},
+                    {"equipset_name", equipset->name},
+                    {"equipset_hotkey", equipset->hotkey},
+                    {"equipset_modifier1", equipset->modifier1},
+                    {"equipset_modifier2", equipset->modifier2},
+                    {"equipset_modifier3", equipset->modifier3},
+                    {"equipset_order", equipset->order},
+                    {"equipset_equipSound", equipset->equipSound},
+                    {"equipset_toggleEquip", equipset->toggleEquip},
+                    {"equipset_reEquip", equipset->reEquip},
+                    {"equipset_widgetIcon", equipset->widgetIcon.Pack()},
+                    {"equipset_widgetName", equipset->widgetName.Pack()},
+                    {"equipset_widgetHotkey", equipset->widgetHotkey.Pack()},
+                    {"equipset_lefthand", equipset->lefthand.Pack()},
+                    {"equipset_righthand", equipset->righthand.Pack()},
+                    {"equipset_shout", equipset->shout.Pack()},
+                    {"equipset_itemsCount", (uint32_t)equipset->items.size()},
+                    {"equipset_itemsArr", itemsArr},
+                };
+
+                mainTbl.insert(std::to_string(i), tbl);
+
+            } else if (equipsetVec[i]->type == Equipset::TYPE::POTION) {
+                auto equipset = static_cast<PotionSet*>(equipsetVec[i]);
+
+                toml::array itemsArr;
+                for (auto item : equipset->items) {
+                    itemsArr.push_back(item.Pack());
+                }
+
+                auto tbl = toml::table{
+                    {"equipset_type", static_cast<uint32_t>(equipset->type)},
+                    {"equipset_name", equipset->name},
+                    {"equipset_hotkey", equipset->hotkey},
+                    {"equipset_modifier1", equipset->modifier1},
+                    {"equipset_modifier2", equipset->modifier2},
+                    {"equipset_modifier3", equipset->modifier3},
+                    {"equipset_order", equipset->order},
+                    {"equipset_equipSound", equipset->equipSound},
+                    {"equipset_calcDuration", equipset->calcDuration},
+                    {"equipset_widgetIcon", equipset->widgetIcon.Pack()},
+                    {"equipset_widgetName", equipset->widgetName.Pack()},
+                    {"equipset_widgetAmount", equipset->widgetAmount.Pack()},
+                    {"equipset_health", equipset->health.Pack()},
+                    {"equipset_magicka", equipset->magicka.Pack()},
+                    {"equipset_stamina", equipset->stamina.Pack()},
+                    {"equipset_itemsCount", (uint32_t)equipset->items.size()},
+                    {"equipset_itemsArr", itemsArr},
+                };
+
+                mainTbl.insert(std::to_string(i), tbl);
+
+            } else if (equipsetVec[i]->type == Equipset::TYPE::CYCLE) {
+                auto equipset = static_cast<CycleSet*>(equipsetVec[i]);
+
+                toml::array itemsArr;
+                for (auto item : equipset->items) {
+                    itemsArr.push_back(item);
+                }
+
+                auto tbl = toml::table{
+                    {"equipset_type", static_cast<uint32_t>(equipset->type)},
+                    {"equipset_name", equipset->name},
+                    {"equipset_hotkey", equipset->hotkey},
+                    {"equipset_modifier1", equipset->modifier1},
+                    {"equipset_modifier2", equipset->modifier2},
+                    {"equipset_modifier3", equipset->modifier3},
+                    {"equipset_order", equipset->order},
+                    {"equipset_cyclePersist", equipset->cyclePersist},
+                    {"equipset_cycleExpire", equipset->cycleExpire},
+                    {"equipset_cycleReset", equipset->cycleReset},
+                    {"equipset_widgetIcon", equipset->widgetIcon.Pack()},
+                    {"equipset_widgetName", equipset->widgetName.Pack()},
+                    {"equipset_widgetHotkey", equipset->widgetHotkey.Pack()},
+                    {"equipset_itemsCount", (uint32_t)equipset->items.size()},
+                    {"equipset_itemsArr", itemsArr},
+                };
+
+                if (_type == Type::SAVE) {
+                    tbl.insert("equipset_cycleIndex", equipset->cycleIndex);
+                    tbl.insert("equipset_isCycleInit", equipset->isCycleInit);
+                }
+
+                mainTbl.insert(std::to_string(i), tbl);
+            }
         }
-    }
 
-    void SaveHotkey(SerializationInterface* _serde, Hotkey* _hotkey)
-    {
-        _serde->WriteRecordData(&_hotkey->mKeyCode, sizeof(_hotkey->mKeyCode));
-        _serde->WriteRecordData(&_hotkey->mModifier[0], sizeof(_hotkey->mModifier[0]));
-        _serde->WriteRecordData(&_hotkey->mModifier[1], sizeof(_hotkey->mModifier[1]));
-        _serde->WriteRecordData(&_hotkey->mModifier[2], sizeof(_hotkey->mModifier[2]));
-    }
-
-    void SaveOption(SerializationInterface* _serde, Option* _option)
-    {
-        _serde->WriteRecordData(&_option->mSound, sizeof(_option->mSound));
-        _serde->WriteRecordData(&_option->mToggleEquip, sizeof(_option->mToggleEquip));
-        _serde->WriteRecordData(&_option->mReEquip, sizeof(_option->mReEquip));
-        _serde->WriteRecordData(&_option->mBeast, sizeof(_option->mBeast));
-    }
-
-    void SaveWidget(SerializationInterface* _serde, Widget* _widget)
-    {
-        size_t widgetSize = _widget->mWidget.length();
-        _serde->WriteRecordData(&widgetSize, sizeof(widgetSize));
-        for (auto& elem : _widget->mWidget) {
-            _serde->WriteRecordData(&elem, sizeof(elem));
-        }
-        _serde->WriteRecordData(&_widget->mHpos, sizeof(_widget->mHpos));
-        _serde->WriteRecordData(&_widget->mVpos, sizeof(_widget->mVpos));
-        _serde->WriteRecordData(&_widget->mDisplayWidget, sizeof(_widget->mDisplayWidget));
-        _serde->WriteRecordData(&_widget->mDisplayName, sizeof(_widget->mDisplayName));
-        _serde->WriteRecordData(&_widget->mDisplayHotkey, sizeof(_widget->mDisplayHotkey));
-    }
-
-    bool SaveEquipment_Hand(SerializationInterface* _serde, Equipment::Weapon* _hand)
-    {
-        auto action = static_cast<MCM::eAction>(_hand->option);
-        if (action != MCM::eAction::Equip) {
-            _serde->WriteRecordData(&_hand->option, sizeof(_hand->option));
-
-            return true;
-        }
-
-        if (!_hand->form) {
-            uint32_t option = 0;
-            _serde->WriteRecordData(&option, sizeof(option));
-
-            return false;
-        }
-
-        if (_hand->hasExtra.first && !_hand->extraData.first) {
-            uint32_t option = 0;
-            _serde->WriteRecordData(&option, sizeof(option));
-
-            return false;
-        }
-
-        _serde->WriteRecordData(&_hand->option, sizeof(_hand->option));
-        _serde->WriteRecordData(&_hand->form->formID, sizeof(_hand->form->formID));
-        _serde->WriteRecordData(&_hand->hasExtra.first, sizeof(_hand->hasExtra.first));
-        if (_hand->hasExtra.first) {
-            _serde->WriteRecordData(&_hand->numEnch, sizeof(_hand->numEnch));
-            RE::FormID ID = _hand->extraData.first->GetFormID();
-            _serde->WriteRecordData(&ID, sizeof(ID));
-        }
-        _serde->WriteRecordData(&_hand->hasExtra.second, sizeof(_hand->hasExtra.second));
-        if (_hand->hasExtra.second) {
-            _serde->WriteRecordData(&_hand->extraData.second, sizeof(_hand->extraData.second));
-        }
-
-        return true;
-    }
-
-    bool SaveEquipment_Shout(SerializationInterface* _serde, Equipment::Shout* _shout)
-    {
-        auto action = static_cast<MCM::eAction>(_shout->option);
-        if (action != MCM::eAction::Equip) {
-            _serde->WriteRecordData(&_shout->option, sizeof(_shout->option));
-
-            return true;
-        }
-
-        if (!_shout->form) {
-            uint32_t option = 0;
-            _serde->WriteRecordData(&option, sizeof(option));
-
-            return false;
-        }
-
-        _serde->WriteRecordData(&_shout->option, sizeof(_shout->option));
-        _serde->WriteRecordData(&_shout->form->formID, sizeof(_shout->form->formID));
-
-        return true;
-    }
-
-    bool SaveEquipment_Items(SerializationInterface* _serde, std::vector<Equipment::Items*> _items)
-    {
-        for (const auto item : _items) {
-            if (!item->form) {
-                uint32_t size = 0;
-                _serde->WriteRecordData(&size, sizeof(size));
-
+        if (_type == Type::FILE) {
+            std::ofstream f(equipset_path);
+            if (!f.is_open()) {
+                logger::error("Failed to export Equipset!");
                 return false;
             }
 
-            if (item->hasExtra.first && !item->extraData.first) {
-                uint32_t size = 0;
-                _serde->WriteRecordData(&size, sizeof(size));
-
-                return false;
-            }
-        }
-
-        uint32_t itemsSize = _items.size();
-        _serde->WriteRecordData(&itemsSize, sizeof(itemsSize));
-        for (const auto item : _items) {
-            _serde->WriteRecordData(&item->form->formID, sizeof(item->form->formID));
-            _serde->WriteRecordData(&item->hasExtra.first, sizeof(item->hasExtra.first));
-            if (item->hasExtra.first) {
-                _serde->WriteRecordData(&item->numEnch, sizeof(item->numEnch));
-                RE::FormID ID = item->extraData.first->GetFormID();
-                _serde->WriteRecordData(&ID, sizeof(ID));
-            }
-            _serde->WriteRecordData(&item->hasExtra.second, sizeof(item->hasExtra.second));
-            if (item->hasExtra.second) {
-                _serde->WriteRecordData(&item->extraData.second, sizeof(item->extraData.second));
-            }
+            f << mainTbl;
+        } else if (_type == Type::SAVE) {
+            std::stringstream f;
+            f << mainTbl;
+            WriteString(serde, f.str());
         }
 
         return true;
     }
 
-    void SaveCycleOption(SerializationInterface* _serde, CycleOption* _option)
-    {
-        _serde->WriteRecordData(&_option->mPersist, sizeof(_option->mPersist));
-        _serde->WriteRecordData(&_option->mExpire, sizeof(_option->mExpire));
-        _serde->WriteRecordData(&_option->mReset, sizeof(_option->mReset));
-        _serde->WriteRecordData(&_option->mBeast, sizeof(_option->mBeast));
-    }
+    bool ImportEquipset(Type _type, SKSE::SerializationInterface* serde) {
+        try {
+            auto manager = EquipsetManager::GetSingleton();
+            if (!manager) return false;
 
-    void SaveCycleWidget(SerializationInterface* _serde, Widget* _widget)
-    {
-        _serde->WriteRecordData(&_widget->mHpos, sizeof(_widget->mHpos));
-        _serde->WriteRecordData(&_widget->mVpos, sizeof(_widget->mVpos));
-        _serde->WriteRecordData(&_widget->mDisplayWidget, sizeof(_widget->mDisplayWidget));
-        _serde->WriteRecordData(&_widget->mDisplayName, sizeof(_widget->mDisplayName));
-        _serde->WriteRecordData(&_widget->mDisplayHotkey, sizeof(_widget->mDisplayHotkey));
-    }
+            if (_type == Type::SAVE && !serde) return false;
 
-    void SaveCycleItems(SerializationInterface* _serde, std::vector<std::string> _items)
-    {
-        size_t itemsSize = _items.size();
-        _serde->WriteRecordData(&itemsSize, sizeof(itemsSize));
-        for (const auto& item : _items) {
-            size_t size = item.length();
-            _serde->WriteRecordData(&size, sizeof(size));
-            for (const auto& elem : item) {
-                _serde->WriteRecordData(&elem, sizeof(elem));
+            toml::table tbl;
+            if (_type == Type::FILE) {
+                tbl = toml::parse_file(equipset_path.c_str());
+            } else if (_type == Type::SAVE) {
+                std::string data;
+                ReadString(serde, &data);
+                tbl = toml::parse(data);
             }
-        }
-    }
 
-    void SaveCycleIndex(SerializationInterface* _serde, std::pair<uint32_t, int32_t> _cycleIndex)
-    {
-        _serde->WriteRecordData(&_cycleIndex.first, sizeof(_cycleIndex.first));
-        _serde->WriteRecordData(&_cycleIndex.second, sizeof(_cycleIndex.second));
-    }
+            uint32_t equipset_count = tbl["Init"]["equipset_count"].value_or<uint32_t>(0);
 
-    uint32_t LoadOrder(SerializationInterface* _serde)
-    {
-        uint32_t order;
-        _serde->ReadRecordData(&order, sizeof(order));
-        return order;
-    }
+            for (int i = 0; i < equipset_count; i++) {
+                auto id = std::to_string(i);
+                auto type = tbl[id]["equipset_type"].value_or<int>(-1);
+                if (type == -1) continue;
 
-    std::string LoadName(SerializationInterface* _serde)
-    {
-        std::string mName;
-        size_t nameSize;
-        _serde->ReadRecordData(&nameSize, sizeof(nameSize));
-        for (; nameSize > 0; --nameSize) {
-            char name;
-            _serde->ReadRecordData(&name, sizeof(name));
-            mName += name;
-        }
+                if (static_cast<Equipset::TYPE>(type) == Equipset::TYPE::NORMAL) {
+                    NormalSet equipset;
+                    equipset.type = Equipset::TYPE::NORMAL;
+                    equipset.name = tbl[id]["equipset_name"].value_or<std::string>("");
+                    equipset.hotkey = tbl[id]["equipset_hotkey"].value_or<uint32_t>(0);
+                    equipset.modifier1 = tbl[id]["equipset_modifier1"].value_or<bool>(false);
+                    equipset.modifier2 = tbl[id]["equipset_modifier2"].value_or<bool>(false);
+                    equipset.modifier3 = tbl[id]["equipset_modifier3"].value_or<bool>(false);
+                    equipset.order = tbl[id]["equipset_order"].value_or<uint32_t>(0);
+                    equipset.equipSound = tbl[id]["equipset_equipSound"].value_or<bool>(false);
+                    equipset.toggleEquip = tbl[id]["equipset_toggleEquip"].value_or<bool>(false);
+                    equipset.reEquip = tbl[id]["equipset_reEquip"].value_or<bool>(false);
 
-        return mName;
-    }
+                    auto packedWidgetIcon = tbl[id]["equipset_widgetIcon"].value_or<std::string>("");
+                    auto widgetIcon = WidgetIcon::Unpack(packedWidgetIcon);
+                    equipset.widgetIcon = widgetIcon;
 
-    Hotkey* LoadHotkey(SerializationInterface* _serde)
-    {
-        Hotkey* hotkey = new Hotkey;
-        _serde->ReadRecordData(&hotkey->mKeyCode, sizeof(hotkey->mKeyCode));
-        _serde->ReadRecordData(&hotkey->mModifier[0], sizeof(hotkey->mModifier[0]));
-        _serde->ReadRecordData(&hotkey->mModifier[1], sizeof(hotkey->mModifier[1]));
-        _serde->ReadRecordData(&hotkey->mModifier[2], sizeof(hotkey->mModifier[2]));
+                    auto packedWidgetName = tbl[id]["equipset_widgetName"].value_or<std::string>("");
+                    auto widgetName = WidgetText::Unpack(packedWidgetName);
+                    equipset.widgetName = widgetName;
 
-        return hotkey;
-    }
+                    auto packedWidgetHotkey = tbl[id]["equipset_widgetHotkey"].value_or<std::string>("");
+                    auto widgetHotkey = WidgetText::Unpack(packedWidgetHotkey);
+                    equipset.widgetHotkey = widgetHotkey;
 
-    Option* LoadOption(SerializationInterface* _serde)
-    {
-        Option* option = new Option;
-        _serde->ReadRecordData(&option->mSound, sizeof(option->mSound));
-        _serde->ReadRecordData(&option->mToggleEquip, sizeof(option->mToggleEquip));
-        _serde->ReadRecordData(&option->mReEquip, sizeof(option->mReEquip));
-        _serde->ReadRecordData(&option->mBeast, sizeof(option->mBeast));
+                    auto packedLefthand = tbl[id]["equipset_lefthand"].value_or<std::string>("");
+                    auto lefthand = DataWeapon::Unpack(packedLefthand);
+                    equipset.lefthand = lefthand;
 
-        return option;
-    }
+                    auto packedRighthand = tbl[id]["equipset_righthand"].value_or<std::string>("");
+                    auto righthand = DataWeapon::Unpack(packedRighthand);
+                    equipset.righthand = righthand;
 
-    Widget* LoadWidget(SerializationInterface* _serde)
-    {
-        Widget* widget = new Widget;
+                    auto packedShout = tbl[id]["equipset_shout"].value_or<std::string>("");
+                    auto shout = DataShout::Unpack(packedShout);
+                    equipset.shout = shout;
 
-        size_t WidgetSize;
-        _serde->ReadRecordData(&WidgetSize, sizeof(WidgetSize));
-        for (; WidgetSize > 0; --WidgetSize) {
-            char name;
-            _serde->ReadRecordData(&name, sizeof(name));
-            widget->mWidget += name;
-        }
-        _serde->ReadRecordData(&widget->mHpos, sizeof(widget->mHpos));
-        _serde->ReadRecordData(&widget->mVpos, sizeof(widget->mVpos));
-        _serde->ReadRecordData(&widget->mDisplayWidget, sizeof(widget->mDisplayWidget));
-        _serde->ReadRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));
-        _serde->ReadRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));
+                    std::vector<DataArmor> items;
+                    auto itemsCount = tbl[id]["equipset_itemsCount"].value_or<uint32_t>(0);
+                    for (int j = 0; j < itemsCount; j++) {
+                        auto packedItem = tbl[id]["equipset_itemsArr"][j].value_or<std::string>("");
+                        auto item = DataArmor::Unpack(packedItem);
+                        items.push_back(item);
+                    }
+                    equipset.items = items;
 
-        return widget;
-    }
+                    manager->Create(equipset, false);
 
-    bool LoadEquipment_Hand(SerializationInterface* _serde, Equipment::Weapon* _hand)
-    {
-        bool result = true;
+                } else if (static_cast<Equipset::TYPE>(type) == Equipset::TYPE::POTION) {
+                    PotionSet equipset;
+                    equipset.type = Equipset::TYPE::POTION;
+                    equipset.name = tbl[id]["equipset_name"].value_or<std::string>("");
+                    equipset.hotkey = tbl[id]["equipset_hotkey"].value_or<uint32_t>(0);
+                    equipset.modifier1 = tbl[id]["equipset_modifier1"].value_or<bool>(false);
+                    equipset.modifier2 = tbl[id]["equipset_modifier2"].value_or<bool>(false);
+                    equipset.modifier3 = tbl[id]["equipset_modifier3"].value_or<bool>(false);
+                    equipset.order = tbl[id]["equipset_order"].value_or<uint32_t>(0);
+                    equipset.equipSound = tbl[id]["equipset_equipSound"].value_or<bool>(false);
+                    equipset.calcDuration = tbl[id]["equipset_calcDuration"].value_or<bool>(false);
 
-        _serde->ReadRecordData(&_hand->option, sizeof(_hand->option));
+                    auto packedWidgetIcon = tbl[id]["equipset_widgetIcon"].value_or<std::string>("");
+                    auto widgetIcon = WidgetIcon::Unpack(packedWidgetIcon);
+                    equipset.widgetIcon = widgetIcon;
 
-        auto action = static_cast<MCM::eAction>(_hand->option);
-        if (action != MCM::eAction::Equip) {
-            return true;
-        }
+                    auto packedWidgetName = tbl[id]["equipset_widgetName"].value_or<std::string>("");
+                    auto widgetName = WidgetText::Unpack(packedWidgetName);
+                    equipset.widgetName = widgetName;
 
-        RE::FormID ID, newID;
-        _serde->ReadRecordData(&ID, sizeof(ID));
-        if (!_serde->ResolveFormID(ID, newID)) {
-            log::warn("Form ID {:X} could not be found after loading the save.", ID);
-            _hand->option = static_cast<int32_t>(MCM::eAction::Nothing);
-            newID = 0;
-            result = false;
-        }
-        _hand->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
+                    auto packedWidgetAmount = tbl[id]["equipset_widgetAmount"].value_or<std::string>("");
+                    auto widgetAmount = WidgetText::Unpack(packedWidgetAmount);
+                    equipset.widgetAmount = widgetAmount;
 
-        bool hasEnch, hasTemp;
-        RE::EnchantmentItem* enchItem;
-        float tempItem;
-        _serde->ReadRecordData(&hasEnch, sizeof(hasEnch));
-        if (hasEnch) {
-            _serde->ReadRecordData(&_hand->numEnch, sizeof(_hand->numEnch));
-            RE::FormID ExtraID, newExtraID;
-            _serde->ReadRecordData(&ExtraID, sizeof(ExtraID));
-            if (!_serde->ResolveFormID(ExtraID, newExtraID)) {
-                log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                hasEnch = false;
-                _hand->numEnch = 0;
-                newExtraID = 0;
-                result = false;
-            }
-            enchItem = newExtraID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID) : nullptr;
-        }
+                    auto packedHealth = tbl[id]["equipset_health"].value_or<std::string>("");
+                    auto health = DataPotion::Unpack(packedHealth);
+                    equipset.health = health;
 
-        _serde->ReadRecordData(&hasTemp, sizeof(hasTemp));
-        if (hasTemp) {
-            _serde->ReadRecordData(&tempItem, sizeof(tempItem));
-        }
+                    auto packedMagicka = tbl[id]["equipset_magicka"].value_or<std::string>("");
+                    auto magicka = DataPotion::Unpack(packedMagicka);
+                    equipset.magicka = magicka;
 
-        _hand->hasExtra = std::make_pair(hasEnch, hasTemp);
-        _hand->extraData = std::make_pair(enchItem, tempItem);
+                    auto packedStamina = tbl[id]["equipset_stamina"].value_or<std::string>("");
+                    auto stamina = DataPotion::Unpack(packedStamina);
+                    equipset.stamina = stamina;
 
-        RE::ExtraDataList* xList;
-        xList = Extra::SearchExtraList(_hand->form, _hand->numEnch, _hand->extraData.first, _hand->extraData.second);
-        _hand->xList = xList;
+                    std::vector<DataPotion> items;
+                    auto itemsCount = tbl[id]["equipset_itemsCount"].value_or<uint32_t>(0);
+                    for (int j = 0; j < itemsCount; j++) {
+                        auto packedItem = tbl[id]["equipset_itemsArr"][j].value_or<std::string>("");
+                        auto item = DataPotion::Unpack(packedItem);
+                        items.push_back(item);
+                    }
+                    equipset.items = items;
 
-        return result;
-    }
+                    manager->Create(equipset, false);
+                } else if (static_cast<Equipset::TYPE>(type) == Equipset::TYPE::CYCLE) {
+                    CycleSet equipset;
+                    equipset.type = Equipset::TYPE::CYCLE;
+                    equipset.name = tbl[id]["equipset_name"].value_or<std::string>("");
+                    equipset.hotkey = tbl[id]["equipset_hotkey"].value_or<uint32_t>(0);
+                    equipset.modifier1 = tbl[id]["equipset_modifier1"].value_or<bool>(false);
+                    equipset.modifier2 = tbl[id]["equipset_modifier2"].value_or<bool>(false);
+                    equipset.modifier3 = tbl[id]["equipset_modifier3"].value_or<bool>(false);
+                    equipset.order = tbl[id]["equipset_order"].value_or<uint32_t>(0);
+                    equipset.cyclePersist = tbl[id]["equipset_cyclePersist"].value_or<bool>(false);
+                    equipset.cycleExpire = tbl[id]["equipset_cycleExpire"].value_or<float>(0.0f);
+                    equipset.cycleReset = tbl[id]["equipset_cycleReset"].value_or<float>(0.0f);
 
-    bool LoadEquipment_Shout(SerializationInterface* _serde, Equipment::Shout* _shout)
-    {
-        bool result = true;
+                    auto packedWidgetIcon = tbl[id]["equipset_widgetIcon"].value_or<std::string>("");
+                    auto widgetIcon = WidgetIcon::Unpack(packedWidgetIcon);
+                    equipset.widgetIcon = widgetIcon;
 
-        _serde->ReadRecordData(&_shout->option, sizeof(_shout->option));
+                    auto packedWidgetName = tbl[id]["equipset_widgetName"].value_or<std::string>("");
+                    auto widgetName = WidgetText::Unpack(packedWidgetName);
+                    equipset.widgetName = widgetName;
 
-        auto action = static_cast<MCM::eAction>(_shout->option);
-        if (action != MCM::eAction::Equip) {
-            return true;
-        }
+                    auto packedWidgetHotkey = tbl[id]["equipset_widgetHotkey"].value_or<std::string>("");
+                    auto widgetHotkey = WidgetText::Unpack(packedWidgetHotkey);
+                    equipset.widgetHotkey = widgetHotkey;
 
-        RE::FormID ID, newID;
-        _serde->ReadRecordData(&ID, sizeof(ID));
-        if (!_serde->ResolveFormID(ID, newID)) {
-            log::warn("Form ID {:X} could not be found after loading the save.", ID);
-            _shout->option = static_cast<int32_t>(MCM::eAction::Nothing);
-            newID = 0;
-            result = false;
-        }
-        _shout->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
+                    std::vector<std::string> items;
+                    auto itemsCount = tbl[id]["equipset_itemsCount"].value_or<uint32_t>(0);
+                    for (int j = 0; j < itemsCount; j++) {
+                        auto item = tbl[id]["equipset_itemsArr"][j].value_or<std::string>("");
+                        items.push_back(item);
+                    }
+                    equipset.items = items;
 
-        return result;
-    }
+                    if (_type == Type::SAVE) {
+                        equipset.cycleIndex = tbl[id]["equipset_cycleIndex"].value_or<uint32_t>(0);
+                        equipset.isCycleInit = tbl[id]["equipset_isCycleInit"].value_or<bool>(false);
+                    }
 
-    bool LoadEquipment_Items(SerializationInterface* _serde, std::vector<Equipment::Items*>& _items)
-    {
-        uint32_t itemsSize;
-        _serde->ReadRecordData(&itemsSize, sizeof(itemsSize));
-
-        for (; itemsSize > 0; --itemsSize) {
-            bool result = true;
-            Equipment::Items* items = new Equipment::Items;
-
-            RE::FormID ID, newID;
-            _serde->ReadRecordData(&ID, sizeof(ID));
-            if (!_serde->ResolveFormID(ID, newID)) {
-                log::warn("Form ID {:X} could not be found after loading the save.", ID);
-                newID = 0;
-                result = false;
-            }
-            items->form = newID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(newID) : nullptr;
-
-            bool hasItemsExtraEnch, hasItemsExtraTemp;
-            RE::EnchantmentItem* itemsExtraEnch;
-            float itemsExtraTemp;
-
-            _serde->ReadRecordData(&hasItemsExtraEnch, sizeof(hasItemsExtraEnch));
-            if (hasItemsExtraEnch) {
-                uint32_t numItemsEnch;
-                _serde->ReadRecordData(&numItemsEnch, sizeof(numItemsEnch));
-                items->numEnch = numItemsEnch;
-
-                RE::FormID ExtraID, newExtraID;
-                _serde->ReadRecordData(&ExtraID, sizeof(ExtraID));
-                if (!_serde->ResolveFormID(ExtraID, newExtraID)) {
-                    log::warn("Form ID {:X} could not be found after loading the save.", ExtraID);
-                    newExtraID = 0;
-                    result = false;
+                    manager->Create(equipset, false);
                 }
-                itemsExtraEnch = newID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(newExtraID) : nullptr;
             }
 
-            _serde->ReadRecordData(&hasItemsExtraTemp, sizeof(hasItemsExtraTemp));
-            if (hasItemsExtraTemp) {
-                _serde->ReadRecordData(&itemsExtraTemp, sizeof(itemsExtraTemp));
-            }
+            logger::info("Equipset loaded.");
+        } catch (const toml::parse_error& err) {
+            logger::warn("Failed to parse Equipset file.\nError: {}", err.description());
 
-            items->hasExtra = std::make_pair(hasItemsExtraEnch, hasItemsExtraTemp);
-            items->extraData = std::make_pair(itemsExtraEnch, itemsExtraTemp);
-
-            RE::ExtraDataList* xList;
-            xList = Extra::SearchExtraList(items->form, items->numEnch, items->extraData.first, items->extraData.second);
-            items->xList = xList;
-
-            if (result) {
-                _items.push_back(items);
-            }
-            else {
-                delete items;
-            }
-        }
-
-        return true;
-    }
-
-    CycleOption* LoadCycleOption(SerializationInterface* _serde)
-    {
-        CycleOption* option = new CycleOption;
-        _serde->ReadRecordData(&option->mPersist, sizeof(option->mPersist));
-        _serde->ReadRecordData(&option->mExpire, sizeof(option->mExpire));
-        _serde->ReadRecordData(&option->mReset, sizeof(option->mReset));
-        _serde->ReadRecordData(&option->mBeast, sizeof(option->mBeast));
-
-        return option;
-    }
-
-    Widget* LoadCycleWidget(SerializationInterface* _serde)
-    {
-        Widget* widget = new Widget;
-
-        _serde->ReadRecordData(&widget->mHpos, sizeof(widget->mHpos));
-        _serde->ReadRecordData(&widget->mVpos, sizeof(widget->mVpos));
-        _serde->ReadRecordData(&widget->mDisplayWidget, sizeof(widget->mDisplayWidget));
-        _serde->ReadRecordData(&widget->mDisplayName, sizeof(widget->mDisplayName));
-        _serde->ReadRecordData(&widget->mDisplayHotkey, sizeof(widget->mDisplayHotkey));
-
-        return widget;
-    }
-
-    std::vector<std::string> LoadCycleItems(SerializationInterface* _serde)
-    {
-        std::vector<std::string> items;
-        size_t itemsSize;
-        _serde->ReadRecordData(&itemsSize, sizeof(itemsSize));
-        for (; itemsSize > 0; --itemsSize) {
-            std::string itemsName;
-            size_t inameSize;
-            _serde->ReadRecordData(&inameSize, sizeof(inameSize));
-            for (; inameSize > 0; --inameSize) {
-                char name;
-                _serde->ReadRecordData(&name, sizeof(name));
-                itemsName += name;
-            }
-            items.push_back(itemsName);
-        }
-
-        return items;
-    }
-
-    std::pair<uint32_t, int32_t> LoadCycleIndex(SerializationInterface* _serde)
-    {
-        uint32_t index;
-        int32_t prevIndex;
-        _serde->ReadRecordData(&index, sizeof(index));
-        _serde->ReadRecordData(&prevIndex, sizeof(prevIndex));
-
-        return std::make_pair(index, prevIndex);
-    }
-}
-namespace Json {
-    void SaveOrder(Json::Value& _root, const std::string& _name, const uint32_t _order)
-    {
-        _root[_name]["mOrder"] = _order;
-    }
-
-    void SaveName(Json::Value& _root, const std::string& _name, const std::string _mName)
-    {
-        _root[_name]["mName"] = _mName;
-    }
-
-    void SaveHotkey(Json::Value& _root, const std::string& _name, const Hotkey* _hotkey)
-    {
-        _root[_name]["mKeyCode"] = _hotkey->mKeyCode;
-        _root[_name]["mModifier1"] = _hotkey->mModifier[0];
-        _root[_name]["mModifier2"] = _hotkey->mModifier[1];
-        _root[_name]["mModifier3"] = _hotkey->mModifier[2];
-    }
-
-    void SaveOption(Json::Value& _root, const std::string& _name, const Option* _option)
-    {
-        _root[_name]["mSound"] = _option->mSound;
-        _root[_name]["mToggleEquip"] = _option->mToggleEquip;
-        _root[_name]["mReEquip"] = _option->mReEquip;
-        _root[_name]["mBeast"] = _option->mBeast;
-    }
-
-    void SaveWidget(Json::Value& _root, const std::string& _name, const Widget* _widget)
-    {
-        _root[_name]["mWidget"] = _widget->mWidget;
-        _root[_name]["mHpos"] = _widget->mHpos;
-        _root[_name]["mVpos"] = _widget->mVpos;
-        _root[_name]["mDisplayWidget"] = _widget->mDisplayWidget;
-        _root[_name]["mDisplayName"] = _widget->mDisplayName;
-        _root[_name]["mDisplayHotkey"] = _widget->mDisplayHotkey;
-    }
-
-    bool SaveEquipment_Hand(Json::Value& _root, const std::string& _name, const Equipment::Weapon* _hand, bool isLeft)
-    {
-        std::string strOption = isLeft ? "lOption" : "rOption";
-        std::string strForm = isLeft ? "lForm" : "rForm";
-        std::string strHasExtra_first = isLeft ? "lHasExtra_first" : "rHasExtra_first";
-        std::string strNumEnch = isLeft ? "lNumEnch" : "rNumEnch";
-        std::string strExtraData_first = isLeft ? "lExtraData_first" : "rExtraData_first";
-        std::string strHasExtra_second = isLeft ? "lHasExtra_second" : "rHasExtra_second";
-        std::string strExtraData_second = isLeft ? "lExtraData_second" : "rExtraData_second";
-
-        _root[_name][strOption] = _hand->option;
-        _root[_name][strForm] = _hand->option == MCM::eAction::Equip && _hand->form ? _hand->form->formID : 0;
-        _root[_name][strHasExtra_first] = _hand->hasExtra.first;
-        _root[_name][strNumEnch] = _hand->numEnch;
-        _root[_name][strExtraData_first] = _hand->hasExtra.first && _hand->extraData.first ? _hand->extraData.first->GetFormID() : 0;
-        _root[_name][strHasExtra_second] = _hand->hasExtra.second;
-        _root[_name][strExtraData_second] = _hand->extraData.second;
-
-        if (_hand->option != MCM::eAction::Equip) {
-            return true;
-        }
-
-        if (!_hand->form) {
-            _root[_name][strOption] = MCM::eAction::Nothing;
-            return false;
-        }
-
-        if (_hand->hasExtra.first && !_hand->extraData.first) {
-            _root[_name][strOption] = MCM::eAction::Nothing;
             return false;
         }
 
         return true;
     }
 
-    bool SaveEquipment_Shout(Json::Value& _root, const std::string& _name, const Equipment::Shout* _shout)
-    {
-        _root[_name]["sOption"] = _shout->option;
-        _root[_name]["sForm"] = _shout->option == MCM::eAction::Equip && _shout->form ? _shout->form->formID : 0;
+    void OnGameSaved(SKSE::SerializationInterface* serde) {
+        auto manager = EquipsetManager::GetSingleton();
+        if (!manager) return;
 
-        if (_shout->option != MCM::eAction::Equip) {
-            return true;
+        if (!serde->OpenRecord(EquipsetRecord, GetVersionMajor())) {
+            logger::error("Unable to open record to write cosave data.");
+            return;
         }
 
-        if (!_shout->form) {
-            _root[_name]["sOption"] = MCM::eAction::Nothing;
-            return false;
-        }
-
-        return true;
+        ExportEquipset(Type::SAVE, serde);
     }
 
-    bool SaveEquipment_Items(Json::Value& _root, const std::string& _name, std::vector<Equipment::Items*> _items)
-    {
-        for (const auto& item : _items) {
-            if (!item->form) {
-                _root[_name]["mNumItems"] = 0;
-                return false;
+    void OnRevert(SKSE::SerializationInterface* serde) {
+        auto manager = EquipsetManager::GetSingleton();
+        if (!manager) return;
+
+        manager->RemoveAll();
+    }
+
+    void OnGameLoaded(SKSE::SerializationInterface* serde) {
+        auto manager = EquipsetManager::GetSingleton();
+        if (!manager) return;
+
+        auto equipment = EquipmentManager::GetSingleton();
+        if (!equipment) return;
+
+        uint32_t type;
+        uint32_t size;
+        uint32_t version;
+        std::string packedData;
+
+        while (serde->GetNextRecordInfo(type, version, size)) {
+            if (type == EquipsetRecord && version == GetVersionMajor()) {
+                ImportEquipset(Type::SAVE, serde);
+                manager->SyncSortOrder();
+            } else {
+                logger::warn("Unknown record type in cosave.");
+                __assume(false);
             }
-
-            if (item->hasExtra.first && !item->extraData.first) {
-                _root[_name]["mNumItems"] = 0;
-                return false;
-            }
-        }
-
-        _root[_name]["mNumItems"] = _items.size();
-        for (int i = 0; i < _items.size(); i++) {
-            auto itemName = "Item_" + std::to_string(i);
-            _root[_name]["Items"][itemName]["form"] = _items[i]->form ? _items[i]->form->formID : 0;
-            _root[_name]["Items"][itemName]["hasExtra_first"] = _items[i]->hasExtra.first;
-            _root[_name]["Items"][itemName]["numEnch"] = _items[i]->numEnch;
-            _root[_name]["Items"][itemName]["extraData_first"] = _items[i]->hasExtra.first && _items[i]->extraData.first ? _items[i]->extraData.first->GetFormID() : 0;
-            _root[_name]["Items"][itemName]["hasExtra_second"] = _items[i]->hasExtra.second;
-            _root[_name]["Items"][itemName]["extraData_second"] = _items[i]->extraData.second;
-        }
-
-        return true;
-    }
-
-    void SaveCycleOption(Json::Value& _root, const std::string& _name, const CycleOption* _option)
-    {
-        _root[_name]["mPersist"] = _option->mPersist;
-        _root[_name]["mExpire"] = _option->mExpire;
-        _root[_name]["mReset"] = _option->mReset;
-        _root[_name]["mBeast"] = _option->mBeast;
-    }
-
-    void SaveCycleWidget(Json::Value& _root, const std::string& _name, const Widget* _widget)
-    {
-        _root[_name]["mHpos"] = _widget->mHpos;
-        _root[_name]["mVpos"] = _widget->mVpos;
-        _root[_name]["mDisplayWidget"] = _widget->mDisplayWidget;
-        _root[_name]["mDisplayName"] = _widget->mDisplayName;
-        _root[_name]["mDisplayHotkey"] = _widget->mDisplayHotkey;
-    }
-
-    void SaveCycleItems(Json::Value& _root, const std::string& _name, std::vector<std::string> _items)
-    {
-        _root[_name]["mNumItems"] = _items.size();
-        for (int i = 0; i < _items.size(); i++) {
-            auto itemName = "Item_" + std::to_string(i);
-            _root[_name]["Items"][itemName]["name"] = _items[i];
         }
     }
-
-    int32_t LoadOrder(Json::Value& _root, const std::string& _name)
-    {
-        return _root[_name].get("mOrder", 0).asInt();
-    }
-
-    std::string LoadName(Json::Value& _root, const std::string& _name)
-    {
-        return _root[_name].get("mName", "").asString();
-    }
-
-    Hotkey* LoadHotkey(Json::Value& _root, const std::string& _name)
-    {
-        Hotkey* hotkey = new Hotkey;
-        hotkey->mKeyCode = _root[_name].get("mKeyCode", -1).asInt();
-        hotkey->mModifier[0] = _root[_name].get("mModifier1", false).asBool();
-        hotkey->mModifier[1] = _root[_name].get("mModifier2", false).asBool();
-        hotkey->mModifier[2] = _root[_name].get("mModifier3", false).asBool();
-
-        return hotkey;
-    }
-
-    Option* LoadOption(Json::Value& _root, const std::string& _name)
-    {
-        Option* option = new Option;
-        option->mSound = _root[_name].get("mSound", false).asBool();
-        option->mToggleEquip = _root[_name].get("mToggleEquip", false).asBool();
-        option->mReEquip = _root[_name].get("mReEquip", false).asBool();
-        option->mBeast = _root[_name].get("mBeast", false).asBool();
-
-        return option;
-    }
-
-    Widget* LoadWidget(Json::Value& _root, const std::string& _name)
-    {
-        Widget* widget = new Widget;
-        widget->mWidget = _root[_name].get("mWidget", "").asString();
-        widget->mHpos = _root[_name].get("mHpos", 0).asInt();
-        widget->mVpos = _root[_name].get("mVpos", 0).asInt();
-        widget->mDisplayWidget = _root[_name].get("mDisplayWidget", false).asBool();
-        widget->mDisplayName = _root[_name].get("mDisplayName", false).asBool();
-        widget->mDisplayHotkey = _root[_name].get("mDisplayHotkey", false).asBool();
-
-        return widget;
-    }
-
-    bool LoadEquipment_Hand(Json::Value& _root, const std::string& _name, Equipment::Weapon* _hand, bool isLeft)
-    {
-        std::string strOption = isLeft ? "lOption" : "rOption";
-        std::string strForm = isLeft ? "lForm" : "rForm";
-        std::string strHasExtra_first = isLeft ? "lHasExtra_first" : "rHasExtra_first";
-        std::string strNumEnch = isLeft ? "lNumEnch" : "rNumEnch";
-        std::string strExtraData_first = isLeft ? "lExtraData_first" : "rExtraData_first";
-        std::string strHasExtra_second = isLeft ? "lHasExtra_second" : "rHasExtra_second";
-        std::string strExtraData_second = isLeft ? "lExtraData_second" : "rExtraData_second";
-
-        _hand->option = _root[_name].get(strOption, 0).asInt();
-        RE::FormID formID = _root[_name].get(strForm, 0).asInt64();
-        _hand->form = _hand->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-        _hand->hasExtra.first = _root[_name].get(strHasExtra_first, false).asBool();
-        _hand->numEnch = _root[_name].get(strNumEnch, 0).asInt();
-        RE::FormID enchantID = _root[_name].get(strExtraData_first, 0).asInt64();
-        RE::EnchantmentItem* enchantForm = _hand->hasExtra.first && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
-        _hand->extraData.first = _hand->hasExtra.first && enchantForm ? enchantForm : nullptr;
-        _hand->hasExtra.second = _root[_name].get(strHasExtra_second, false).asBool();
-        _hand->extraData.second = _root[_name].get(strExtraData_second, 0.0f).asFloat();
-        RE::ExtraDataList* xList;
-        xList = Extra::SearchExtraList(_hand->form, _hand->numEnch, _hand->extraData.first, _hand->extraData.second);
-        _hand->xList = xList;
-
-        if (_hand->option != MCM::eAction::Equip) {
-            return true;
-        }
-
-        if (!_hand->form) {
-            _hand->option = MCM::eAction::Nothing;
-            return false;
-        }
-
-        if (_hand->hasExtra.first && !_hand->extraData.first) {
-            _hand->option = MCM::eAction::Nothing;
-            return false;
-        }
-
-        return true;
-    }
-
-    bool LoadEquipment_Shout(Json::Value& _root, const std::string& _name, Equipment::Shout* _shout)
-    {
-        _shout->option = _root[_name].get("sOption", 0).asInt();
-        RE::FormID formID = _root[_name].get("sForm", 0).asInt64();
-        _shout->form = _shout->option == 2 && formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-
-        if (_shout->option != MCM::eAction::Equip) {
-            return true;
-        }
-
-        if (!_shout->form) {
-            _shout->option = MCM::eAction::Nothing;
-            return false;
-        }
-
-        return true;
-    }
-
-    bool LoadEquipment_Items(Json::Value& _root, const std::string& _name, std::vector<Equipment::Items*>& _Items)
-    {
-        int numItems = _root[_name].get("mNumItems", 0).asInt();
-        for (int j = 0; j < numItems; j++) {
-            bool result = true;
-
-            Equipment::Items* item = new Equipment::Items;
-            auto itemName = "Item_" + std::to_string(j);
-
-            RE::FormID formID = _root[_name]["Items"][itemName].get("form", 0).asInt64();
-            item->form = formID != 0 ? RE::TESForm::LookupByID<RE::TESForm>(formID) : nullptr;
-            item->hasExtra.first = _root[_name]["Items"][itemName].get("hasExtra_first", false).asBool();
-            item->numEnch = _root[_name]["Items"][itemName].get("numEnch", 0).asInt();
-            RE::FormID enchantID = _root[_name]["Items"][itemName].get("extraData_first", 0).asInt64();
-            RE::EnchantmentItem* enchantForm = item->hasExtra.first && enchantID != 0 ? RE::TESForm::LookupByID<RE::EnchantmentItem>(enchantID) : nullptr;
-            item->extraData.first = item->hasExtra.first && enchantForm ? enchantForm : nullptr;
-            item->hasExtra.second = _root[_name]["Items"][itemName].get("hasExtra_second", false).asBool();
-            item->extraData.second = _root[_name]["Items"][itemName].get("extraData_second", 0.0f).asFloat();
-            RE::ExtraDataList* xList;
-            xList = Extra::SearchExtraList(item->form, item->numEnch, item->extraData.first, item->extraData.second);
-            item->xList = xList;
-
-            if (!item->form) {
-                delete item;
-                continue;
-            }
-
-            if (item->hasExtra.first && !item->extraData.first) {
-                delete item;
-                continue;
-            }
-
-            _Items.push_back(item);
-        }
-
-        return true;
-    }
-
-    CycleOption* LoadCycleOption(Json::Value& _root, const std::string& _name)
-    {
-        CycleOption* option = new CycleOption;
-        option->mPersist = _root[_name].get("mPersist", false).asBool();
-        option->mExpire = _root[_name].get("mExpire", false).asBool();
-        option->mReset = _root[_name].get("mReset", false).asBool();
-        option->mBeast = _root[_name].get("mBeast", false).asBool();
-
-        return option;
-    }
-
-    Widget* LoadCycleWidget(Json::Value& _root, const std::string& _name)
-    {
-        Widget* widget = new Widget;
-        widget->mHpos = _root[_name].get("mHpos", 0).asInt();
-        widget->mVpos = _root[_name].get("mVpos", 0).asInt();
-        widget->mDisplayWidget = _root[_name].get("mDisplayWidget", false).asBool();
-        widget->mDisplayName = _root[_name].get("mDisplayName", false).asBool();
-        widget->mDisplayHotkey = _root[_name].get("mDisplayHotkey", false).asBool();
-
-        return widget;
-    }
-
-    std::vector<std::string> LoadCycleItems(Json::Value& _root, const std::string& _name)
-    {
-        std::vector<std::string> items;
-
-        size_t itemsSize = _root[_name].get("mNumItems", 0).asInt();
-        for (int j = 0; j < itemsSize; j++) {
-            auto itemName = "Item_" + std::to_string(j);
-            std::string cycleItemsName = _root[_name]["Items"][itemName].get("name", 0).asString();
-            items.push_back(cycleItemsName);
-        }
-
-        return items;
-    }
-}
-
-void EquipsetManager::OnRevert(SerializationInterface*)
-{
-    std::unique_lock lock(GetSingleton()._lock);
-
-    auto manager = &GetSingleton();
-    if (!manager) {
-        log::error("Unable to get EquipsetManager");
-        return;
-    }
-
-    manager->RemoveAllEquipset();
-}
-
-void EquipsetManager::OnGameSaved(SerializationInterface* serde)
-{
-    std::unique_lock lock(GetSingleton()._lock);
-
-    auto manager = &GetSingleton();
-    if (!manager) {
-        log::error("Unable to get EquipsetManager");
-        return;
-    }
-    
-    if (!serde->OpenRecord(EquipsetRecord, 0)) {
-        log::error("Unable to open record to write cosave data.");
-        return;
-    }
-
-    logger::debug("Saving {} Equipsets...", manager->mEquipset.size());
-
-    size_t equipsetSize = manager->mEquipset.size();
-    serde->WriteRecordData(&equipsetSize, sizeof(equipsetSize));
-
-    for (auto equipset : manager->mEquipset) {
-
-        logger::trace("Saving '{}'...", equipset->mName);
- 
-        SaveOrder(serde, equipset->mOrder);
-        SaveName(serde, equipset->mName);
-        SaveHotkey(serde, equipset->mHotkey);
-        SaveOption(serde, equipset->mOption);
-        SaveWidget(serde, equipset->mWidget);
-
-        auto equipment = equipset->mEquipment;
-
-        if (!SaveEquipment_Hand(serde, equipment->mLeft)) {
-            logger::error("[{}] Failed to save Lefthand data.", equipset->mName);
-        }
-
-        if (!SaveEquipment_Hand(serde, equipment->mRight)) {
-            logger::error("[{}] Failed to save Righthand data.", equipset->mName);
-        }
-
-        if (!SaveEquipment_Shout(serde, equipment->mShout)) {
-            logger::error("[{}] Failed to save Shout/Power data.", equipset->mName);
-        }
-
-        if (!SaveEquipment_Items(serde, equipment->mItems)) {
-            logger::error("[{}] Failed to save Items data.", equipset->mName);
-        }
-
-        logger::debug("'{}' saved.", equipset->mName);
-    }
-
-    logger::info("Total {} Equipsets saved.", manager->mEquipset.size());
-    
-    if (!serde->OpenRecord(CycleEquipsetRecord, 0)) {
-        log::error("Unable to open record to write cosave data.");
-        return;
-    }
-    
-    logger::debug("Saving {} Cycle Equipsets...", manager->mCycleEquipset.size());
-
-    size_t cycleEquipsetSize = manager->mCycleEquipset.size();
-    serde->WriteRecordData(&cycleEquipsetSize, sizeof(cycleEquipsetSize));
-
-    for (auto equipset : manager->mCycleEquipset) {
-
-        logger::trace("Saving '{}'...", equipset->mName);
-
-        SaveOrder(serde, equipset->mOrder);
-        SaveName(serde, equipset->mName);
-        SaveHotkey(serde, equipset->mHotkey);
-        SaveCycleOption(serde, equipset->mOption);
-        SaveCycleWidget(serde, equipset->mWidget);
-        SaveCycleItems(serde, equipset->mCycleItems);
-        SaveCycleIndex(serde, equipset->mCycleIndex);
-
-        logger::debug("'{}' saved.", equipset->mName);
-    }
-
-    logger::info("Total {} Cycle Equipsets saved.", manager->mCycleEquipset.size());
-}
-
-
-void EquipsetManager::OnGameLoaded(SerializationInterface* serde) {
-    std::uint32_t type;
-    std::uint32_t size;
-    std::uint32_t version;
-
-    while (serde->GetNextRecordInfo(type, version, size)) {
-        if (type == EquipsetRecord) {
-
-            size_t equipsetSize;
-            serde->ReadRecordData(&equipsetSize, sizeof(equipsetSize));
-
-            logger::debug("Loading {} Equipsets...", equipsetSize);
-
-            for (int i = 0; i < equipsetSize; i++) {
-                uint32_t order = LoadOrder(serde);;
-                std::string mName = LoadName(serde);
-
-                logger::trace("Loading '{}'...", mName);
-
-                Hotkey* hotkey = LoadHotkey(serde);
-                Option* option = LoadOption(serde);
-                Widget* widget = LoadWidget(serde);
-
-                Equipment* equipment = new Equipment;
-
-                if (!LoadEquipment_Hand(serde, equipment->mLeft)) {
-                    logger::error("[{}] Failed to load Lefthand data.", mName);
-                }
-
-                if (!LoadEquipment_Hand(serde, equipment->mRight)) {
-                    logger::error("[{}] Failed to load Righthand data.", mName);
-                }
-
-                if (!LoadEquipment_Shout(serde, equipment->mShout)) {
-                    logger::error("[{}] Failed to load Shout/Power data.", mName);
-                }
-
-                if (!LoadEquipment_Items(serde, equipment->mItems)) {
-                    logger::error("[{}] Failed to load Items data.", mName);
-                }
-
-                auto manager = &GetSingleton();
-                if (!manager) {
-                    log::error("Unable to get EquipsetManager");
-                    return;
-                }
-
-                manager->NewEquipset(order, mName, hotkey, option, widget, equipment);
-
-                logger::debug("'{}' loaded.", mName);
-            }
-
-            logger::info("Total {} Equipsets loaded.", equipsetSize);
-        }
-        else if (type == CycleEquipsetRecord) {
-            size_t equipsetSize;
-            serde->ReadRecordData(&equipsetSize, sizeof(equipsetSize));
-
-            logger::debug("Loading {} Cycle Equipsets...", equipsetSize);
-
-            for (int i = 0; i < equipsetSize; i++) {
-                uint32_t order = LoadOrder(serde);;
-                std::string mName = LoadName(serde);
-
-                logger::trace("Loading '{}'...", mName);
-
-                Hotkey* hotkey = LoadHotkey(serde);
-                CycleOption* option = LoadCycleOption(serde);
-                Widget* widget = LoadCycleWidget(serde);
-                std::vector<std::string> items = LoadCycleItems(serde);
-                std::pair<uint32_t, int32_t> index = LoadCycleIndex(serde);
-
-                auto manager = &GetSingleton();
-                if (!manager) {
-                    log::error("Unable to get EquipsetManager");
-                    return;
-                }
-
-                manager->NewCycleEquipset(order, mName, hotkey, option, widget, items, index);
-
-                logger::debug("'{}' loaded.", mName);
-            }
-
-            logger::info("Total {} Cycle Equipsets loaded.", equipsetSize);
-        }
-        else {
-            log::warn("Unknown record type in cosave.");
-            __assume(false);
-        }
-    }
-}
-
-void EquipsetManager::SaveEquipsetData()
-{
-    Json::Value root;
-    
-    {
-        auto size = GetEquipsetList().size();
-        root["Equipset Size"] = size;
-
-        logger::debug("Exporting {} Equipsets...", size);
-
-        for (int i = 0; i < size; i++) {
-            auto name = "Equipset_" + std::to_string(i);
-            auto equipset = mEquipset[i];
-
-            logger::trace("Exporting '{}'...", equipset->mName);
-            
-            Json::SaveOrder(root, name, equipset->mOrder);
-            Json::SaveName(root, name, equipset->mName);
-            Json::SaveHotkey(root, name, equipset->mHotkey);
-            Json::SaveOption(root, name, equipset->mOption);
-            Json::SaveWidget(root, name, equipset->mWidget);
-
-            auto equipment = equipset->mEquipment;
-            if (!Json::SaveEquipment_Hand(root, name, equipment->mLeft, true)) {
-                logger::error("[{}] Failed to export Lefthand data.", equipset->mName);
-            }
-            if (!Json::SaveEquipment_Hand(root, name, equipment->mRight, false)) {
-                logger::error("[{}] Failed to export Righthand data.", equipset->mName);
-            }
-            if (!Json::SaveEquipment_Shout(root, name, equipment->mShout)) {
-                logger::error("[{}] Failed to export Shout/Power data.", equipset->mName);
-            }
-            if (!Json::SaveEquipment_Items(root, name, equipment->mItems)) {
-                logger::error("[{}] Failed to export Items data.", equipset->mName);
-            }
-
-            logger::debug("'{}' exported.", equipset->mName);
-        }
-
-        logger::info("Total {} Equipsets exported.", size);
-    }
-
-    {
-        auto size = GetCycleEquipsetList().size();
-        root["CycleEquipset Size"] = size;
-
-        logger::debug("Exporting {} Cycle Equipsets...", size);
-
-        for (int i = 0; i < size; i++) {
-            auto name = "CycleEquipset_" + std::to_string(i);
-            auto equipset = mCycleEquipset[i];
-
-            logger::trace("Exporting '{}'...", equipset->mName);
-            
-            Json::SaveOrder(root, name, equipset->mOrder);
-            Json::SaveName(root, name, equipset->mName);
-            Json::SaveHotkey(root, name, equipset->mHotkey);
-            Json::SaveCycleOption(root, name, equipset->mOption);
-            Json::SaveCycleWidget(root, name, equipset->mWidget);
-            Json::SaveCycleItems(root, name, equipset->mCycleItems);
-
-            logger::debug("'{}' exported.", equipset->mName);
-        }
-
-        logger::info("Total {} Cycle Equipsets exported.", size);
-    }
-
-    Json::StyledWriter writer;
-    std::string outString = writer.write(root);
-    std::ofstream out("Data/SKSE/Plugins/UIHS/Equipset.json");
-    out << outString;
-    out.close();
-}
-
-void EquipsetManager::LoadEquipsetData()
-{
-    auto manager = &GetSingleton();
-    if (!manager) {
-        log::error("Unable to get EquipsetManager");
-        return;
-    }
-
-    std::ifstream file("Data/SKSE/Plugins/UIHS/Equipset.json", std::ifstream::binary);
-    if (!file.is_open()) {
-        log::error("Unable to open Equipset.json file.");
-        return;
-    }
-
-    Json::Value root;
-    file >> root;
-    file.close();
-
-    {
-        size_t size;
-        size = root.get("Equipset Size", 0).asInt();
-
-        logger::debug("Loading {} Equipsets...", size);
-
-        for (int i = 0; i < size; i++) {
-            std::string name = "Equipset_" + std::to_string(i);
-
-            int32_t mOrder = Json::LoadOrder(root, name);
-            std::string mName = Json::LoadName(root, name);
-
-            logger::trace("Loading '{}'...", mName);
-
-            Hotkey* hotkey = Json::LoadHotkey(root, name);
-            Option* option = Json::LoadOption(root, name);
-            Widget* widget = Json::LoadWidget(root, name);
-
-            Equipment* equipment = new Equipment;
-            if (!Json::LoadEquipment_Hand(root, name, equipment->mLeft, true)) {
-                logger::error("[{}] Failed to load Lefthand data.", mName);
-            }
-            if (!Json::LoadEquipment_Hand(root, name, equipment->mRight, false)) {
-                logger::error("[{}] Failed to load Righthand data.", mName);
-            }
-            if (!Json::LoadEquipment_Shout(root, name, equipment->mShout)) {
-                logger::error("[{}] Failed to load Shout/Power data.", mName);
-            }
-            if (!Json::LoadEquipment_Items(root, name, equipment->mItems)) {
-                logger::error("[{}] Failed to load Items data.", mName);
-            }
-
-            manager->NewEquipset(mOrder, mName, hotkey, option, widget, equipment);
-
-            logger::debug("'{}' loaded.", mName);
-        }
-
-        logger::info("Total {} Equipsets loaded.", size);
-    }
-    {
-        size_t size;
-        size = root.get("CycleEquipset Size", 0).asInt();
-
-        logger::debug("Loading {} Cycle Equipsets...", size);
-
-        for (int i = 0; i < size; i++) {
-            std::string name = "CycleEquipset_" + std::to_string(i);
-
-            int32_t mOrder = Json::LoadOrder(root, name);
-            std::string mName = Json::LoadName(root, name);
-
-            logger::trace("Loading '{}'...", mName);
-
-            Hotkey* hotkey = Json::LoadHotkey(root, name);
-            CycleOption* option = Json::LoadCycleOption(root, name);
-            Widget* widget = Json::LoadCycleWidget(root, name);
-            std::vector<std::string> items = Json::LoadCycleItems(root, name);
-
-            manager->NewCycleEquipset(mOrder, mName, hotkey, option, widget, items, std::make_pair(0, -1));
-
-            logger::debug("'{}' loaded.", mName);
-        }
-
-        logger::info("Total {} Cycle Equipsets loaded.", size);
-    }
-}
+}  // namespace Serialize

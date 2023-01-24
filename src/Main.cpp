@@ -1,10 +1,43 @@
-#include "header.h"
+#include "Config.h"
+#include "Render.h"
+#include "Gui/GuiMenu.h"
+#include "Translate.h"
+#include "Serialize.h"
 
-#include <stddef.h>
+#include "Event/Combat.h"
+#include "Event/Container.h"
+#include "Event/Equip.h"
+#include "Event/Input.h"
 
+#include "Scaleform/Scaleform.h"
+#include "HUDHandler.h"
+
+using namespace RE::BSScript;
 using namespace SKSE;
 using namespace SKSE::log;
 using namespace SKSE::stl;
+
+void postInitCallback() {
+    auto menu = GuiMenu::GetSingleton();
+    if (!menu) return;
+
+    DXGIPresentHook::callback_mutex.lock();
+    DXGIPresentHook::pre_callbacks.push_back([menu]() { 
+        menu->LoadFont();
+    });
+    DXGIPresentHook::mid_callbacks.push_back([menu]() { 
+        menu->DrawMain();
+    });
+    DXGIPresentHook::callback_mutex.unlock();
+    menu->NotifyInit();
+}
+
+template <class T>
+void write_thunk_call() {
+    auto& trampoline = SKSE::GetTrampoline();
+    REL::Relocation<std::uintptr_t> hook{T::id, T::offset};
+    T::func = trampoline.write_call<5>(hook.address(), T::thunk);
+}
 
 namespace {
     /**
@@ -26,34 +59,32 @@ namespace {
         *path /= PluginDeclaration::GetSingleton()->GetName();
         *path += L".log";
 
-        
         if (IsDebuggerPresent()) {
             auto msvc_sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
             msvc_sink->set_level(spdlog::level::debug);
 
             auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
             file_sink->set_level(spdlog::level::trace);
-            
-            auto log = std::make_shared<spdlog::logger>("Global", std::initializer_list<spdlog::sink_ptr>{msvc_sink, file_sink});
+
+            auto log = std::make_shared<spdlog::logger>("Global",
+                                                        std::initializer_list<spdlog::sink_ptr>{msvc_sink, file_sink});
             log->set_level(spdlog::level::trace);
             log->flush_on(spdlog::level::level_enum::trace);
-            
+
             spdlog::set_default_logger(std::move(log));
             spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
-        }
-        else {
-            auto log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
+        } else {
+            auto log = std::make_shared<spdlog::logger>(
+                "Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
 
-            spdlog::level::level_enum level = Config::GetLogLevel();
+            spdlog::level::level_enum level = spdlog::level::level_enum::info;
 
             log->set_level(level);
             log->flush_on(level);
-        
+
             spdlog::set_default_logger(std::move(log));
             spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
         }
-
-       
     }
 
     /**
@@ -73,36 +104,13 @@ namespace {
      * </p>
      */
     void InitializeSerialization() {
-        logger::trace("Initializing cosave serialization...");
+        log::trace("Initializing cosave serialization...");
         auto* serde = GetSerializationInterface();
         serde->SetUniqueID(_byteswap_ulong('UIHS'));
-        serde->SetSaveCallback(UIHS::EquipsetManager::OnGameSaved);
-        serde->SetRevertCallback(UIHS::EquipsetManager::OnRevert);
-        serde->SetLoadCallback(UIHS::EquipsetManager::OnGameLoaded);
-        logger::debug("Cosave serialization initialized.");
-    }
-
-    /**
-     * Initialize our Papyrus extensions.
-     *
-     * <p>
-     * A common use of SKSE is to add new Papyrus functions. You can call a registration callback to do this. This
-     * callback will not necessarily be called immediately, if the Papyrus VM has not been initialized yet (in that case
-     * it's execution is delayed until the VM is available).
-     * </p>
-     *
-     * <p>
-     * You can call the <code>Register</code> function as many times as you want and at any time you want to register
-     * additional functions.
-     * </p>
-     */
-    void InitializePapyrus() {
-        logger::trace("Initializing Papyrus binding...");
-        if (GetPapyrusInterface()->Register(Papyrus::RegisterFuncs)) {
-            logger::debug("Papyrus functions bound.");
-        } else {
-            stl::report_and_fail("Failure to register Papyrus bindings.");
-        }
+        serde->SetSaveCallback(Serialize::OnGameSaved);
+        serde->SetRevertCallback(Serialize::OnRevert);
+        serde->SetLoadCallback(Serialize::OnGameLoaded);
+        log::trace("Cosave serialization initialized.");
     }
 
     /**
@@ -121,16 +129,15 @@ namespace {
      * suffice for our demo project.
      * </p>
      */
-    void InitializeHooking() {
-        //log::trace("Initializing trampoline...");
-        //auto& trampoline = GetTrampoline();
-        //trampoline.create(64);
-        //log::trace("Trampoline initialized.");
+    void InitializeD3DHooking() {
+        logger::trace("Initializing trampoline...");
+        auto& trampoline = GetTrampoline();
+        trampoline.create(28);
 
-        //Sample::InitializeHook(trampoline);
-        Scaleform::Register();
-        OnCombatEvent::RegisterEvent();
-        HUDHandler::Register();
+        D3DInitHook::post_init_callbacks.push_back(postInitCallback);
+        write_thunk_call<D3DInitHook>();
+        write_thunk_call<DXGIPresentHook>();
+        logger::trace("Trampoline initialized.");
     }
 
     /**
@@ -164,7 +171,15 @@ namespace {
                     break;
                 case MessagingInterface::kDataLoaded: // All ESM/ESL/ESP plugins have loaded, main menu is now active.
                     // It is now safe to access form data.
-                    InitializeHooking();
+                   
+                    GuiMenu::GetSingleton()->NotifyFontReload();
+                    InputHandler::Register();
+                    HUDHandler::Register();
+                    EquipHandler::Register();
+                    CombatHandler::Register();
+                    ContainerHandler::Register();
+                    Scaleform::Register();
+                    Translator::GetSingleton()->Load();
                     break;
 
                 // Skyrim game events.
@@ -203,11 +218,10 @@ SKSEPluginLoad(const LoadInterface* skse) {
 
 
     Init(skse);
+    InitializeD3DHooking();
     InitializeMessaging();
     InitializeSerialization();
-    InitializePapyrus();
-    
-    logger::info("{} has finished loading.", plugin->GetName());
 
+    logger::info("{} has finished loading.", plugin->GetName());
     return true;
 }

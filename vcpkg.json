@@ -1,53 +1,27 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
-    "name": "commonlibsse-sample-plugin",
+    "name": "ui-integrated-hotkeys-system",
     "version-string": "1.0.0",
     "port-version": 0,
-    "description": "Sample SKSE plugin based on CommonLibSSE, for unified AE/SE/VR deployment.",
-    "homepage": "https://www.skyrimng.com",
+    "description": "Hotkeys System SKSE plugin for Skyrim SE.",
+    "homepage": "",
     "license": "Apache-2.0",
     "features": {
-        "scripts": {
-            "description": "Install Papyrus sources for this program to develop on top of it."
-        },
-        "scripts-dev": {
-            "description": "Install Papyrus sources necessary to develop scripts for this plugin.",
-            "dependencies": [
-                "bethesda-skyrim-scripts",
-                {
-                    "name": "skse",
-                    "default-features": false,
-                    "features": [
-                        "scripts"
-                    ]
-                }
-            ]
-        },
         "plugin": {
             "description": "Build the SKSE plugin.",
             "dependencies": [
-                "articuno",
-                "jsoncpp",
-                "commonlibsse-ng"
-            ]
-        },
-        "tests": {
-            "description": "Build tests for the SKSE plugin.",
-            "dependencies": [
+                "tomlplusplus",
+                "commonlibsse-ng",
                 {
-                    "name": "commonlibsse-sample-plugin",
-                    "default-features": false,
-                    "features": [
-                        "plugin"
-                    ]
-                },
-                "catch2"
+                  "name": "imgui",
+                  "features": [
+                    "win32-binding"
+                  ]
+                }
             ]
         }
     },
     "default-features": [
-        "scripts-dev",
-        "plugin",
-        "tests"
+        "plugin"
     ]
 }

@@ -118,3 +118,6 @@ namespace logger = SKSE::log;
 namespace util {
     using SKSE::stl::report_and_fail;
 }
+
+#define UNICODE
+#define _UNICODE

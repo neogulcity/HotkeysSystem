@@ -1,217 +1,146 @@
-#include "Scaleform/WidgetMenu.h"
+#include "WidgetMenu.h"
+
 #include "WidgetHandler.h"
 
 namespace Scaleform {
-    void WidgetMenu::Register()
-    {
+    void WidgetMenu::Register() {
         auto ui = RE::UI::GetSingleton();
-        if (ui) {
-            ui->Register(MENU_NAME, Creator);
-            logger::info("Registered {}"sv, MENU_NAME);
-        }
+        if (!ui) return;
+
+        ui->Register(MENU_NAME, Creator);
+        logger::info("{} Registered."sv, MENU_NAME);
     }
 
-    void WidgetMenu::RefreshUI()
-    {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-
-        const RE::GFxValue bTrue{true};
-        const RE::GFxValue bFalse{false};
+    void WidgetMenu::RefreshUI() {
+        //auto widgetHandler = WidgetHandler::GetSingleton();
 
         if (uiMovie) {
-            if (widgetHandler->mDissolveIn) {
-                _widget.Invoke("DissolveIn");
-                widgetHandler->ProcessDissolveIn();
-            }
+            //if (widgetHandler->mDissolveIn) {
+            //    _widget.Invoke("DissolveIn");
+            //    widgetHandler->ProcessDissolveIn();
+            //}
 
-            if (widgetHandler->mDissolveOut) {
-                _widget.Invoke("DissolveOut");
-                widgetHandler->ProcessDissolveOut();
-            }
+            //if (widgetHandler->mDissolveOut) {
+            //    _widget.Invoke("DissolveOut");
+            //    widgetHandler->ProcessDissolveOut();
+            //}
 
-            while (widgetHandler->mAnimate.size() > 0) {
-                const auto& elem = widgetHandler->mAnimate;
-                int32_t id = elem[0];
-                RE::GFxValue arg[1];
-                arg[0].SetNumber(id);
-                _widget.Invoke("Animate", nullptr, arg, 1);
-                widgetHandler->ProcessAnimate();
-            }
+            //while (widgetHandler->mAnimate.size() > 0) {
+            //    const auto& elem = widgetHandler->mAnimate;
+            //    int32_t id = elem[0];
+            //    RE::GFxValue arg[1];
+            //    arg[0].SetNumber(id);
+            //    _widget.Invoke("Animate", nullptr, arg, 1);
+            //    widgetHandler->ProcessAnimate();
+            //}
         }
     }
 
-    void WidgetMenu::ProcessDelegate()
-	{
-		WidgetHandler::GetSingleton()->ProcessWidgetMenu(*this);
-	}
-
-    void WidgetMenu::OnOpen()
-    {
-		RefreshUI();
-		ProcessDelegate();
+    void WidgetMenu::ProcessDelegate() {
+        WidgetHandler::GetSingleton()->ProcessWidgetMenu(*this);
     }
 
-    void WidgetMenu::OnClose()
-    {
-        if (!uiMovie) {
-            return;
-        }
-
-        _widget.Invoke("Clear");
+    void WidgetMenu::OnOpen() {
+        RefreshUI();
+        ProcessDelegate();
     }
 
-    void WidgetMenu::LoadWidget(std::string _path, int32_t _x, int32_t _y, int32_t _width, int32_t _height, int32_t _alpha)
-    {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
-
-        if (!uiMovie) {
-            return;
-        }
-
-        RE::GFxValue result;
-        RE::GFxValue args[6];
-        args[0].SetString(_path);
-        args[1].SetNumber(_x);
-        args[2].SetNumber(_y);
-        args[3].SetNumber(_width);
-        args[4].SetNumber(_height);
-        args[5].SetNumber(_alpha);
-        _widget.Invoke("LoadWidget", &result, args, 6);
-        int32_t id = std::stoi(result.GetString());
-        widgetHandler->AddID(id, WidgetHandler::eIDType::Widget);
+    void WidgetMenu::OnClose() {
+        //
     }
 
-    void WidgetMenu::LoadText(std::string _text, std::string _font, int32_t _size, int32_t _x, int32_t _y)
-    {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
+    void WidgetMenu::SetMenuVisible(bool _visible) {
+        const auto prev = _view->GetVisible();
+        if (prev != _visible) {
+            _view->SetVisible(_visible);
         }
+    }
 
-        if (!uiMovie) {
-            return;
-        }
+    void WidgetMenu::LoadWidget(uint32_t _id, std::string _path, int32_t _x, int32_t _y, int32_t _width, int32_t _height,
+                                int32_t _alpha) {
+        if (!uiMovie) return;
 
-        RE::GFxValue result;
-        RE::GFxValue args[5];
-        args[0].SetString(_text);
-        args[1].SetString(_font);
-        args[2].SetNumber(_size);
+        RE::GFxValue args[7];
+        args[0].SetNumber(_id);
+        args[1].SetString(_path);
+        args[2].SetNumber(_x);
+        args[3].SetNumber(_y);
+        args[4].SetNumber(_width);
+        args[5].SetNumber(_height);
+        args[6].SetNumber(_alpha);
+        _widget.Invoke("LoadWidget", nullptr, args, 7);
+    }
+
+    void WidgetMenu::UnloadWidget(uint32_t _id) {
+        if (!uiMovie) return;
+
+        RE::GFxValue args[1];
+        args[0].SetNumber(_id);
+        _widget.Invoke("UnloadWidget", nullptr, args, 1);
+    }
+
+    void WidgetMenu::LoadText(uint32_t _id, std::string _text, std::string _font, int32_t _x, int32_t _y,
+                              int32_t _align, int32_t _size, int32_t _alpha, bool _shadow) {
+        if (!uiMovie) return;
+
+        RE::GFxValue args[9];
+        args[0].SetNumber(_id);
+        args[1].SetString(_text);
+        args[2].SetString(_font);
         args[3].SetNumber(_x);
         args[4].SetNumber(_y);
-        _widget.Invoke("LoadText", &result, args, 5);
-        int32_t id = std::stoi(result.GetString());
-        widgetHandler->AddID(id, WidgetHandler::eIDType::Text);
+        args[5].SetNumber(_align);
+        args[6].SetNumber(_size);
+        args[7].SetNumber(_alpha);
+        args[8].SetBoolean(_shadow);
+        _widget.Invoke("LoadText", nullptr, args, 9);
     }
 
-    void WidgetMenu::UnloadWidget(int32_t _id)
-    {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
+    void WidgetMenu::UnloadText(uint32_t _id) {
+        if (!uiMovie) return;
 
-        if (!uiMovie) {
-            return;
-        }
-
-        RE::GFxValue arg[1];
-        arg[0].SetNumber(_id);
-        _widget.Invoke("UnloadWidget", nullptr, arg, 1);
-        widgetHandler->RemoveID(_id);
+        RE::GFxValue args[1];
+        args[0].SetNumber(_id);
+        _widget.Invoke("UnloadText", nullptr, args, 1);
     }
 
-    void WidgetMenu::UnloadText(int32_t _id) {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
+    void WidgetMenu::Animate(uint32_t _previd, uint32_t _nextid) {
+        if (!uiMovie) return;
 
-        if (!uiMovie) {
-            return;
-        }
-
-        RE::GFxValue arg[1];
-        arg[0].SetNumber(_id);
-        _widget.Invoke("UnloadText", nullptr, arg, 1);
-        widgetHandler->RemoveID(_id);
+        RE::GFxValue args[2];
+        args[0].SetNumber(_previd);
+        args[1].SetNumber(_nextid);
+        _widget.Invoke("Animate", nullptr, args, 2);
     }
 
-    void WidgetMenu::SetText(int32_t _id, std::string _text)
-    {
-        auto widgetHandler = WidgetHandler::GetSingleton();
-        if (!widgetHandler) {
-            return;
-        }
+    void WidgetMenu::SetText(uint32_t _id, std::string _text) {
+        if (!uiMovie) return;
 
-        if (!uiMovie) {
-            return;
-        }
-
-        const auto& elem = widgetHandler->mText;
         RE::GFxValue args[2];
         args[0].SetNumber(_id);
         args[1].SetString(_text);
         _widget.Invoke("SetText", nullptr, args, 2);
     }
 
-    void WidgetMenu::SetSize(int32_t _id, int32_t _width, int32_t _height)
-    {
-        if (!uiMovie) {
-            return;
-        }
+    void WidgetMenu::SetMenuAlpha(uint32_t _alpha) {
+        if (!uiMovie) return;
 
-        RE::GFxValue args[3];
-        args[0].SetNumber(_id);
-        args[1].SetNumber(_width);
-        args[2].SetNumber(_height);
-        _widget.Invoke("SetSize", nullptr, args, 3);
+        RE::GFxValue args[1];
+        args[0].SetNumber(_alpha);
+        _widget.Invoke("SetMenuAlpha", nullptr, args, 1);
     }
 
-    void WidgetMenu::SetPos(int32_t _id, int32_t _x, int32_t _y)
-    {
-        if (!uiMovie) {
-            return;
-        }
+    void WidgetMenu::MenuFadeIn() {
+        if (!uiMovie) return;
 
-        RE::GFxValue args[3];
-        args[0].SetNumber(_id);
-        args[1].SetNumber(_x);
-        args[2].SetNumber(_y);
-        _widget.Invoke("SetPos", nullptr, args, 3);
+        _widget.Invoke("MenuFadeIn");
     }
 
-    void WidgetMenu::SetAlpha(int32_t _id, int32_t _alpha)
-    {
-        if (!uiMovie) {
-            return;
-        }
+    void WidgetMenu::MenuFadeOut() {
+        if (!uiMovie) return;
 
-        RE::GFxValue args[2];
-        args[0].SetNumber(_id);
-        args[1].SetNumber(_alpha);
-        _widget.Invoke("SetAlpha", nullptr, args, 2);
+        _widget.Invoke("MenuFadeOut");
     }
+}  // namespace Scaleform
 
-    void WidgetMenu::SetMenuVisible(bool _visible)
-    {
-        const auto prev = _view->GetVisible();
-		if (prev != _visible) {
-			_view->SetVisible(_visible);
-		}
-    }
 
-    void WidgetMenu::SetMenuAlpha(int32_t _alpha)
-    {
-        if (!uiMovie) {
-            return;
-        }
-
-        RE::GFxValue arg[1];
-        arg[0].SetNumber(_alpha);
-        _widget.Invoke("SetMenuAlpha", nullptr, arg, 1);
-    }
-}
