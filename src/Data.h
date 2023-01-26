@@ -162,7 +162,8 @@ public:
     void InitPotion();
     void Clear();
 
-    std::vector<DataWeapon> weapon;
+    std::vector<DataWeapon> weapon_left;
+    std::vector<DataWeapon> weapon_right;
     std::vector<DataShout> shout;
     std::vector<DataArmor> armor;
     std::vector<DataPotion> potion;

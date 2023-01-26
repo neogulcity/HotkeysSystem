@@ -174,7 +174,8 @@ void DataHandler::Init() {
 }
 
 void DataHandler::Clear() {
-    weapon.clear();
+    weapon_left.clear();
+    weapon_right.clear();
     shout.clear();
     armor.clear();
     potion.clear();
@@ -215,7 +216,12 @@ void DataHandler::InitWeapon() {
     auto inv = player->GetInventory();
     for (const auto& [item, data] : inv) {
         const auto& [numItem, entry] = data;
-        if (numItem > 0 && item->Is(RE::FormType::Weapon)) {
+        if (numItem < 1) continue;
+
+        if (item->Is(RE::FormType::Weapon, RE::FormType::Armor)) {
+            auto armor = item->As<RE::TESObjectARMO>();
+            if (armor && !armor->IsShield()) continue;
+
             uint32_t numExtra = 0;
 
             auto extraLists = entry->extraLists;
@@ -243,6 +249,13 @@ void DataHandler::InitWeapon() {
                 tempVal.push_back(0.0f);
                 form.push_back(item->As<RE::TESForm>());
             }
+        } else if (item->Is(RE::FormType::Light)) {
+            type.push_back(Data::DATATYPE::WEAP);
+            name.push_back(item->GetName());
+            enchNum.push_back(0);
+            enchName.push_back(Extra::ENCHNONE);
+            tempVal.push_back(0.0f);
+            form.push_back(item->As<RE::TESForm>());
         }
     }
 
@@ -288,7 +301,13 @@ void DataHandler::InitWeapon() {
 
     for (int i = 0; i < type.size(); i++) {
         DataWeapon data(type[i], name[i], enchNum[i], enchName[i], tempVal[i], form[i]);
-        weapon.push_back(data);
+        weapon_left.push_back(data);
+    }
+    for (int i = 0; i < type.size(); i++) {
+        if (form[i] && form[i]->Is(RE::FormType::Armor, RE::FormType::Light)) continue;
+
+        DataWeapon data(type[i], name[i], enchNum[i], enchName[i], tempVal[i], form[i]);
+        weapon_right.push_back(data);
     }
 }
 
@@ -414,6 +433,9 @@ void DataHandler::InitArmor() {
     for (const auto& [item, data] : inv) {
         const auto& [numItem, entry] = data;
         if (numItem > 0 && item->Is(RE::FormType::Armor)) {
+            auto armor = item->As<RE::TESObjectARMO>();
+            if (armor && armor->IsShield()) continue;
+
             uint32_t numExtra = 0;
 
             auto extraLists = entry->extraLists;

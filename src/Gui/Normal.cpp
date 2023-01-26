@@ -12,16 +12,20 @@
 #include "extern/imgui_impl_dx11.h"
 #include "extern/imgui_stdlib.h"
 
-static void DrawComboWeapon(DataWeapon* _weapon, const std::string& _label) {
+static void DrawComboWeapon(DataWeapon* _weapon, const std::string& _label, bool _isLeft) {
     auto ts = Translator::GetSingleton();
     if (!ts) return;
 
     auto dataHandler = DataHandler::GetSingleton();
     if (!dataHandler) return;
 
+    std::vector<DataWeapon> weapon;
+    if (_isLeft) weapon = dataHandler->weapon_left;
+    else weapon = dataHandler->weapon_right;
+
     if (ImGui::BeginCombo(_label.c_str(), _weapon->name.c_str())) {
-        for (int i = 0; i < dataHandler->weapon.size(); i++) {
-            const auto& data = dataHandler->weapon[i];
+        for (int i = 0; i < weapon.size(); i++) {
+            const auto& data = weapon[i];
             bool is_selected = (_weapon->type == data.type) && (_weapon->name == data.name) &&
                                (_weapon->enchNum == data.enchNum) && (_weapon->enchName == data.enchName) &&
                                (_weapon->tempVal == data.tempVal);
@@ -143,8 +147,8 @@ namespace Shared::Normal {
         auto dataHandler = DataHandler::GetSingleton();
         if (!dataHandler) return;
 
-        DrawComboWeapon(_lefthand, TRANSLATE("_WEAPON_LEFTHAND"));
-        DrawComboWeapon(_righthand, TRANSLATE("_WEAPON_RIGHTHAND"));
+        DrawComboWeapon(_lefthand, TRANSLATE("_WEAPON_LEFTHAND"), true);
+        DrawComboWeapon(_righthand, TRANSLATE("_WEAPON_RIGHTHAND"), false);
 
         std::vector<std::string> items;
         for (const auto& item : dataHandler->shout) {

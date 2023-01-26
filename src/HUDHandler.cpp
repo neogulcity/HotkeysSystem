@@ -31,27 +31,52 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
     if (!config) return EventResult::kContinue;
 
     if (_event->menuName == intfcStr->loadingMenu && !(_event->opening)) {
-        auto equipment = EquipmentManager::GetSingleton();
-        if (!equipment) return EventResult::kContinue;
+        auto task = SKSE::GetTaskInterface();
+        if (!task) return EventResult::kContinue;
 
-        auto equipset = EquipsetManager::GetSingleton();
-        if (!equipset) return EventResult::kContinue;
+        task->AddUITask([widgetHandler, config]() {
+            auto equipment = EquipmentManager::GetSingleton();
+            auto equipset = EquipsetManager::GetSingleton();
 
-        widgetHandler->OpenWidgetMenu();
-        
-        if (config->Widget.General.animDelay != 0.0f &&
-            config->Widget.General.displayMode == (uint32_t)Config::DisplayType::INCOMBAT) {
-            widgetHandler->SetMenuAlpha(0);
-        }
+            if (equipment && equipset) {
+                widgetHandler->OpenWidgetMenu();
 
-        equipment->RemoveAllArmorWidget();
-        equipment->RemoveAllWeaponWidget();
-        equipment->RemoveAllShoutWidget();
-        equipset->RemoveAllWidget();
-        equipment->CreateAllArmorWidget();
-        equipment->CreateAllWeaponWidget();
-        equipment->CreateAllShoutWidget();
-        equipset->CreateAllWidget();
+                if (config->Widget.General.animDelay != 0.0f &&
+                    config->Widget.General.displayMode == (uint32_t)Config::DisplayType::INCOMBAT) {
+                    widgetHandler->SetMenuAlpha(0);
+                }
+
+                equipment->RemoveAllArmorWidget();
+                equipment->RemoveAllWeaponWidget();
+                equipment->RemoveAllShoutWidget();
+                equipset->RemoveAllWidget();
+                equipment->CreateAllArmorWidget();
+                equipment->CreateAllWeaponWidget();
+                equipment->CreateAllShoutWidget();
+                equipset->CreateAllWidget();
+            }
+        });
+        //auto equipment = EquipmentManager::GetSingleton();
+        //if (!equipment) return EventResult::kContinue;
+
+        //auto equipset = EquipsetManager::GetSingleton();
+        //if (!equipset) return EventResult::kContinue;
+
+        //widgetHandler->OpenWidgetMenu();
+        //
+        //if (config->Widget.General.animDelay != 0.0f &&
+        //    config->Widget.General.displayMode == (uint32_t)Config::DisplayType::INCOMBAT) {
+        //    widgetHandler->SetMenuAlpha(0);
+        //}
+
+        //equipment->RemoveAllArmorWidget();
+        //equipment->RemoveAllWeaponWidget();
+        //equipment->RemoveAllShoutWidget();
+        //equipset->RemoveAllWidget();
+        //equipment->CreateAllArmorWidget();
+        //equipment->CreateAllWeaponWidget();
+        //equipment->CreateAllShoutWidget();
+        //equipset->CreateAllWidget();
     }
 
     if (_event->menuName == intfcStr->mapMenu || _event->menuName == intfcStr->inventoryMenu ||

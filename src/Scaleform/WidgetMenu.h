@@ -102,7 +102,7 @@ namespace Scaleform {
         RE::GFxValue _widget;
 
         static constexpr std::string_view FILE_NAME{"HotkeysSystem/UIHS_Widget"};
-        static constexpr std::string_view MENU_NAME{"WidgetMenu"};
+        static constexpr std::string_view MENU_NAME{"UIHS_WidgetMenu"};
         static constexpr std::int8_t SORT_PRIORITY{0};
 
         RE::GPtr<RE::GFxMovieView> _view;

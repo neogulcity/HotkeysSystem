@@ -38,17 +38,24 @@ static void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, 
 
     // Items
     } else {
-        if (_form->GetFormType() == RE::FormType::Light) {
+        if (_form->Is(RE::FormType::Light)) {
             if (Actor::HasItem(player, _form)) {
                 auto object = _form->As<RE::TESBoundObject>();
                 if (object) {
-                    equipManager->EquipObject(player, object, nullptr, 1U, _slot, _queue, _force, _sound, false);
+                    equipManager->EquipObject(player, object, nullptr, 1U, nullptr, _queue, _force, _sound, false);
                 }
             }
-        } else if (Actor::HasItem(player, _form) || _form->formID == GetDummyDagger()->formID) {
-            auto object = _form->As<RE::TESBoundObject>();
-            if (object) {
-                equipManager->EquipObject(player, object, _xList, 1U, _slot, _queue, _force, _sound, false);
+        } else if (_form->Is(RE::FormType::Weapon, RE::FormType::Armor)) {
+            if (Actor::HasItem(player, _form) || _form->formID == GetDummyDagger()->formID) {
+                auto object = _form->As<RE::TESBoundObject>();
+                if (object) {
+                    auto armor = _form->As<RE::TESObjectARMO>();
+                    if (armor && armor->IsShield()) {
+                        equipManager->EquipObject(player, object, _xList, 1U, nullptr, _queue, _force, _sound, false);
+                    } else {
+                        equipManager->EquipObject(player, object, _xList, 1U, _slot, _queue, _force, _sound, false);
+                    }
+                }
             }
         }
     }
