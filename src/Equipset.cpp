@@ -38,7 +38,7 @@ static void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, 
 
     // Items
     } else {
-        if (_form->Is(RE::FormType::Light)) {
+        if (_form->Is(RE::FormType::Light, RE::FormType::AlchemyItem)) {
             if (Actor::HasItem(player, _form)) {
                 auto object = _form->As<RE::TESBoundObject>();
                 if (object) {
