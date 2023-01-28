@@ -1,13 +1,8 @@
 #include "Input.h"
-
-#include <imgui.h>
-
 #include "Config.h"
 #include "EquipsetManager.h"
-#include "WidgetHandler.h"
 
-
-#include "Actor.h"
+#include <imgui.h>
 
 InputHandler::InputHandler() {
     // Key: scan_code

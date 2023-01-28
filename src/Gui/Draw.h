@@ -2,6 +2,8 @@
 
 #include "Equipset.h"
 
+struct ImVec2;
+
 class DrawHelper {
 private:
     std::atomic<bool> reload = false;
@@ -35,13 +37,16 @@ namespace Draw {
     void TextCenter(const std::string& _msg);
     void InputButton(uint32_t* _key, const std::string& _id, const std::string& _button,
                                 const std::string& _label);
-    void SliderInt(const std::string& _label, int* _value, const int& _min, const int& _max, const std::string& _format,
+    bool SliderInt(const std::string& _label, int* _value, const int& _min, const int& _max, const std::string& _format,
                    int flags = 0);
-    void SliderFloat(const std::string& _label, float* _value, const float& _min, const float& _max, const std::string& _format = "%.3f",
-                   int flags = 0);
-    void Combo(const std::vector<std::string>& _items, uint32_t* _current, const std::string& _label);
-    void ComboIcon(std::string* _icon_type, const std::string& _label);
+    bool SliderFloat(const std::string& _label, float* _value, const float& _min, const float& _max,
+                     const std::string& _format = "%.3f", int flags = 0);
+    bool Combo(const std::vector<std::string>& _items, uint32_t* _current, const std::string& _label);
+    bool ComboIcon(std::string* _icon_type, const std::string& _label);
     void PopupConflict(const std::string& _title, const std::string& _name, std::string* _conflictName);
+
+    void BeginGroupPanel(const char* name, const ImVec2& size, const ImVec2& _padding);
+    void EndGroupPanel();
 
     bool CreateNormal();
     void ShowNormal(NormalSet* _normalSet, const uint32_t& _id);

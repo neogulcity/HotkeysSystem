@@ -13,6 +13,7 @@
 #include <imgui_internal.h>
 #include "extern/imgui_impl_dx11.h"
 #include "extern/imgui_stdlib.h"
+#include "extern/IconsFontAwesome5.h"
 
 GuiMenu::GuiMenu() {
     ConfigHandler::GetSingleton()->LoadConfig();
@@ -331,6 +332,16 @@ void GuiMenu::LoadFont() {
         io.Fonts->Clear();
         io.Fonts->AddFontDefault();
         font = io.Fonts->AddFontFromFileTTF(path.string().c_str(), config->Gui.fontSize, NULL, ranges.Data);
+
+        std::filesystem::path iconPath = "Data/SKSE/Plugins/UIHS/Fonts/fa-solid-900.ttf";
+        if (std::filesystem::is_regular_file(iconPath)) {
+            static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+            ImFontConfig icons_config;
+            icons_config.MergeMode = true;
+            icons_config.PixelSnapH = true;
+            io.Fonts->AddFontFromFileTTF(iconPath.string().c_str(), config->Gui.fontSize, &icons_config, icons_ranges);
+        }
+
         if (io.Fonts->Build()) {
             ImGui_ImplDX11_ReCreateFontsTexture();
             logger::info("Font loaded.");
@@ -361,60 +372,68 @@ void GuiMenu::DrawEquipment() {
     auto equipment = EquipmentManager::GetSingleton();
     if (!equipment) return;
 
-    ImGui::InvisibleButton("##Invisible", ImVec2(-110, 25));
-    ImGui::SameLine();
-    if (ImGui::Button(C_TRANSLATE("_RELOAD_WIDGET"), ImVec2(100, 25))) {
-        equipment->RemoveAllArmorWidget();
-        equipment->RemoveAllWeaponWidget();
-        equipment->RemoveAllShoutWidget();
-        equipment->CreateAllArmorWidget();
-        equipment->CreateAllWeaponWidget();
-        equipment->CreateAllShoutWidget();
-    }
+    bool shouldReload = false;
+    auto Reload = [&shouldReload]() { shouldReload = true; };
+
+    auto DrawWidgetIconSection = [ts, Reload](WidgetIcon* _widget) {
+        if (ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &_widget->enable)) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &_widget->offsetX, Config::icon_smin,
+                        Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &_widget->offsetY, Config::icon_smin,
+                        Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+    }; 
+    auto DrawWidgetTextSection = [ts, Reload](WidgetText* _widget) {
+        std::vector<std::string> align_items = {TRANSLATE("_ALIGN_LEFT"),
+                                                TRANSLATE("_ALIGN_RIGHT"),
+                                                TRANSLATE("_ALIGN_CENTER")};
+
+        if (ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &_widget->enable)) { Reload(); }
+        uint32_t* align = reinterpret_cast<uint32_t*>(&_widget->align);
+        if (Draw::Combo(align_items, align, C_TRANSLATE("_WIDGET_ALIGN"))) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &_widget->offsetX, Config::text_smin,
+                        Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &_widget->offsetY, Config::text_smin,
+                        Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+    };
 
     if (ImGui::CollapsingHeader(C_TRANSLATE("_TAB_EQUIPMENT_ARMOR"))) {
         ImGui::Indent();
 
+        static std::vector<ImVec2> groupSize(32, ImVec2(0.0f, 0.0f));
         for (int i = 0; i < 32; i++) {
             auto treeName = fmt::format("Slot{}", i + 30);
             if (ImGui::TreeNode(treeName.c_str())) {
                 ImGui::PushID(i);
 
-                ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 110.0f), false);
-
-                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                    ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->armor[i].widgetIcon.enable);
-                    Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->armor[i].widgetIcon.offsetX, Config::icon_smin,
-                                    Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-                    Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->armor[i].widgetIcon.offsetY, Config::icon_smin,
-                                    Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-                    ImGui::TreePop();
+                auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
+                Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+                {
+                    ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize[i].y), false);
+                    {
+                        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                            DrawWidgetIconSection(&equipment->armor[i].widgetIcon);
+                            ImGui::TreePop();
+                        }
+                    }
+                    ImGui::EndChild();
+                    ImGui::SameLine();
+                    ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize[i].y), false);
+                    {
+                        ImGui::BeginGroup();
+                        {
+                            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                            if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
+                                DrawWidgetTextSection(&equipment->armor[i].widgetName);
+                                ImGui::TreePop();
+                            }
+                        }
+                        ImGui::EndGroup();
+                        groupSize[i] = ImGui::GetItemRectSize();
+                    }
+                    ImGui::EndChild();
                 }
-                ImGui::EndChild();
-                ImGui::SameLine();
-                ImGui::BeginChild("RightRegion", ImVec2(0.0f, 110.0f), false);
-
-                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
-                    std::vector<std::string> align_items = {TRANSLATE("_ALIGN_LEFT"),
-                                                            TRANSLATE("_ALIGN_RIGHT"),
-                                                            TRANSLATE("_ALIGN_CENTER")};
-
-                    ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->armor[i].widgetName.enable);
-                    uint32_t* align = reinterpret_cast<uint32_t*>(&equipment->armor[i].widgetName.align);
-                    Draw::Combo(align_items, align, C_TRANSLATE("_WIDGET_ALIGN"));
-                    Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->armor[i].widgetName.offsetX, Config::text_smin,
-                                    Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-                    Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->armor[i].widgetName.offsetY, Config::text_smin,
-                                    Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-                    ImGui::TreePop();
-                }
-                ImGui::EndChild();
-
-                ImGui::Separator();
+                Draw::EndGroupPanel();
 
                 ImGui::PopID();
                 ImGui::TreePop();
@@ -428,81 +447,69 @@ void GuiMenu::DrawEquipment() {
         ImGui::Indent();
 
         if (ImGui::TreeNode(C_TRANSLATE("_WEAPON_LEFTHAND"))) {
-            ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 110.0f), false);
-
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->lefthand.widgetIcon.enable);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->lefthand.widgetIcon.offsetX, Config::icon_smin,
-                                Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->lefthand.widgetIcon.offsetY, Config::icon_smin,
-                                Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-                ImGui::TreePop();
+            static auto groupSize = ImVec2(0.0f, 0.0f);
+            auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
+            Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+            {
+                ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
+                {
+                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                    if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                        DrawWidgetIconSection(&equipment->lefthand.widgetIcon);
+                        ImGui::TreePop();
+                    }
+                }
+                ImGui::EndChild();
+                ImGui::SameLine();
+                ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
+                {
+                    ImGui::BeginGroup();
+                    {
+                        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
+                            DrawWidgetTextSection(&equipment->lefthand.widgetName);
+                            ImGui::TreePop();
+                        }
+                    }
+                    ImGui::EndGroup();
+                    groupSize = ImGui::GetItemRectSize();
+                }
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
-            ImGui::SameLine();
-            ImGui::BeginChild("RightRegion", ImVec2(0.0f, 110.0f), false);
-
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
-                std::vector<std::string> align_items = {TRANSLATE("_ALIGN_LEFT"),
-                                                        TRANSLATE("_ALIGN_RIGHT"),
-                                                        TRANSLATE("_ALIGN_CENTER")};
-
-                ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->lefthand.widgetName.enable);
-                uint32_t* align = reinterpret_cast<uint32_t*>(&equipment->lefthand.widgetName.align);
-                Draw::Combo(align_items, align, C_TRANSLATE("_WIDGET_ALIGN"));
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->lefthand.widgetName.offsetX, Config::text_smin,
-                                Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->lefthand.widgetName.offsetY, Config::text_smin,
-                                Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-                ImGui::TreePop();
-            }
-            ImGui::EndChild();
-
-            ImGui::Separator();
-
+            Draw::EndGroupPanel();
             ImGui::TreePop();
         }
         if (ImGui::TreeNode(C_TRANSLATE("_WEAPON_RIGHTHAND"))) {
-            ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 110.0f), false);
-
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->righthand.widgetIcon.enable);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->righthand.widgetIcon.offsetX, Config::icon_smin,
-                                Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->righthand.widgetIcon.offsetY, Config::icon_smin,
-                                Config::icon_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-                ImGui::TreePop();
+            static auto groupSize = ImVec2(0.0f, 0.0f);
+            auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
+            Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+            {
+                ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
+                {
+                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                    if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                        DrawWidgetIconSection(&equipment->righthand.widgetIcon);
+                        ImGui::TreePop();
+                    }
+                }
+                ImGui::EndChild();
+                ImGui::SameLine();
+                ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
+                {
+                    ImGui::BeginGroup();
+                    {
+                        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
+                            DrawWidgetTextSection(&equipment->righthand.widgetName);
+                            ImGui::TreePop();
+                        }
+                    }
+                    ImGui::EndGroup();
+                    groupSize = ImGui::GetItemRectSize();
+                }
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
-            ImGui::SameLine();
-            ImGui::BeginChild("RightRegion", ImVec2(0.0f, 110.0f), false);
-
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
-                std::vector<std::string> align_items = {TRANSLATE("_ALIGN_LEFT"),
-                                                        TRANSLATE("_ALIGN_RIGHT"),
-                                                        TRANSLATE("_ALIGN_CENTER")};
-
-                ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->righthand.widgetName.enable);
-                uint32_t* align = reinterpret_cast<uint32_t*>(&equipment->righthand.widgetName.align);
-                Draw::Combo(align_items, align, C_TRANSLATE("_WIDGET_ALIGN"));
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->righthand.widgetName.offsetX, Config::text_smin,
-                                Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->righthand.widgetName.offsetY, Config::text_smin,
-                                Config::text_smax, "%d", ImGuiSliderFlags_AlwaysClamp);
-
-                ImGui::TreePop();
-            }
-            ImGui::EndChild();
-
-            ImGui::Separator();
-
+            Draw::EndGroupPanel();
             ImGui::TreePop();
         }
 
@@ -512,41 +519,59 @@ void GuiMenu::DrawEquipment() {
     if (ImGui::CollapsingHeader(C_TRANSLATE("_TAB_EQUIPMENT_SHOUT"))) {
         ImGui::Indent();
 
-        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 110.0f), false);
-
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-            ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->shout.widgetIcon.enable);
-            Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->shout.widgetIcon.offsetX, Config::icon_smin, Config::icon_smax,
-                            "%d", ImGuiSliderFlags_AlwaysClamp);
-            Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->shout.widgetIcon.offsetY, Config::icon_smin, Config::icon_smax,
-                            "%d", ImGuiSliderFlags_AlwaysClamp);
-
-            ImGui::TreePop();
+        static auto groupSize = ImVec2(0.0f, 0.0f);
+        auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
+        Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+        {       
+            ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
+            {
+                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                    DrawWidgetIconSection(&equipment->shout.widgetIcon);
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::EndChild();
+            ImGui::SameLine();
+            ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
+            {
+                ImGui::BeginGroup();
+                {
+                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                    if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
+                        DrawWidgetTextSection(&equipment->shout.widgetName);
+                        ImGui::TreePop();
+                    }
+                }
+                ImGui::EndGroup();
+                groupSize = ImGui::GetItemRectSize();
+            }
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
-        ImGui::SameLine();
-        ImGui::BeginChild("RightRegion", ImVec2(0.0f, 110.0f), false);
-
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_NAME"))) {
-            std::vector<std::string> align_items = {TRANSLATE("_ALIGN_LEFT"),
-                                                    TRANSLATE("_ALIGN_RIGHT"),
-                                                    TRANSLATE("_ALIGN_CENTER")};
-
-            ImGui::Checkbox(C_TRANSLATE("_WIDGET_ENABLE"), &equipment->shout.widgetName.enable);
-            uint32_t* align = reinterpret_cast<uint32_t*>(&equipment->shout.widgetName.align);
-            Draw::Combo(align_items, align, C_TRANSLATE("_WIDGET_ALIGN"));
-            Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETX"), &equipment->shout.widgetName.offsetX, Config::text_smin, Config::text_smax,
-                            "%d", ImGuiSliderFlags_AlwaysClamp);
-            Draw::SliderInt(C_TRANSLATE("_WIDGET_OFFSETY"), &equipment->shout.widgetName.offsetY, Config::text_smin, Config::text_smax,
-                            "%d", ImGuiSliderFlags_AlwaysClamp);
-
-            ImGui::TreePop();
-        }
-        ImGui::EndChild();
-
+        Draw::EndGroupPanel();
         ImGui::Unindent();
+    }
+
+    if (shouldReload) {
+        auto equipment = EquipmentManager::GetSingleton();
+        if (!equipment) return;
+
+        auto equipset = EquipsetManager::GetSingleton();
+        if (!equipset) return;
+
+        auto widgetHandler = WidgetHandler::GetSingleton();
+        if (!widgetHandler) return;
+
+        widgetHandler->CloseWidgetMenu();
+        widgetHandler->OpenWidgetMenu();
+        equipset->RemoveAllWidget();
+        equipment->RemoveAllArmorWidget();
+        equipment->RemoveAllWeaponWidget();
+        equipment->RemoveAllShoutWidget();
+        equipment->CreateAllArmorWidget();
+        equipment->CreateAllWeaponWidget();
+        equipment->CreateAllShoutWidget();
+        equipset->CreateAllWidget();
     }
 }
 
@@ -557,177 +582,203 @@ void GuiMenu::DrawConfig() {
     auto ts = Translator::GetSingleton();
     if (!ts) return;
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader(C_TRANSLATE("_TAB_CONFIG_WIDGET"))) {
-        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 175.0f), false);
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::TreeNode(C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL"))) {
-            Draw::Combo(config->fontVec, &config->Widget.General.font, C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_FONT"));
+    bool shouldReload = false;
+    auto Reload = [&shouldReload]() { shouldReload = true; };
 
-            std::vector<std::string> displayVec = {TRANSLATE("_DISPLAYMODE_ALWAYS"),
-                                                   TRANSLATE("_DISPLAYMODE_INCOMBAT")};
-            Draw::Combo(displayVec, &config->Widget.General.displayMode,
-                        C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_DISPLAY"));
+    auto DrawWidgetSection = [ts, Reload](ConfigHandler::WidgetBase* _widget) {
+        if (Draw::ComboIcon(&_widget->bgType, C_TRANSLATE("_BACKGROUND_TYPE"))) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_BACKGROUND_SIZE"), &_widget->bgSize, 0, 200, "%d%%",
+                        ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_BACKGROUND_ALPHA"), &_widget->bgAlpha, 0, 100, "%d%%",
+                        ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_WIDGET_SIZE"), &_widget->widgetSize, 0, 200, "%d%%",
+                        ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+        if (Draw::SliderInt(C_TRANSLATE("_FONT_SIZE"), &_widget->fontSize, 0, 200, "%d%%",
+                        ImGuiSliderFlags_AlwaysClamp)) { Reload(); }
+        if (ImGui::Checkbox(C_TRANSLATE("_FONT_SHADOW"), &_widget->fontShadow)) { Reload(); }
+    };
 
-            std::vector<std::string> animVec = {TRANSLATE("_ANIMATIONTYPE_FADE"),
-                                                TRANSLATE("_ANIMATIONTYPE_INSTANT")};
-            Draw::Combo(animVec, &config->Widget.General.animType, C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_ANIM"));
+    static auto groupWidgetSize = ImVec2(0.0f, 0.0f);
+    auto groupWidgetLeftSize = ImVec2(0.0f, 0.0f);
+    auto groupWidgetRightSize = ImVec2(0.0f, 0.0f);
 
-            auto msg = "%.1f" + TRANSLATE("_TIMESECOND");
-            Draw::SliderFloat(C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_ANIMDELAY"), &config->Widget.General.animDelay,
-                              1.0f, 5.0f, msg.c_str(), ImGuiSliderFlags_AlwaysClamp);
+    ImGui::Text(" ");
 
-            ImGui::TreePop();
+    auto groupWidgetLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
+    Draw::BeginGroupPanel(groupWidgetLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+    {
+        ImGui::BeginChild("WidgetRegionLeft", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupWidgetSize.y), false);
+        {
+            ImGui::BeginGroup();
+            {
+                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                if (ImGui::TreeNode(C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL"))) {
+                    if (Draw::Combo(config->fontVec, &config->Widget.General.font, C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_FONT"))) { Reload(); }
+
+                    std::vector<std::string> displayVec = {TRANSLATE("_DISPLAYMODE_ALWAYS"),
+                                                           TRANSLATE("_DISPLAYMODE_INCOMBAT")};
+                    Draw::Combo(displayVec, &config->Widget.General.displayMode,
+                                C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_DISPLAY"));
+
+                    std::vector<std::string> animVec = {TRANSLATE("_ANIMATIONTYPE_FADE"),
+                                                        TRANSLATE("_ANIMATIONTYPE_INSTANT")};
+                    Draw::Combo(animVec, &config->Widget.General.animType, C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_ANIM"));
+
+                    auto msg = "%.1f" + TRANSLATE("_TIMESECOND");
+                    Draw::SliderFloat(C_TRANSLATE("_TAB_CONFIG_WIDGET_GENERAL_ANIMDELAY"), &config->Widget.General.animDelay,
+                                      1.0f, 5.0f, msg.c_str(), ImGuiSliderFlags_AlwaysClamp);
+
+                    ImGui::TreePop();
+                }
+                ImGui::PopItemWidth();
+            }
+            ImGui::EndGroup();
+            groupWidgetLeftSize = ImGui::GetItemRectSize();
         }
-        ImGui::PopItemWidth();
         ImGui::EndChild();
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion", ImVec2(0.0f, 175.0f), false);
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
-        if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPSETS"))) {
-            Draw::ComboIcon(&config->Widget.Equipset.bgType, C_TRANSLATE("_BACKGROUND_TYPE"));
-            Draw::SliderInt(C_TRANSLATE("_BACKGROUND_SIZE"), &config->Widget.Equipset.bgSize, 0, 200, "%d%%",
-                            ImGuiSliderFlags_AlwaysClamp);
-            Draw::SliderInt(C_TRANSLATE("_BACKGROUND_ALPHA"), &config->Widget.Equipset.bgAlpha, 0, 100, "%d%%",
-                            ImGuiSliderFlags_AlwaysClamp);
-            Draw::SliderInt(C_TRANSLATE("_WIDGET_SIZE"), &config->Widget.Equipset.widgetSize, 0, 200, "%d%%",
-                            ImGuiSliderFlags_AlwaysClamp);
-            Draw::SliderInt(C_TRANSLATE("_FONT_SIZE"), &config->Widget.Equipset.fontSize, 0, 200, "%d%%",
-                            ImGuiSliderFlags_AlwaysClamp);
-            ImGui::Checkbox(C_TRANSLATE("_FONT_SHADOW"), &config->Widget.Equipset.fontShadow);
-            ImGui::TreePop();
+        ImGui::BeginChild("WidgetRegionRight", ImVec2(0.0f, groupWidgetSize.y), false);
+        {
+            ImGui::BeginGroup();
+            {
+                ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPSETS"))) {
+                    DrawWidgetSection(&config->Widget.Equipset);
+                    ImGui::TreePop();
+                }
+                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT"))) {
+                    if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT_ARMOR"))) {
+                        DrawWidgetSection(&config->Widget.Equipment.Armor);
+                        ImGui::TreePop();
+                    }
+                    if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT_WEAPON"))) {
+                        DrawWidgetSection(&config->Widget.Equipment.Weapon);
+                        ImGui::TreePop();
+                    }
+                    if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT_SHOUT"))) {
+                        DrawWidgetSection(&config->Widget.Equipment.Shout);
+                        ImGui::TreePop();
+                    }
+                    ImGui::TreePop();
+                }
+                ImGui::PopItemWidth();
+            }
+            ImGui::EndGroup();
+            groupWidgetRightSize = ImGui::GetItemRectSize();
         }
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT"))) {
-            if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT_ARMOR"))) {
-                Draw::ComboIcon(&config->Widget.Equipment.Armor.bgType, C_TRANSLATE("_BACKGROUND_TYPE"));
-                Draw::SliderInt(C_TRANSLATE("_BACKGROUND_SIZE"), &config->Widget.Equipment.Armor.bgSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_BACKGROUND_ALPHA"), &config->Widget.Equipment.Armor.bgAlpha, 0, 100,
-                                "%d%%", ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_SIZE"), &config->Widget.Equipment.Armor.widgetSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_FONT_SIZE"), &config->Widget.Equipment.Armor.fontSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                ImGui::Checkbox(C_TRANSLATE("_FONT_SHADOW"), &config->Widget.Equipment.Armor.fontShadow);
-                ImGui::TreePop();
-            }
-            if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT_WEAPON"))) {
-                Draw::ComboIcon(&config->Widget.Equipment.Weapon.bgType, C_TRANSLATE("_BACKGROUND_TYPE"));
-                Draw::SliderInt(C_TRANSLATE("_BACKGROUND_SIZE"), &config->Widget.Equipment.Weapon.bgSize, 0, 200,
-                                "%d%%", ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_BACKGROUND_ALPHA"), &config->Widget.Equipment.Weapon.bgAlpha, 0, 100, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_SIZE"), &config->Widget.Equipment.Weapon.widgetSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_FONT_SIZE"), &config->Widget.Equipment.Weapon.fontSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                ImGui::Checkbox(C_TRANSLATE("_FONT_SHADOW"), &config->Widget.Equipment.Weapon.fontShadow);
-                ImGui::TreePop();
-            }
-            if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPMENT_SHOUT"))) {
-                Draw::ComboIcon(&config->Widget.Equipment.Shout.bgType, C_TRANSLATE("_BACKGROUND_TYPE"));
-                Draw::SliderInt(C_TRANSLATE("_BACKGROUND_SIZE"), &config->Widget.Equipment.Shout.bgSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_BACKGROUND_ALPHA"), &config->Widget.Equipment.Shout.bgAlpha, 0, 100, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_WIDGET_SIZE"), &config->Widget.Equipment.Shout.widgetSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                Draw::SliderInt(C_TRANSLATE("_FONT_SIZE"), &config->Widget.Equipment.Shout.fontSize, 0, 200, "%d%%",
-                                ImGuiSliderFlags_AlwaysClamp);
-                ImGui::Checkbox(C_TRANSLATE("_FONT_SHADOW"), &config->Widget.Equipment.Shout.fontShadow);
-                ImGui::TreePop();
-            }
-            ImGui::TreePop();
-        }
-        ImGui::PopItemWidth();
         ImGui::EndChild();
-        ImGui::InvisibleButton("##Invisible", ImVec2(-110, 25));
-        ImGui::SameLine();
-        if (ImGui::Button(C_TRANSLATE("_RELOAD_WIDGET"), ImVec2(100, 25))) {
-            auto equipment = EquipmentManager::GetSingleton();
-            if (!equipment) return;
-
-            auto equipset = EquipsetManager::GetSingleton();
-            if (!equipset) return;
-
-            equipset->RemoveAllWidget();
-            equipment->RemoveAllArmorWidget();
-            equipment->RemoveAllWeaponWidget();
-            equipment->RemoveAllShoutWidget();
-            equipment->CreateAllArmorWidget();
-            equipment->CreateAllWeaponWidget();
-            equipment->CreateAllShoutWidget();
-            equipset->CreateAllWidget();
-        }
     }
+    Draw::EndGroupPanel();
+    groupWidgetSize = groupWidgetLeftSize.y > groupWidgetRightSize.y
+            ? groupWidgetLeftSize
+            : groupWidgetRightSize;
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader(C_TRANSLATE("_TAB_CONFIG_SETTINGS"))) {
-        ImGui::Indent();
-        ImGui::BeginChild("LeftRegion2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 70.0f), false);
-        Draw::InputButton(&config->Settings.modifier1, "Modifier1", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER1"));
-        Draw::InputButton(&config->Settings.modifier2, "Modifier2", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER2"));
-        Draw::InputButton(&config->Settings.modifier3, "Modifier3", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER3"));
-        ImGui::EndChild();
-        ImGui::SameLine();
-        ImGui::BeginChild("RightRegion2", ImVec2(0.0f, 70.0f), false);
+    ImGui::Text(" ");
+    
+    static auto settingsSize = ImVec2(0.0f, 0.0f);
+    auto groupSettingLabel = fmt::format("{}  {}", ICON_FA_COG, TRANSLATE("_TAB_CONFIG_SETTINGS"));
+    Draw::BeginGroupPanel(groupSettingLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+    {
+        ImGui::BeginChild("SettingsRegionLeft", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, settingsSize.y), false);
         {
-            std::vector<std::string> items;
-            items.push_back(TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_CREATEASC"));
-            items.push_back(TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_CREATEDESC"));
-            items.push_back(TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_NAMEASC"));
-            items.push_back(TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_NAMEDESC"));
-            Draw::Combo(items, &config->Settings.sort, C_TRANSLATE("_TAB_CONFIG_SETTINGS_SORTORDER"));
-        }
-        ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_SETTINGS_FAVOR"), &config->Settings.favorOnly);
-        ImGui::EndChild();
-
-        ImGui::Unindent();
-    }
-
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::CollapsingHeader(C_TRANSLATE("_TAB_CONFIG_GUI"))) {
-        ImGui::Indent();
-
-        ImGui::BeginChild("LeftRegion3", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 70.0f), false);
-
-        auto hotkey = reinterpret_cast<uint32_t*>(&config->Gui.hotkey);
-        if (hotkey) {
-            Draw::InputButton(hotkey, "GuiHotkey", TRANSLATE("_EDIT"), TRANSLATE("_TAB_CONFIG_GUI_HOTKEY"));
-        }
-        ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_GUI_WINDOWBORDER"), &config->Gui.windowBorder);
-        ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_GUI_FRAMEBORDER"), &config->Gui.frameBorder);
-        ImGui::EndChild();
-
-        ImGui::SameLine();
-        ImGui::BeginChild("RightRegion3", ImVec2(0.0f, 70.0f), false);
-        {
-            std::vector<std::string> items = {"Chinese", "Czech", "English",
-                                              "French", "German", "Italian",
-                                              "Japanese", "Korean", "Polish",
-                                              "Russian", "Spanish", "Thai",
-                                              "Vietnamese"};
-            Draw::Combo(items, &config->Gui.language, TRANSLATE("_TAB_CONFIG_GUI_LANGUAGE"));
-
-            static uint32_t language = config->Gui.language;
-            if (language != config->Gui.language) {
-                language = config->Gui.language;
-                reload_font.store(true);
-                Translator::GetSingleton()->Load();
-                DataHandler::GetSingleton()->Init();
+            ImGui::BeginGroup();
+            {
+                Draw::InputButton(&config->Settings.modifier1, "Modifier1", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER1"));
+                Draw::InputButton(&config->Settings.modifier2, "Modifier2", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER2"));
+                Draw::InputButton(&config->Settings.modifier3, "Modifier3", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER3"));
             }
+            ImGui::EndGroup();
+            settingsSize = ImGui::GetItemRectSize();
         }
-        {
-            std::vector<std::string> items = {TRANSLATE("_STYLE_DARK"),
-                                              TRANSLATE("_STYLE_LIGHT"),
-                                              TRANSLATE("_STYLE_CLASSIC")};
-            Draw::Combo(items, &config->Gui.style, TRANSLATE("_TAB_CONFIG_GUI_STYLE"));
-        }
-        Draw::SliderFloat(TRANSLATE("_TAB_CONFIG_GUI_ROUNDING"), &config->Gui.rounding, 0.0f, 12.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp);
         ImGui::EndChild();
+        ImGui::SameLine();
+        ImGui::BeginChild("SettingsRegionRight", ImVec2(0.0f, settingsSize.y), false);
+        {
+            ImGui::BeginGroup();
+            {
+                std::vector<std::string> items = {TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_CREATEASC"),
+                                                  TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_CREATEDESC"),
+                                                  TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_NAMEASC"),
+                                                  TRANSLATE("_TAB_CONFIG_SETTINGS_SORT_NAMEDESC")};
+                Draw::Combo(items, &config->Settings.sort, C_TRANSLATE("_TAB_CONFIG_SETTINGS_SORTORDER"));
+                ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_SETTINGS_FAVOR"), &config->Settings.favorOnly);
+            }
+            ImGui::EndGroup();
+        }
+        ImGui::EndChild();
+    }
+    Draw::EndGroupPanel();
 
-        ImGui::Unindent();
+    ImGui::Text(" ");
+
+    static auto guiSize = ImVec2(0.0f, 0.0f);
+    auto groupGuiLabel = fmt::format("{}  {}", ICON_FA_DESKTOP, TRANSLATE("_TAB_CONFIG_GUI"));
+    Draw::BeginGroupPanel(groupGuiLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
+    {
+        ImGui::BeginChild("GuiRegionLeft", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, guiSize.y), false);
+        {
+            ImGui::BeginGroup();
+            {
+                auto hotkey = reinterpret_cast<uint32_t*>(&config->Gui.hotkey);
+                if (hotkey) Draw::InputButton(hotkey, "GuiHotkey", TRANSLATE("_EDIT"), TRANSLATE("_TAB_CONFIG_GUI_HOTKEY"));
+                ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_GUI_WINDOWBORDER"), &config->Gui.windowBorder);
+                ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_GUI_FRAMEBORDER"), &config->Gui.frameBorder);
+                ImGui::EndGroup();
+            }
+            guiSize = ImGui::GetItemRectSize();
+        }
+        ImGui::EndChild();
+        ImGui::SameLine();
+        ImGui::BeginChild("GuiRegionRight", ImVec2(0.0f, guiSize.y), false);
+        {
+            ImGui::BeginGroup();
+            {
+                {
+                    std::vector<std::string> items = {"Chinese", "Czech",    "English",   "French", "German",
+                                                      "Italian", "Japanese", "Korean",    "Polish", "Russian",
+                                                      "Spanish", "Thai",     "Vietnamese"};
+                    if (Draw::Combo(items, &config->Gui.language, TRANSLATE("_TAB_CONFIG_GUI_LANGUAGE"))) {
+                        reload_font.store(true);
+                        Translator::GetSingleton()->Load();
+                        DataHandler::GetSingleton()->Init();
+                    }
+                }
+                {
+                    std::vector<std::string> items = {TRANSLATE("_STYLE_DARK"),
+                                                      TRANSLATE("_STYLE_LIGHT"),
+                                                      TRANSLATE("_STYLE_CLASSIC")};
+                    Draw::Combo(items, &config->Gui.style, TRANSLATE("_TAB_CONFIG_GUI_STYLE"));
+                }
+                Draw::SliderFloat(TRANSLATE("_TAB_CONFIG_GUI_ROUNDING"), &config->Gui.rounding, 0.0f, 12.0f, "%.1f",
+                                  ImGuiSliderFlags_AlwaysClamp);
+            }
+            ImGui::EndGroup();
+        }
+        ImGui::EndChild();
+    }
+    Draw::EndGroupPanel();
+
+    if (shouldReload) {
+        auto equipment = EquipmentManager::GetSingleton();
+        if (!equipment) return;
+
+        auto equipset = EquipsetManager::GetSingleton();
+        if (!equipset) return;
+
+        auto widgetHandler = WidgetHandler::GetSingleton();
+        if (!widgetHandler) return;
+
+        widgetHandler->CloseWidgetMenu();
+        widgetHandler->OpenWidgetMenu();
+        equipset->RemoveAllWidget();
+        equipment->RemoveAllArmorWidget();
+        equipment->RemoveAllWeaponWidget();
+        equipment->RemoveAllShoutWidget();
+        equipment->CreateAllArmorWidget();
+        equipment->CreateAllWeaponWidget();
+        equipment->CreateAllShoutWidget();
+        equipset->CreateAllWidget();
     }
 }
