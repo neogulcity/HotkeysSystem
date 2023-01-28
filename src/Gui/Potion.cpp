@@ -10,6 +10,7 @@
 #include <imgui.h>
 #include "extern/imgui_impl_dx11.h"
 #include "extern/imgui_stdlib.h"
+#include "extern/IconsFontAwesome5.h"
 
 static void DrawComboPotion(DataPotion* _potion, const std::vector<DataPotion>& _potionVec, const std::string& _label) {
     auto ts = Translator::GetSingleton();
@@ -134,7 +135,7 @@ namespace Shared::Potion {
 
         if (ImGui::BeginTable("Item_Table", 2)) {
             ImGui::TableNextColumn();
-            if (ImGui::Button(C_TRANSLATE("_ADD"), {-FLT_MIN, 0.f})) {
+            if (ImGui::Button(C_TRANSLATE("_ADD"), {ImGui::GetContentRegionAvail().x - 7.5f, 0.f})) {
                 if (dataHandler->potion.size() != 0) {
                     ImGui::OpenPopup(C_TRANSLATE("_ITEM_ADDPOPUP"));
                 }
@@ -162,21 +163,27 @@ namespace Shared::Potion {
                     ImGui::EndListBox();
                 }
 
-                if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(120, 0))) {
-                    _potion->push_back(dataHandler->potion[*_popup_potionIndex]);
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                ImGui::SetItemDefaultFocus();
-                if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(120, 0))) {
-                    ImGui::CloseCurrentPopup();
-                }
+                if (ImGui::BeginTable("Button_Table", 2)) {
+                    ImGui::TableNextColumn();
+                    auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                    if (ImGui::Button(C_TRANSLATE("_OK"),
+                                      ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                        _potion->push_back(dataHandler->potion[*_popup_potionIndex]);
+                        ImGui::CloseCurrentPopup();
+                    }
 
+                    ImGui::TableNextColumn();
+                    if (ImGui::Button(C_TRANSLATE("_CANCEL"),
+                                      ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndTable();
+                }
                 ImGui::EndPopup();
             }
 
             ImGui::TableNextColumn();
-            if (ImGui::Button(C_TRANSLATE("_REMOVE"), {-FLT_MIN, 0.f})) {
+            if (ImGui::Button(C_TRANSLATE("_REMOVE"), {ImGui::GetContentRegionAvail().x - 7.5f, 0.f})) {
                 if (*_page_potionIndex < _potion->size()) {
                     _potion->erase(_potion->begin() + *_page_potionIndex);
                 }
@@ -189,7 +196,9 @@ namespace Shared::Potion {
         for (int i = 0; i < _potion->size(); i++) {
             auto potion = *(_potion->begin() + i);
             const bool is_selected = (*_page_potionIndex == i);
-            if (ImGui::Selectable(potion.name.c_str(), is_selected)) {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5.0f);
+            if (ImGui::Selectable(potion.name.c_str(), is_selected, ImGuiSelectableFlags_None,
+                                  ImVec2(ImGui::GetContentRegionAvail().x - 15.0f, 0.0f))) {
                 *_page_potionIndex = i;
             }
 
@@ -211,7 +220,8 @@ namespace Create::Potion {
         auto drawHelper = DrawHelper::GetSingleton();
         if (!drawHelper) return;
 
-        if (ImGui::Button(C_TRANSLATE("_EDIT"), ImVec2(80, 0))) {
+        auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_EDIT"));
+        if (ImGui::Button(C_TRANSLATE("_EDIT"), ImVec2(buttonSize.x + 30.0f, 0.0f))) {
             ImGui::OpenPopup(C_TRANSLATE("_EDIT_POPUP_TITLE"));
         }
         ImGui::SameLine();
@@ -228,21 +238,28 @@ namespace Create::Potion {
                 drawHelper->NotifyReloadName(false);
             }
 
-            ImGui::Text((TRANSLATE("_EDIT_NAMEMSG") + "\n\n").c_str());
+            ImGui::Text(C_TRANSLATE("_EDIT_NAMEMSG"));
+            ImGui::Text(" ");
             ImGui::InputText("##NameInput", &tempName);
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(120, 0))) {
-                *_name = tempName;
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
-            }
+            if (ImGui::BeginTable("Button_Table", 2)) {
+                ImGui::TableNextColumn();
+                auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                if (ImGui::Button(C_TRANSLATE("_OK"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    *_name = tempName;
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
 
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(120, 0))) {
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
+                ImGui::TableNextColumn();
+                if (ImGui::Button(C_TRANSLATE("_CANCEL"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndTable();
             }
             ImGui::EndPopup();
         }
@@ -323,43 +340,110 @@ namespace Create::Potion {
         NameSection(&name);
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 285.0f), false);
+        static auto groupSize = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize = ImVec2(0.0f, 0.0f);
+        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
         {
-            Shared::Potion::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
-            ImGui::Separator();
-            Shared::Potion::OptionSection(&equipSound, &calcDuration);
+            ImGui::BeginGroup();
+            {
+                auto hotkeyLabel = fmt::format("{}  {}", ICON_FA_KEYBOARD, TRANSLATE("_ICON_HOTKEY"));
+                Draw::BeginGroupPanel(hotkeyLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
+                }
+                Draw::EndGroupPanel();
+
+                auto optionLabel = fmt::format("{}  {}", ICON_FA_SLIDERS_H, TRANSLATE("_ICON_OPTION"));
+                Draw::BeginGroupPanel(optionLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::OptionSection(&equipSound, &calcDuration);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupLeftSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion", ImVec2(0.0f, 285.0f), false);
+        ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
         {
-            Shared::Potion::WidgetSection(&icon_enable, &icon_type, &icon_offsetX, &icon_offsetY, &name_enable,
-                                          &name_align_type, &name_offsetX, &name_offsetY, &amount_enable,
-                                          &amount_align_type, &amount_offsetX, &amount_offsetY);
+            ImGui::BeginGroup();
+            {
+                auto widgetLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_ICON_WIDGET"));
+                Draw::BeginGroupPanel(widgetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::WidgetSection(&icon_enable, &icon_type, &icon_offsetX, &icon_offsetY, &name_enable,
+                                                  &name_align_type, &name_offsetX, &name_offsetY, &amount_enable,
+                                                  &amount_align_type, &amount_offsetX, &amount_offsetY);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
 
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 200), false);
+        static auto groupSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize2 = ImVec2(0.0f, 0.0f);
+
+        auto margin = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str()).y + 30.0f;
+        if (groupSize2.y < ImGui::GetContentRegionAvail().y - margin) {
+            groupSize2.y = ImGui::GetContentRegionAvail().y - margin;
+        }
+
+        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize2.y), false);
         {
-            Shared::Potion::PotionSection(&health, &magicka, &stamina);
+            ImGui::BeginGroup();
+            {
+                auto potionLabel = fmt::format("{}  {}", ICON_FA_FLASK, TRANSLATE("_ICON_POTION"));
+                Draw::BeginGroupPanel(potionLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::PotionSection(&health, &magicka, &stamina);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupLeftSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, 200), false);
+        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, groupSize2.y), false);
         {
-            Shared::Potion::PotionItemSection(&potion, &page_potionIndex, &popup_potionIndex);
+            ImGui::BeginGroup();
+            {
+                auto potionItemLabel = fmt::format("{}  {}", ICON_FA_FLASK, TRANSLATE("_ICON_POTION"));
+                Draw::BeginGroupPanel(potionItemLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::PotionItemSection(&potion, &page_potionIndex, &popup_potionIndex);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize2 = groupLeftSize2.y > groupRightSize2.y ? groupLeftSize2 : groupRightSize2;
 
         if (ImGui::BeginTable("End_Table", 2)) {
             ImGui::TableNextColumn();
 
             auto title = TRANSLATE("_WARNING");
-            if (ImGui::Button(C_TRANSLATE("_OK"), {-FLT_MIN, 25.0f})) {
+            auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+            if (ImGui::Button(C_TRANSLATE("_OK"), {-FLT_MIN, buttonSize.y + 15.0f})) {
                 auto [result_type, result_string] =
                     manager->IsCreateValid(name, hotkey, modifier1, modifier2, modifier3);
 
@@ -412,7 +496,7 @@ namespace Create::Potion {
             Draw::PopupConflict(title, name, &hotkey_conflictName);
 
             ImGui::TableNextColumn();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), {-FLT_MIN, 25.0f})) {
+            if (ImGui::Button(C_TRANSLATE("_CANCEL"), {-FLT_MIN, buttonSize.y + 15.0f})) {
                 close_popup = true;
             }
             ImGui::EndTable();
@@ -430,7 +514,8 @@ namespace Show::Potion {
         auto drawHelper = DrawHelper::GetSingleton();
         if (!drawHelper) return;
 
-        if (ImGui::Button(C_TRANSLATE("_EDIT_NAME"), ImVec2(80, 0))) {
+        auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_EDIT_NAME"));
+        if (ImGui::Button(C_TRANSLATE("_EDIT_NAME"), ImVec2(buttonSize.x + 30.0f, 0.0f))) {
             ImGui::OpenPopup(C_TRANSLATE("_EDIT_POPUP_TITLE"));
         }
 
@@ -444,20 +529,28 @@ namespace Show::Potion {
                 drawHelper->NotifyReloadName(false);
             }
 
-            ImGui::Text((TRANSLATE("_EDIT_NAMEMSG") + "\n\n").c_str());
+            ImGui::Text(C_TRANSLATE("_EDIT_NAMEMSG"));
+            ImGui::Text(" ");
             ImGui::InputText("##NameInput", &tempName);
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(120, 0))) {
-                *_name = tempName;
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(120, 0))) {
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
+            if (ImGui::BeginTable("Button_Table", 2)) {
+                ImGui::TableNextColumn();
+                auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                if (ImGui::Button(C_TRANSLATE("_OK"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    *_name = tempName;
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::TableNextColumn();
+                if (ImGui::Button(C_TRANSLATE("_CANCEL"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndTable();
             }
             ImGui::EndPopup();
         }
@@ -572,30 +665,35 @@ namespace Show::Potion {
 
         NameSection(&name);
         ImGui::SameLine();
-        ImGui::InvisibleButton("##Invisible", ImVec2(-220, ImGui::CalcTextSize("text").y));
+
+        auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_REMOVE") + TRANSLATE("_SAVECHANGES")).c_str());
+        ImGui::InvisibleButton("##Invisible", ImVec2(-buttonSize.x - 80.0f, buttonSize.y));
         ImGui::SameLine();
 
-        if (ImGui::Button(C_TRANSLATE("_REMOVE"), ImVec2(100, 0))) {
+        if (ImGui::Button(C_TRANSLATE("_REMOVE"), ImVec2(ImGui::CalcTextSize(C_TRANSLATE("_REMOVE")).x + 30.0f, 0))) {
             ImGui::OpenPopup("##Remove");
         }
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowSize({200, 110}, ImGuiCond_Once);
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("##Remove", NULL)) {
-            auto msg = fmt::format("\n  {}  \n\n", C_TRANSLATE("_REMOVE_MSG"));
+            auto msg = fmt::format("  {}  ", C_TRANSLATE("_REMOVE_MSG"));
+            ImGui::Text(" ");
             ImGui::Text(msg.c_str());
+            ImGui::Text(" ");
             ImGui::Separator();
 
             if (ImGui::BeginTable("Button_Table", 2)) {
                 ImGui::TableNextColumn();
-                if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, 20.0f))) {
+                auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                     manager->RemoveAllWidget();
                     manager->Remove(equipset);
                     manager->CreateAllWidget();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::TableNextColumn();
-                if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(-FLT_MIN, 20.0f))) {
+                if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndTable();
@@ -612,7 +710,8 @@ namespace Show::Potion {
         }
 
         auto title = TRANSLATE("_WARNING");
-        if (ImGui::Button(C_TRANSLATE("_SAVECHANGES"), ImVec2(100, 0))) {
+        if (ImGui::Button(C_TRANSLATE("_SAVECHANGES"),
+                          ImVec2(ImGui::CalcTextSize(C_TRANSLATE("_SAVECHANGES")).x + 30.0f, 0))) {
             auto [result_type, result_string] =
                 manager->IsEditValid(equipset, name, hotkey, modifier1, modifier2, modifier3);
 
@@ -671,36 +770,96 @@ namespace Show::Potion {
 
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 285.0f), false);
+        static auto groupSize = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize = ImVec2(0.0f, 0.0f);
+        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
         {
-            Shared::Potion::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
-            ImGui::Separator();
-            Shared::Potion::OptionSection(&equipSound, &calcDuration);
+            ImGui::BeginGroup();
+            {
+                auto hotkeyLabel = fmt::format("{}  {}", ICON_FA_KEYBOARD, TRANSLATE("_ICON_HOTKEY"));
+                Draw::BeginGroupPanel(hotkeyLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
+                }
+                Draw::EndGroupPanel();
+
+                auto optionLabel = fmt::format("{}  {}", ICON_FA_SLIDERS_H, TRANSLATE("_ICON_OPTION"));
+                Draw::BeginGroupPanel(optionLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::OptionSection(&equipSound, &calcDuration);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupLeftSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion", ImVec2(0.0f, 285.0f), false);
+        ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
         {
-            Shared::Potion::WidgetSection(&icon_enable, &icon_type, &icon_offsetX, &icon_offsetY, &name_enable,
-                                          &name_align_type, &name_offsetX, &name_offsetY, &amount_enable,
-                                          &amount_align_type, &amount_offsetX, &amount_offsetY);
+            ImGui::BeginGroup();
+            {
+                auto widgetLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_ICON_WIDGET"));
+                Draw::BeginGroupPanel(widgetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::WidgetSection(&icon_enable, &icon_type, &icon_offsetX, &icon_offsetY, &name_enable,
+                                                  &name_align_type, &name_offsetX, &name_offsetY, &amount_enable,
+                                                  &amount_align_type, &amount_offsetX, &amount_offsetY);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
 
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 150), false);
+        static auto groupSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize2 = ImVec2(0.0f, 0.0f);
+        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize2.y), false);
         {
-            Shared::Potion::PotionSection(&health, &magicka, &stamina);
+            ImGui::BeginGroup();
+            {
+                auto potionLabel = fmt::format("{}  {}", ICON_FA_FLASK, TRANSLATE("_ICON_POTION"));
+                Draw::BeginGroupPanel(potionLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::PotionSection(&health, &magicka, &stamina);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupLeftSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, 150), false);
+        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, groupSize2.y), false);
         {
-            Shared::Potion::PotionItemSection(&potion, &page_potionIndex, &popup_potionIndex);
+            ImGui::BeginGroup();
+            {
+                auto potionItemLabel = fmt::format("{}  {}", ICON_FA_FLASK, TRANSLATE("_ICON_POTION"));
+                Draw::BeginGroupPanel(potionItemLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Potion::PotionItemSection(&potion, &page_potionIndex, &popup_potionIndex);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize2 = groupLeftSize2.y > groupRightSize2.y ? groupLeftSize2 : groupRightSize2;
     }
 }  // namespace Show::Potion

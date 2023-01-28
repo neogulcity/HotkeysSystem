@@ -10,6 +10,7 @@
 #include <imgui.h>
 #include "extern/imgui_impl_dx11.h"
 #include "extern/imgui_stdlib.h"
+#include "extern/IconsFontAwesome5.h"
 
 namespace Shared::Cycle {
     void HotkeySection(uint32_t* _hotkey, bool* _modifier1, bool* _modifier2, bool* _modifier3) {
@@ -99,10 +100,11 @@ namespace Shared::Cycle {
 
         if (ImGui::BeginTable("Item_Table", 2)) {
             ImGui::TableNextColumn();
-            if (ImGui::Button(C_TRANSLATE("_ADD"), {-FLT_MIN, 0.f})) {
+            if (ImGui::Button(C_TRANSLATE("_ADD"), {ImGui::GetContentRegionAvail().x - 7.5f, 0.f})) {
                 uint32_t count = 0U;
                 for (auto elem : manager->equipsetVec) {
-                    if (elem->type == Equipset::TYPE::CYCLE) continue;
+                    if (elem->type == Equipset::TYPE::CYCLE ||
+                        elem->type == Equipset::TYPE::POTION) continue;
 
                     count++;
                 }
@@ -135,21 +137,27 @@ namespace Shared::Cycle {
                     ImGui::EndListBox();
                 }
 
-                if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(120, 0))) {
-                    _equipset->push_back(items[*_popup_equipsetIndex]);
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                ImGui::SetItemDefaultFocus();
-                if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(120, 0))) {
-                    ImGui::CloseCurrentPopup();
-                }
+                if (ImGui::BeginTable("Button_Table", 2)) {
+                    ImGui::TableNextColumn();
+                    auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                    if (ImGui::Button(C_TRANSLATE("_OK"),
+                                      ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                        _equipset->push_back(items[*_popup_equipsetIndex]);
+                        ImGui::CloseCurrentPopup();
+                    }
 
+                    ImGui::TableNextColumn();
+                    if (ImGui::Button(C_TRANSLATE("_CANCEL"),
+                                      ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndTable();
+                }
                 ImGui::EndPopup();
             }
 
             ImGui::TableNextColumn();
-            if (ImGui::Button(C_TRANSLATE("_REMOVE"), {-FLT_MIN, 0.f})) {
+            if (ImGui::Button(C_TRANSLATE("_REMOVE"), {ImGui::GetContentRegionAvail().x - 7.5f, 0.f})) {
                 if (*_page_equipsetIndex < _equipset->size()) {
                     _equipset->erase(_equipset->begin() + *_page_equipsetIndex);
                 }
@@ -162,7 +170,9 @@ namespace Shared::Cycle {
         for (int i = 0; i < _equipset->size(); i++) {
             auto equipset = *(_equipset->begin() + i);
             const bool is_selected = (*_page_equipsetIndex == i);
-            if (ImGui::Selectable(equipset.c_str(), is_selected)) {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5.0f);
+            if (ImGui::Selectable(equipset.c_str(), is_selected, ImGuiSelectableFlags_None,
+                                  ImVec2(ImGui::GetContentRegionAvail().x - 15.0f, 0.0f))) {
                 *_page_equipsetIndex = i;
             }
 
@@ -184,7 +194,8 @@ namespace Create::Cycle {
         auto drawHelper = DrawHelper::GetSingleton();
         if (!drawHelper) return;
 
-        if (ImGui::Button(C_TRANSLATE("_EDIT"), ImVec2(80, 0))) {
+        auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_EDIT"));
+        if (ImGui::Button(C_TRANSLATE("_EDIT"), ImVec2(buttonSize.x + 30.0f, 0.0f))) {
             ImGui::OpenPopup(C_TRANSLATE("_EDIT_POPUP_TITLE"));
         }
         ImGui::SameLine();
@@ -201,21 +212,28 @@ namespace Create::Cycle {
                 drawHelper->NotifyReloadName(false);
             }
 
-            ImGui::Text((TRANSLATE("_EDIT_NAMEMSG") + "\n\n").c_str());
+            ImGui::Text(C_TRANSLATE("_EDIT_NAMEMSG"));
+            ImGui::Text(" ");
             ImGui::InputText("##NameInput", &tempName);
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(120, 0))) {
-                *_name = tempName;
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
-            }
+            if (ImGui::BeginTable("Button_Table", 2)) {
+                ImGui::TableNextColumn();
+                auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                if (ImGui::Button(C_TRANSLATE("_OK"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    *_name = tempName;
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
 
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(120, 0))) {
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
+                ImGui::TableNextColumn();
+                if (ImGui::Button(C_TRANSLATE("_CANCEL"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndTable();
             }
             ImGui::EndPopup();
         }
@@ -290,42 +308,112 @@ namespace Create::Cycle {
         NameSection(&name);
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 285.0f), false);
+        static auto groupSize = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize = ImVec2(0.0f, 0.0f);
+        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
         {
-            Shared::Cycle::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
-            ImGui::Separator();
-            Shared::Cycle::OptionSection(&cyclePersist, &cycleExpire, &cycleReset);
+            ImGui::BeginGroup();
+            {
+                auto hotkeyLabel = fmt::format("{}  {}", ICON_FA_KEYBOARD, TRANSLATE("_ICON_HOTKEY"));
+                Draw::BeginGroupPanel(hotkeyLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
+                }
+                Draw::EndGroupPanel();
+
+                auto optionLabel = fmt::format("{}  {}", ICON_FA_SLIDERS_H, TRANSLATE("_ICON_OPTION"));
+                Draw::BeginGroupPanel(optionLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::OptionSection(&cyclePersist, &cycleExpire, &cycleReset);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupLeftSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion", ImVec2(0.0f, 285.0f), false);
+        ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
         {
-            Shared::Cycle::WidgetSection(&icon_enable, &icon_offsetX, &icon_offsetY, &name_enable, &name_align_type, &name_offsetX,
-                                          &name_offsetY, &hotkey_enable, &hotkey_align_type, &hotkey_offsetX, &hotkey_offsetY);
+            ImGui::BeginGroup();
+            {
+                auto widgetLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_ICON_WIDGET"));
+                Draw::BeginGroupPanel(widgetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::WidgetSection(&icon_enable, &icon_offsetX, &icon_offsetY, &name_enable,
+                                                 &name_align_type, &name_offsetX, &name_offsetY, &hotkey_enable,
+                                                 &hotkey_align_type, &hotkey_offsetX, &hotkey_offsetY);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
 
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 200), false);
+        static auto groupSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize2 = ImVec2(0.0f, 0.0f);
+
+        auto margin = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str()).y + 30.0f;
+        if (groupSize2.y < ImGui::GetContentRegionAvail().y - margin) {
+            groupSize2.y = ImGui::GetContentRegionAvail().y - margin;
+        }
+
+        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize2.y), false);
         {
-            //Shared::Normal::WeaponSection(&lefthand, &righthand, &shout);
+            //ImGui::BeginGroup();
+            //{
+            //    auto weaponLabel = fmt::format("{}  {}", ICON_FA_HAMMER, TRANSLATE("_ICON_WEAPON"));
+            //    Draw::BeginGroupPanel(weaponLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+            //                          ImVec2(15.0f, 10.0f));
+            //    {
+            //        Shared::Normal::WeaponSection(&lefthand, &righthand, &shout);
+            //    }
+            //    Draw::EndGroupPanel();
+            //}
+            //ImGui::EndGroup();
+            //groupLeftSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, 200), false);
+        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, groupSize2.y), false);
         {
-            Shared::Cycle::EquipsetSection(&equipset, &page_equipsetIndex, &popup_equipsetIndex);
+            ImGui::BeginGroup();
+            {
+                auto equipsetLabel = fmt::format("{}  {}", ICON_FA_DATABASE, TRANSLATE("_ICON_EQUIPSET"));
+                Draw::BeginGroupPanel(equipsetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::EquipsetSection(&equipset, &page_equipsetIndex, &popup_equipsetIndex);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize2 = groupLeftSize2.y > groupRightSize2.y ? groupLeftSize2 : groupRightSize2;
+
+        ImGui::Separator();
 
         if (ImGui::BeginTable("End_Table", 2)) {
             ImGui::TableNextColumn();
 
             auto title = TRANSLATE("_WARNING");
-            if (ImGui::Button(C_TRANSLATE("_OK"), {-FLT_MIN, 25.0f})) {
+            auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+            if (ImGui::Button(C_TRANSLATE("_OK"), {-FLT_MIN, buttonSize.y + 15.0f})) {
                 auto [result_type, result_string] =
                     manager->IsCreateValid(name, hotkey, modifier1, modifier2, modifier3);
 
@@ -375,7 +463,7 @@ namespace Create::Cycle {
             Draw::PopupConflict(title, name, &hotkey_conflictName);
 
             ImGui::TableNextColumn();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), {-FLT_MIN, 25.0f})) {
+            if (ImGui::Button(C_TRANSLATE("_CANCEL"), {-FLT_MIN, buttonSize.y + 15.0f})) {
                 close_popup = true;
             }
             ImGui::EndTable();
@@ -393,7 +481,8 @@ namespace Show::Cycle {
         auto drawHelper = DrawHelper::GetSingleton();
         if (!drawHelper) return;
 
-        if (ImGui::Button(C_TRANSLATE("_EDIT_NAME"), ImVec2(80, 0))) {
+        auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_EDIT_NAME"));
+        if (ImGui::Button(C_TRANSLATE("_EDIT_NAME"), ImVec2(buttonSize.x + 30.0f, 0.0f))) {
             ImGui::OpenPopup(C_TRANSLATE("_EDIT_POPUP_TITLE"));
         }
 
@@ -407,20 +496,28 @@ namespace Show::Cycle {
                 drawHelper->NotifyReloadName(false);
             }
 
-            ImGui::Text((TRANSLATE("_EDIT_NAMEMSG") + "\n\n").c_str());
+            ImGui::Text(C_TRANSLATE("_EDIT_NAMEMSG"));
+            ImGui::Text(" ");
             ImGui::InputText("##NameInput", &tempName);
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(120, 0))) {
-                *_name = tempName;
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(120, 0))) {
-                drawHelper->NotifyReloadName(true);
-                ImGui::CloseCurrentPopup();
+            if (ImGui::BeginTable("Button_Table", 2)) {
+                ImGui::TableNextColumn();
+                auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                if (ImGui::Button(C_TRANSLATE("_OK"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    *_name = tempName;
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::TableNextColumn();
+                if (ImGui::Button(C_TRANSLATE("_CANCEL"),
+                                  ImVec2(ImGui::GetWindowContentRegionMax().x * 0.45f, buttonSize.y + 15.0f))) {
+                    drawHelper->NotifyReloadName(true);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndTable();
             }
             ImGui::EndPopup();
         }
@@ -526,30 +623,35 @@ namespace Show::Cycle {
 
         NameSection(&name);
         ImGui::SameLine();
-        ImGui::InvisibleButton("##Invisible", ImVec2(-220, ImGui::CalcTextSize("text").y));
+
+        auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_REMOVE") + TRANSLATE("_SAVECHANGES")).c_str());
+        ImGui::InvisibleButton("##Invisible", ImVec2(-buttonSize.x - 80.0f, buttonSize.y));
         ImGui::SameLine();
 
-        if (ImGui::Button(C_TRANSLATE("_REMOVE"), ImVec2(100, 0))) {
+        if (ImGui::Button(C_TRANSLATE("_REMOVE"), ImVec2(ImGui::CalcTextSize(C_TRANSLATE("_REMOVE")).x + 30.0f, 0))) {
             ImGui::OpenPopup("##Remove");
         }
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowSize({200, 110}, ImGuiCond_Once);
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("##Remove", NULL)) {
-            auto msg = fmt::format("\n  {}  \n\n", C_TRANSLATE("_REMOVE_MSG"));
+            auto msg = fmt::format("  {}  ", C_TRANSLATE("_REMOVE_MSG"));
+            ImGui::Text(" ");
             ImGui::Text(msg.c_str());
+            ImGui::Text(" ");
             ImGui::Separator();
 
             if (ImGui::BeginTable("Button_Table", 2)) {
                 ImGui::TableNextColumn();
-                if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, 20.0f))) {
+                auto buttonSize = ImGui::CalcTextSize((TRANSLATE("_OK") + TRANSLATE("_CANCEL")).c_str());
+                if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                     manager->RemoveAllWidget();
                     manager->Remove(cycleset);
                     manager->CreateAllWidget();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::TableNextColumn();
-                if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(-FLT_MIN, 20.0f))) {
+                if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndTable();
@@ -566,7 +668,8 @@ namespace Show::Cycle {
         }
 
         auto title = TRANSLATE("_WARNING");
-        if (ImGui::Button(C_TRANSLATE("_SAVECHANGES"), ImVec2(100, 0))) {
+        if (ImGui::Button(C_TRANSLATE("_SAVECHANGES"),
+                          ImVec2(ImGui::CalcTextSize(C_TRANSLATE("_SAVECHANGES")).x + 30.0f, 0))) {
             auto [result_type, result_string] =
                 manager->IsEditValid(cycleset, name, hotkey, modifier1, modifier2, modifier3);
 
@@ -615,35 +718,96 @@ namespace Show::Cycle {
 
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 285.0f), false);
+        static auto groupSize = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize = ImVec2(0.0f, 0.0f);
+        ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
         {
-            Shared::Cycle::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
-            ImGui::Separator();
-            Shared::Cycle::OptionSection(&cyclePersist, &cycleExpire, &cycleReset);
+            ImGui::BeginGroup();
+            {
+                auto hotkeyLabel = fmt::format("{}  {}", ICON_FA_KEYBOARD, TRANSLATE("_ICON_HOTKEY"));
+                Draw::BeginGroupPanel(hotkeyLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::HotkeySection(&hotkey, &modifier1, &modifier2, &modifier3);
+                }
+                Draw::EndGroupPanel();
+
+                auto optionLabel = fmt::format("{}  {}", ICON_FA_SLIDERS_H, TRANSLATE("_ICON_OPTION"));
+                Draw::BeginGroupPanel(optionLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::OptionSection(&cyclePersist, &cycleExpire, &cycleReset);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupLeftSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion", ImVec2(0.0f, 285.0f), false);
+        ImGui::BeginChild("RightRegion", ImVec2(0.0f, groupSize.y), false);
         {
-            Shared::Cycle::WidgetSection(&icon_enable, &icon_offsetX, &icon_offsetY, &name_enable, &name_align_type, &name_offsetX, &name_offsetY,
-                                         &hotkey_enable, &hotkey_align_type, &hotkey_offsetX, &hotkey_offsetY);
+            ImGui::BeginGroup();
+            {
+                auto widgetLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_ICON_WIDGET"));
+                Draw::BeginGroupPanel(widgetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::WidgetSection(&icon_enable, &icon_offsetX, &icon_offsetY, &name_enable,
+                                                 &name_align_type, &name_offsetX, &name_offsetY, &hotkey_enable,
+                                                 &hotkey_align_type, &hotkey_offsetX, &hotkey_offsetY);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
 
         ImGui::Separator();
 
-        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 150), false);
+        static auto groupSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize2 = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize2 = ImVec2(0.0f, 0.0f);
+        ImGui::BeginChild("LeftRegion_2", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize2.y), false);
         {
-            //Shared::Normal::WeaponSection(&lefthand, &righthand, &shout);
+            //ImGui::BeginGroup();
+            //{
+            //    auto weaponLabel = fmt::format("{}  {}", ICON_FA_HAMMER, TRANSLATE("_ICON_WEAPON"));
+            //    Draw::BeginGroupPanel(weaponLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+            //                          ImVec2(15.0f, 10.0f));
+            //    {
+            //        Shared::Normal::WeaponSection(&lefthand, &righthand, &shout);
+            //    }
+            //    Draw::EndGroupPanel();
+            //}
+            //ImGui::EndGroup();
+            //groupLeftSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, 150), false);
+        ImGui::BeginChild("RightRegion_2", ImVec2(0.0f, groupSize2.y), false);
         {
-            Shared::Cycle::EquipsetSection(&equipset, &page_equipsetIndex, &popup_equipsetIndex);
+            ImGui::BeginGroup();
+            {
+                auto equipsetLabel = fmt::format("{}  {}", ICON_FA_DATABASE, TRANSLATE("_ICON_EQUIPSET"));
+                Draw::BeginGroupPanel(equipsetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f),
+                                      ImVec2(15.0f, 10.0f));
+                {
+                    Shared::Cycle::EquipsetSection(&equipset, &page_equipsetIndex, &popup_equipsetIndex);
+                }
+                Draw::EndGroupPanel();
+            }
+            ImGui::EndGroup();
+            groupRightSize2 = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
+
+        groupSize2 = groupLeftSize2.y > groupRightSize2.y ? groupLeftSize2 : groupRightSize2;
     }
 }  // namespace Show::Potion

@@ -536,12 +536,12 @@ void Equipset::CreateWidgetBackground() {
 
         if (equipset->widgetIcon.enable) {
             auto id = equipset->widgetID.background;
-            auto path = config->GetWidgetPath(config->Widget.Equipset.bgType);
+            auto path = config->GetWidgetPath(config->Widget.Equipset.Normal.bgType);
             auto offsetX = equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetIcon.offsetY;
-            auto width = 1.3f * (float)config->Widget.Equipset.bgSize;
-            auto height = 1.3f * (float)config->Widget.Equipset.bgSize;
-            auto alpha = config->Widget.Equipset.bgAlpha;
+            auto width = 1.3f * (float)config->Widget.Equipset.Normal.bgSize;
+            auto height = 1.3f * (float)config->Widget.Equipset.Normal.bgSize;
+            auto alpha = config->Widget.Equipset.Normal.bgAlpha;
             
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, alpha);
         }
@@ -551,12 +551,12 @@ void Equipset::CreateWidgetBackground() {
 
         if (equipset->widgetIcon.enable) {
             auto id = equipset->widgetID.background;
-            auto path = config->GetWidgetPath(config->Widget.Equipset.bgType);
+            auto path = config->GetWidgetPath(config->Widget.Equipset.Potion.bgType);
             auto offsetX = equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetIcon.offsetY;
-            auto width = 1.3f * (float)config->Widget.Equipset.bgSize;
-            auto height = 1.3f * (float)config->Widget.Equipset.bgSize;
-            auto alpha = config->Widget.Equipset.bgAlpha;
+            auto width = 1.3f * (float)config->Widget.Equipset.Potion.bgSize;
+            auto height = 1.3f * (float)config->Widget.Equipset.Potion.bgSize;
+            auto alpha = config->Widget.Equipset.Potion.bgAlpha;
 
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, alpha);
         }
@@ -566,12 +566,12 @@ void Equipset::CreateWidgetBackground() {
 
         if (equipset->widgetIcon.enable) {
             auto id = equipset->widgetID.background;
-            auto path = config->GetWidgetPath(config->Widget.Equipset.bgType);
+            auto path = config->GetWidgetPath(config->Widget.Equipset.Cycle.bgType);
             auto offsetX = equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetIcon.offsetY;
-            auto width = 1.3f * (float)config->Widget.Equipset.bgSize;
-            auto height = 1.3f * (float)config->Widget.Equipset.bgSize;
-            auto alpha = config->Widget.Equipset.bgAlpha;
+            auto width = 1.3f * (float)config->Widget.Equipset.Cycle.bgSize;
+            auto height = 1.3f * (float)config->Widget.Equipset.Cycle.bgSize;
+            auto alpha = config->Widget.Equipset.Cycle.bgAlpha;
             
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, alpha);
         }
@@ -594,8 +594,8 @@ void Equipset::CreateWidgetIcon() {
             auto path = config->GetWidgetPath(equipset->widgetIcon.type);
             auto offsetX = equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetIcon.offsetY;
-            auto width = config->Widget.Equipset.widgetSize;
-            auto height = config->Widget.Equipset.widgetSize;
+            auto width = config->Widget.Equipset.Normal.widgetSize;
+            auto height = config->Widget.Equipset.Normal.widgetSize;
 
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, 100);
         }
@@ -608,8 +608,8 @@ void Equipset::CreateWidgetIcon() {
             auto path = config->GetWidgetPath(equipset->widgetIcon.type);
             auto offsetX = equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetIcon.offsetY;
-            auto width = config->Widget.Equipset.widgetSize;
-            auto height = config->Widget.Equipset.widgetSize;
+            auto width = config->Widget.Equipset.Potion.widgetSize;
+            auto height = config->Widget.Equipset.Potion.widgetSize;
 
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, 100);
         }
@@ -625,8 +625,8 @@ void Equipset::CreateWidgetIcon() {
             std::string path = "";
             auto offsetX = equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetIcon.offsetY;
-            auto width = config->Widget.Equipset.widgetSize;
-            auto height = config->Widget.Equipset.widgetSize;
+            auto width = config->Widget.Equipset.Cycle.widgetSize;
+            auto height = config->Widget.Equipset.Cycle.widgetSize;
 
             if (equipset->cycleIndex < equipset->items.size()) {
                 auto& name = equipset->items[equipset->cycleIndex];
@@ -665,8 +665,8 @@ void Equipset::CreateWidgetText1() {
             auto offsetX = equipset->widgetName.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetName.offsetY + equipset->widgetIcon.offsetY;
             auto align = static_cast<uint32_t>(equipset->widgetName.align);
-            auto size = 0.25f * (float)config->Widget.Equipset.fontSize;
-            auto shadow = config->Widget.Equipset.fontShadow;
+            auto size = 0.25f * (float)config->Widget.Equipset.Normal.fontSize;
+            auto shadow = config->Widget.Equipset.Normal.fontShadow;
 
             widgetHandler->LoadText(id, text, font, offsetX, offsetY, align, size, 100, shadow);
         }
@@ -681,8 +681,8 @@ void Equipset::CreateWidgetText1() {
             auto offsetX = equipset->widgetName.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetName.offsetY + equipset->widgetIcon.offsetY;
             auto align = static_cast<uint32_t>(equipset->widgetName.align);
-            auto size = 0.25f * (float)config->Widget.Equipset.fontSize;
-            auto shadow = config->Widget.Equipset.fontShadow;
+            auto size = 0.25f * (float)config->Widget.Equipset.Potion.fontSize;
+            auto shadow = config->Widget.Equipset.Potion.fontShadow;
 
             widgetHandler->LoadText(id, text, font, offsetX, offsetY, align, size, 100, shadow);
         }
@@ -698,8 +698,8 @@ void Equipset::CreateWidgetText1() {
             auto offsetX = equipset->widgetName.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetName.offsetY + equipset->widgetIcon.offsetY;
             auto align = static_cast<uint32_t>(equipset->widgetName.align);
-            auto size = 0.25f * (float)config->Widget.Equipset.fontSize;
-            auto shadow = config->Widget.Equipset.fontShadow;
+            auto size = 0.25f * (float)config->Widget.Equipset.Cycle.fontSize;
+            auto shadow = config->Widget.Equipset.Cycle.fontShadow;
 
             widgetHandler->LoadText(id, text, font, offsetX, offsetY, align, size, 100, shadow);
         }
@@ -724,8 +724,8 @@ void Equipset::CreateWidgetText2() {
             auto offsetX = equipset->widgetHotkey.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetHotkey.offsetY + equipset->widgetIcon.offsetY;
             auto align = static_cast<uint32_t>(equipset->widgetHotkey.align);
-            auto size = 0.25f * (float)config->Widget.Equipset.fontSize;
-            auto shadow = config->Widget.Equipset.fontShadow;
+            auto size = 0.25f * (float)config->Widget.Equipset.Normal.fontSize;
+            auto shadow = config->Widget.Equipset.Normal.fontShadow;
 
             widgetHandler->LoadText(id, text, font, offsetX, offsetY, align, size, 100, shadow);
         }
@@ -740,8 +740,8 @@ void Equipset::CreateWidgetText2() {
             auto offsetX = equipset->widgetAmount.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetAmount.offsetY + equipset->widgetIcon.offsetY;
             auto align = static_cast<uint32_t>(equipset->widgetAmount.align);
-            auto size = 0.25f * (float)config->Widget.Equipset.fontSize;
-            auto shadow = config->Widget.Equipset.fontShadow;
+            auto size = 0.25f * (float)config->Widget.Equipset.Potion.fontSize;
+            auto shadow = config->Widget.Equipset.Potion.fontShadow;
 
             widgetHandler->LoadText(id, text, font, offsetX, offsetY, align, size, 100, shadow);
         }
@@ -756,8 +756,8 @@ void Equipset::CreateWidgetText2() {
             auto offsetX = equipset->widgetHotkey.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetHotkey.offsetY + equipset->widgetIcon.offsetY;
             auto align = static_cast<uint32_t>(equipset->widgetHotkey.align);
-            auto size = 0.25f * (float)config->Widget.Equipset.fontSize;
-            auto shadow = config->Widget.Equipset.fontShadow;
+            auto size = 0.25f * (float)config->Widget.Equipset.Cycle.fontSize;
+            auto shadow = config->Widget.Equipset.Cycle.fontShadow;
 
             widgetHandler->LoadText(id, text, font, offsetX, offsetY, align, size, 100, shadow);
         }

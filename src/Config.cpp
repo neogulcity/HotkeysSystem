@@ -18,12 +18,26 @@ void ConfigHandler::LoadConfig() {
         this->Widget.General.animType = tbl["Widget"]["general_animation_type"].value_or<uint32_t>((uint32_t)Config::AnimType::FADE);
         this->Widget.General.animDelay = tbl["Widget"]["general_anim_delay"].value_or<float>(3.0f);
 
-        this->Widget.Equipset.bgType = tbl["Widget"]["equipset_background"].value_or<std::string>("_BACKGROUND");
-        this->Widget.Equipset.bgSize = tbl["Widget"]["equipset_background_size"].value_or<uint32_t>(100);
-        this->Widget.Equipset.bgAlpha = tbl["Widget"]["equipset_background_alpha"].value_or<uint32_t>(100);
-        this->Widget.Equipset.widgetSize = tbl["Widget"]["equipset_widget_size"].value_or<uint32_t>(100);
-        this->Widget.Equipset.fontSize = tbl["Widget"]["equipset_font_size"].value_or<uint32_t>(100);
-        this->Widget.Equipset.fontShadow = tbl["Widget"]["equipset_font_shadow"].value_or<bool>(false);
+        this->Widget.Equipset.Normal.bgType = tbl["Widget"]["normal_background"].value_or<std::string>("_BACKGROUND");
+        this->Widget.Equipset.Normal.bgSize = tbl["Widget"]["normal_background_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Normal.bgAlpha = tbl["Widget"]["normal_background_alpha"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Normal.widgetSize = tbl["Widget"]["normal_widget_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Normal.fontSize = tbl["Widget"]["normal_font_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Normal.fontShadow = tbl["Widget"]["normal_font_shadow"].value_or<bool>(false);
+
+        this->Widget.Equipset.Potion.bgType = tbl["Widget"]["potion_background"].value_or<std::string>("_BACKGROUND");
+        this->Widget.Equipset.Potion.bgSize = tbl["Widget"]["potion_background_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Potion.bgAlpha = tbl["Widget"]["potion_background_alpha"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Potion.widgetSize = tbl["Widget"]["potion_widget_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Potion.fontSize = tbl["Widget"]["potion_font_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Potion.fontShadow = tbl["Widget"]["potion_font_shadow"].value_or<bool>(false);
+
+        this->Widget.Equipset.Cycle.bgType = tbl["Widget"]["cycle_background"].value_or<std::string>("_BACKGROUND");
+        this->Widget.Equipset.Cycle.bgSize = tbl["Widget"]["cycle_background_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Cycle.bgAlpha = tbl["Widget"]["cycle_background_alpha"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Cycle.widgetSize = tbl["Widget"]["cycle_widget_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Cycle.fontSize = tbl["Widget"]["cycle_font_size"].value_or<uint32_t>(100);
+        this->Widget.Equipset.Cycle.fontShadow = tbl["Widget"]["cycle_font_shadow"].value_or<bool>(false);
 
         this->Widget.Equipment.Armor.bgType = tbl["Widget"]["armor_background"].value_or<std::string>("_BACKGROUND");
         this->Widget.Equipment.Armor.bgSize = tbl["Widget"]["armor_background_size"].value_or<uint32_t>(100);
@@ -170,12 +184,24 @@ void ConfigHandler::SaveConfig() {
                 {"general_display_mode", this->Widget.General.displayMode},
                 {"general_animation_type", this->Widget.General.animType},
                 {"general_anim_delay", this->Widget.General.animDelay},
-                {"equipset_background", this->Widget.Equipset.bgType},
-                {"equipset_background_size", this->Widget.Equipset.bgSize},
-                {"equipset_background_alpha", this->Widget.Equipset.bgAlpha},
-                {"equipset_widget_size", this->Widget.Equipset.widgetSize},
-                {"equipset_font_size", this->Widget.Equipset.fontSize},
-                {"equipset_font_shadow", this->Widget.Equipset.fontShadow},
+                {"normal_background", this->Widget.Equipset.Normal.bgType},
+                {"normal_background_size", this->Widget.Equipset.Normal.bgSize},
+                {"normal_background_alpha", this->Widget.Equipset.Normal.bgAlpha},
+                {"normal_widget_size", this->Widget.Equipset.Normal.widgetSize},
+                {"normal_font_size", this->Widget.Equipset.Normal.fontSize},
+                {"normal_font_shadow", this->Widget.Equipset.Normal.fontShadow},
+                {"potion_background", this->Widget.Equipset.Potion.bgType},
+                {"potion_background_size", this->Widget.Equipset.Potion.bgSize},
+                {"potion_background_alpha", this->Widget.Equipset.Potion.bgAlpha},
+                {"potion_widget_size", this->Widget.Equipset.Potion.widgetSize},
+                {"potion_font_size", this->Widget.Equipset.Potion.fontSize},
+                {"potion_font_shadow", this->Widget.Equipset.Potion.fontShadow},
+                {"cycle_background", this->Widget.Equipset.Cycle.bgType},
+                {"cycle_background_size", this->Widget.Equipset.Cycle.bgSize},
+                {"cycle_background_alpha", this->Widget.Equipset.Cycle.bgAlpha},
+                {"cycle_widget_size", this->Widget.Equipset.Cycle.widgetSize},
+                {"cycle_font_size", this->Widget.Equipset.Cycle.fontSize},
+                {"cycle_font_shadow", this->Widget.Equipset.Cycle.fontShadow},
                 {"armor_background", this->Widget.Equipment.Armor.bgType},
                 {"armor_background_size", this->Widget.Equipment.Armor.bgSize},
                 {"armor_background_alpha", this->Widget.Equipment.Armor.bgAlpha},

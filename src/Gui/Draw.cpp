@@ -47,10 +47,11 @@ namespace Draw {
 
         auto buttonMsg = _button + "##" + _id;
         auto popupID = TRANSLATE("_WAITINPUT") + "##" + _id;
-        auto popupMsg = "\n  " + TRANSLATE("_WAITINPUTMSG") + "  \n\n";
+        auto popupMsg = "  " + TRANSLATE("_WAITINPUTMSG") + "  ";
         auto labelMsg = _label + ImGui::GetKeyName(*_key);
 
-        if (ImGui::Button(buttonMsg.c_str(), ImVec2(80, 0))) {
+        auto buttonSize = ImGui::CalcTextSize(_button.c_str());
+        if (ImGui::Button(buttonMsg.c_str(), ImVec2(buttonSize.x + 30.0f, 0.0f))) {
             ImGui::OpenPopup(popupID.c_str());
         }
 
@@ -62,11 +63,14 @@ namespace Draw {
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
         if (ImGui::BeginPopupModal(popupID.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text(" ");
             ImGui::Text(popupMsg.c_str());
+            ImGui::Text(" ");
             ImGui::Separator();
 
+            auto cancelSize = ImGui::CalcTextSize(C_TRANSLATE("_CANCEL"));
             ImGui::SetItemDefaultFocus();
-            if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(-FLT_MIN, 20.0f))) {
+            if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(-FLT_MIN, cancelSize.y + 15.0f))) {
                 ImGui::CloseCurrentPopup();
             }
 
@@ -232,11 +236,14 @@ namespace Draw {
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal(name_blank_msg.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            auto msg = fmt::format("\n  {}  \n\n", "Equipset name must not be blanked.");
+            auto msg = fmt::format("  {}  ", TRANSLATE("_CONFLICT_MSGA"));
+            ImGui::Text(" ");
             ImGui::Text(msg.c_str());
+            ImGui::Text(" ");
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, 20.0f))) {
+            auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_OK"));
+            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -244,11 +251,16 @@ namespace Draw {
 
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal(name_conflict_msg.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            auto msg = fmt::format("\n  \"{}\" {}  \n\n", _name, "Already Used in other Equipset.");
+            auto msgName = fmt::format("\"{}\"", _name);
+            auto msg = fmt::format("  {}  ", TRANSLATE("_CONFLICT_MSGB"));
+            ImGui::Text(" ");
+            Draw::TextCenter(msgName.c_str());
             ImGui::Text(msg.c_str());
+            ImGui::Text(" ");
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, 20.0f))) {
+            auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_OK"));
+            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -256,12 +268,16 @@ namespace Draw {
 
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal(hotkey_conflict_msg.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            auto msg =
-                fmt::format("\n  {}  \n  \"{}\"  \n\n", "Hotkey conflict with following Equipset.", *_conflictName);
+            auto msgName = fmt::format("\"{}\"", *_conflictName);
+            auto msg = fmt::format("  {}  ", TRANSLATE("_CONFLICT_MSGC"));
+            ImGui::Text(" ");
             ImGui::Text(msg.c_str());
+            Draw::TextCenter(msgName.c_str());
+            ImGui::Text(" ");
             ImGui::Separator();
 
-            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, 20.0f))) {
+            auto buttonSize = ImGui::CalcTextSize(C_TRANSLATE("_OK"));
+            if (ImGui::Button(C_TRANSLATE("_OK"), ImVec2(-FLT_MIN, buttonSize.y + 15.0f))) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();

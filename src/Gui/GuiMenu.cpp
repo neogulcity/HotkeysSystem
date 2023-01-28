@@ -171,7 +171,8 @@ void GuiMenu::DrawMain() {
 
         if (ImGui::BeginTabBar("##")) {
             if (ImGui::BeginTabItem(C_TRANSLATE("_TAB_EQUIPSETS"))) {
-                if (ImGui::Button(C_TRANSLATE("_NEW"), ImVec2(90, 0))) {
+                auto newSize = ImGui::CalcTextSize(C_TRANSLATE("_NEW"));
+                if (ImGui::Button(C_TRANSLATE("_NEW"), ImVec2(newSize.x + 30.0f, 0.0f))) {
                     ImGui::SetNextWindowSize({200, 230}, ImGuiCond_Once);
                     ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_POPUP"));
                 }
@@ -180,11 +181,37 @@ void GuiMenu::DrawMain() {
                 ImVec2 center = ImGui::GetMainViewport()->GetCenter();
                 ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-                if (ImGui::BeginPopupModal(C_TRANSLATE("_SELECT_NEW_POPUP"), NULL)) {
+                if (ImGui::BeginPopupModal(C_TRANSLATE("_SELECT_NEW_POPUP"), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
                     bool shouldClose = false;
-                    ImVec2 size = {-FLT_MIN, 40.0f};
 
-                    if (ImGui::Button(C_TRANSLATE("_SELECT_NEW_NORMAL"), size)) {
+                    auto normalSize = ImGui::CalcTextSize(C_TRANSLATE("_SELECT_NEW_NORMAL"));
+                    auto potionSize = ImGui::CalcTextSize(C_TRANSLATE("_SELECT_NEW_POTION"));
+                    auto cycleSize = ImGui::CalcTextSize(C_TRANSLATE("_SELECT_NEW_CYCLE"));
+                    auto cancelSize = ImGui::CalcTextSize(C_TRANSLATE("_CANCEL"));
+
+                    std::vector<float> vecX = {
+                        normalSize.x,
+                        potionSize.x,
+                        cycleSize.x,
+                        cancelSize.x
+                    };
+                    std::vector<float> vecY = {
+                        normalSize.y,
+                        potionSize.y,
+                        cycleSize.y,
+                        cancelSize.y
+                    };
+
+                    auto compare = [](float a, float b) {
+                        return a > b;
+                    };
+
+                    std::sort(vecX.begin(), vecX.end(), compare);
+                    std::sort(vecY.begin(), vecY.end(), compare);
+                    float sizeX = *vecX.begin() * 2.5f;
+                    float sizeY = *vecY.begin() * 2.0f;
+
+                    if (ImGui::Button(C_TRANSLATE("_SELECT_NEW_NORMAL"), ImVec2(sizeX, sizeY))) {
                         drawHelper->NotifyReload(true);
                         ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_OPEN_NORMAL"));
                     }
@@ -195,7 +222,7 @@ void GuiMenu::DrawMain() {
                         ImGui::EndPopup();
                     }
 
-                    if (ImGui::Button(C_TRANSLATE("_SELECT_NEW_POTION"), size)) {
+                    if (ImGui::Button(C_TRANSLATE("_SELECT_NEW_POTION"), ImVec2(sizeX, sizeY))) {
                         drawHelper->NotifyReload(true);
                         ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_OPEN_POTION"));
                     }
@@ -206,7 +233,7 @@ void GuiMenu::DrawMain() {
                         ImGui::EndPopup();
                     }
 
-                    if (ImGui::Button(C_TRANSLATE("_SELECT_NEW_CYCLE"), size)) {
+                    if (ImGui::Button(C_TRANSLATE("_SELECT_NEW_CYCLE"), ImVec2(sizeX, sizeY))) {
                         drawHelper->NotifyReload(true);
                         ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_OPEN_CYCLE"));
                     }
@@ -217,9 +244,9 @@ void GuiMenu::DrawMain() {
                         ImGui::EndPopup();
                     }
 
-                    ImGui::Text("\n\n");
+                    ImGui::Dummy(ImVec2(sizeX, sizeY));
                     ImGui::Separator();
-                    if (ImGui::Button(C_TRANSLATE("_CANCEL"), {-FLT_MIN, 25.0f})) {
+                    if (ImGui::Button(C_TRANSLATE("_CANCEL"), ImVec2(sizeX, sizeY))) {
                         ImGui::CloseCurrentPopup();
                     }
                     if (shouldClose) {
@@ -643,8 +670,20 @@ void GuiMenu::DrawConfig() {
             ImGui::BeginGroup();
             {
                 ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
                 if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPSETS"))) {
-                    DrawWidgetSection(&config->Widget.Equipset);
+                    if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPSETS_NORMAL"))) {
+                        DrawWidgetSection(&config->Widget.Equipset.Normal);
+                        ImGui::TreePop();
+                    }
+                    if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPSETS_POTION"))) {
+                        DrawWidgetSection(&config->Widget.Equipset.Potion);
+                        ImGui::TreePop();
+                    }
+                    if (ImGui::TreeNode(C_TRANSLATE("_TAB_EQUIPSETS_CYCLE"))) {
+                        DrawWidgetSection(&config->Widget.Equipset.Cycle);
+                        ImGui::TreePop();
+                    }
                     ImGui::TreePop();
                 }
                 ImGui::SetNextItemOpen(true, ImGuiCond_Once);
@@ -725,9 +764,8 @@ void GuiMenu::DrawConfig() {
                 if (hotkey) Draw::InputButton(hotkey, "GuiHotkey", TRANSLATE("_EDIT"), TRANSLATE("_TAB_CONFIG_GUI_HOTKEY"));
                 ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_GUI_WINDOWBORDER"), &config->Gui.windowBorder);
                 ImGui::Checkbox(C_TRANSLATE("_TAB_CONFIG_GUI_FRAMEBORDER"), &config->Gui.frameBorder);
-                ImGui::EndGroup();
             }
-            guiSize = ImGui::GetItemRectSize();
+            ImGui::EndGroup();
         }
         ImGui::EndChild();
         ImGui::SameLine();
@@ -753,8 +791,18 @@ void GuiMenu::DrawConfig() {
                 }
                 Draw::SliderFloat(TRANSLATE("_TAB_CONFIG_GUI_ROUNDING"), &config->Gui.rounding, 0.0f, 12.0f, "%.1f",
                                   ImGuiSliderFlags_AlwaysClamp);
+                ImGui::InputFloat(C_TRANSLATE("_FONT_SIZE"), &config->Gui.fontSize, 1.0f, 0.0f, "%.0f");
+                if (ImGui::IsItemDeactivatedAfterEdit()) {
+                    if (config->Gui.fontSize < 13.0f) {
+                        config->Gui.fontSize = 13.0f;
+                    } else if (config->Gui.fontSize > 26.0f) {
+                        config->Gui.fontSize = 26.0f;
+                    }
+                    reload_font.store(true);
+                }
             }
             ImGui::EndGroup();
+            guiSize = ImGui::GetItemRectSize();
         }
         ImGui::EndChild();
     }

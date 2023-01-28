@@ -67,6 +67,12 @@ public:
         bool fontShadow{false};
     };
 
+    struct WidgetEquipset {
+        WidgetBase Normal;
+        WidgetBase Potion;
+        WidgetBase Cycle;
+    };
+
     struct WidgetEquipment {
         WidgetBase Armor;
         WidgetBase Weapon;
@@ -75,7 +81,7 @@ public:
 
     struct config_widget {
         WidgetGeneral General;
-        WidgetBase Equipset;
+        WidgetEquipset Equipset;
         WidgetEquipment Equipment;
     } Widget;
 
