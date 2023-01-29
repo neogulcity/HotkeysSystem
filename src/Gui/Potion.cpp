@@ -364,7 +364,8 @@ namespace Create::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupLeftSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupLeftSize = size;
         }
         ImGui::EndChild();
 
@@ -384,7 +385,8 @@ namespace Create::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupRightSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupRightSize = size;
         }
         ImGui::EndChild();
 
@@ -414,7 +416,8 @@ namespace Create::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupLeftSize2 = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupLeftSize2 = size;
         }
         ImGui::EndChild();
 
@@ -432,7 +435,8 @@ namespace Create::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupRightSize2 = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupRightSize2 = size;
         }
         ImGui::EndChild();
 
@@ -794,7 +798,8 @@ namespace Show::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupLeftSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupLeftSize = size;
         }
         ImGui::EndChild();
 
@@ -814,7 +819,8 @@ namespace Show::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupRightSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupRightSize = size;
         }
         ImGui::EndChild();
 
@@ -838,7 +844,8 @@ namespace Show::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupLeftSize2 = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupLeftSize2 = size;
         }
         ImGui::EndChild();
 
@@ -856,7 +863,8 @@ namespace Show::Potion {
                 Draw::EndGroupPanel();
             }
             ImGui::EndGroup();
-            groupRightSize2 = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y > 50.0f) groupRightSize2 = size;
         }
         ImGui::EndChild();
 

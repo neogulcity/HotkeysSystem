@@ -115,6 +115,8 @@ void GuiMenu::DrawMain() {
         dataHandler->Init();
     }
 
+    ImGui::ShowDemoWindow();
+
     ImGui::SetNextWindowSize({620, 575}, ImGuiCond_Once);
     if (ImGui::Begin(fmt::format("UI-Integrated Hotkeys System {}", SKSE::PluginDeclaration::GetSingleton()->GetVersion().string()).c_str(),
                      &show,
@@ -427,6 +429,8 @@ void GuiMenu::DrawEquipment() {
         ImGui::Indent();
 
         static std::vector<ImVec2> groupSize(32, ImVec2(0.0f, 0.0f));
+        static std::vector<ImVec2> groupLeftSize(32, ImVec2(0.0f, 0.0f));
+        static std::vector<ImVec2> groupRightSize(32, ImVec2(0.0f, 0.0f));
         for (int i = 0; i < 32; i++) {
             auto treeName = fmt::format("Slot{}", i + 30);
             if (ImGui::TreeNode(treeName.c_str())) {
@@ -437,11 +441,17 @@ void GuiMenu::DrawEquipment() {
                 {
                     ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize[i].y), false);
                     {
-                        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                            DrawWidgetIconSection(&equipment->armor[i].widgetIcon);
-                            ImGui::TreePop();
+                        ImGui::BeginGroup();
+                        {
+                            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                            if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                                DrawWidgetIconSection(&equipment->armor[i].widgetIcon);
+                                ImGui::TreePop();
+                            }
                         }
+                        ImGui::EndGroup();
+                        auto size = ImGui::GetItemRectSize();
+                        if (size.y != 0.0f) groupLeftSize[i] = size;
                     }
                     ImGui::EndChild();
                     ImGui::SameLine();
@@ -456,9 +466,12 @@ void GuiMenu::DrawEquipment() {
                             }
                         }
                         ImGui::EndGroup();
-                        groupSize[i] = ImGui::GetItemRectSize();
+                        auto size = ImGui::GetItemRectSize();
+                        if (size.y != 0.0f) groupRightSize[i] = size;
                     }
                     ImGui::EndChild();
+
+                    groupSize[i] = groupLeftSize[i].y > groupRightSize[i].y ? groupLeftSize[i] : groupRightSize[i];
                 }
                 Draw::EndGroupPanel();
 
@@ -475,16 +488,24 @@ void GuiMenu::DrawEquipment() {
 
         if (ImGui::TreeNode(C_TRANSLATE("_WEAPON_LEFTHAND"))) {
             static auto groupSize = ImVec2(0.0f, 0.0f);
+            static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+            static auto groupRightSize = ImVec2(0.0f, 0.0f);
             auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
             Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
             {
                 ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
                 {
-                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                    if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                        DrawWidgetIconSection(&equipment->lefthand.widgetIcon);
-                        ImGui::TreePop();
+                    ImGui::BeginGroup();
+                    {
+                        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                            DrawWidgetIconSection(&equipment->lefthand.widgetIcon);
+                            ImGui::TreePop();
+                        }
                     }
+                    ImGui::EndGroup();
+                    auto size = ImGui::GetItemRectSize();
+                    if (size.y != 0.0f) groupLeftSize = size;
                 }
                 ImGui::EndChild();
                 ImGui::SameLine();
@@ -499,25 +520,36 @@ void GuiMenu::DrawEquipment() {
                         }
                     }
                     ImGui::EndGroup();
-                    groupSize = ImGui::GetItemRectSize();
+                    auto size = ImGui::GetItemRectSize();
+                    if (size.y != 0.0f) groupRightSize = size;
                 }
                 ImGui::EndChild();
+
+                groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
             }
             Draw::EndGroupPanel();
             ImGui::TreePop();
         }
         if (ImGui::TreeNode(C_TRANSLATE("_WEAPON_RIGHTHAND"))) {
             static auto groupSize = ImVec2(0.0f, 0.0f);
+            static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+            static auto groupRightSize = ImVec2(0.0f, 0.0f);
             auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
             Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
             {
                 ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
                 {
-                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                    if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                        DrawWidgetIconSection(&equipment->righthand.widgetIcon);
-                        ImGui::TreePop();
+                    ImGui::BeginGroup();
+                    {
+                        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                        if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                            DrawWidgetIconSection(&equipment->righthand.widgetIcon);
+                            ImGui::TreePop();
+                        }
                     }
+                    ImGui::EndGroup();
+                    auto size = ImGui::GetItemRectSize();
+                    if (size.y != 0.0f) groupLeftSize = size;
                 }
                 ImGui::EndChild();
                 ImGui::SameLine();
@@ -532,9 +564,12 @@ void GuiMenu::DrawEquipment() {
                         }
                     }
                     ImGui::EndGroup();
-                    groupSize = ImGui::GetItemRectSize();
+                    auto size = ImGui::GetItemRectSize();
+                    if (size.y != 0.0f) groupRightSize = size;
                 }
                 ImGui::EndChild();
+
+                groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
             }
             Draw::EndGroupPanel();
             ImGui::TreePop();
@@ -547,16 +582,24 @@ void GuiMenu::DrawEquipment() {
         ImGui::Indent();
 
         static auto groupSize = ImVec2(0.0f, 0.0f);
+        static auto groupLeftSize = ImVec2(0.0f, 0.0f);
+        static auto groupRightSize = ImVec2(0.0f, 0.0f);
         auto groupLabel = fmt::format("{}  {}", ICON_FA_IMAGE, TRANSLATE("_TAB_CONFIG_WIDGET"));
         Draw::BeginGroupPanel(groupLabel.c_str(), ImVec2(-FLT_MIN, 0.0f), ImVec2(15.0f, 10.0f));
         {       
             ImGui::BeginChild("LeftRegion", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, groupSize.y), false);
             {
-                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-                if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
-                    DrawWidgetIconSection(&equipment->shout.widgetIcon);
-                    ImGui::TreePop();
+                ImGui::BeginGroup();
+                {
+                    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+                    if (ImGui::TreeNode(C_TRANSLATE("_WIDGET_ICON"))) {
+                        DrawWidgetIconSection(&equipment->shout.widgetIcon);
+                        ImGui::TreePop();
+                    }
                 }
+                ImGui::EndGroup();
+                auto size = ImGui::GetItemRectSize();
+                if (size.y != 0.0f) groupLeftSize = size;
             }
             ImGui::EndChild();
             ImGui::SameLine();
@@ -571,9 +614,12 @@ void GuiMenu::DrawEquipment() {
                     }
                 }
                 ImGui::EndGroup();
-                groupSize = ImGui::GetItemRectSize();
+                auto size = ImGui::GetItemRectSize();
+                if (size.y != 0.0f) groupRightSize = size;
             }
             ImGui::EndChild();
+
+            groupSize = groupLeftSize.y > groupRightSize.y ? groupLeftSize : groupRightSize;
         }
         Draw::EndGroupPanel();
         ImGui::Unindent();
@@ -626,8 +672,8 @@ void GuiMenu::DrawConfig() {
     };
 
     static auto groupWidgetSize = ImVec2(0.0f, 0.0f);
-    auto groupWidgetLeftSize = ImVec2(0.0f, 0.0f);
-    auto groupWidgetRightSize = ImVec2(0.0f, 0.0f);
+    static auto groupWidgetLeftSize = ImVec2(0.0f, 0.0f);
+    static auto groupWidgetRightSize = ImVec2(0.0f, 0.0f);
 
     ImGui::Text(" ");
 
@@ -661,7 +707,8 @@ void GuiMenu::DrawConfig() {
                 ImGui::PopItemWidth();
             }
             ImGui::EndGroup();
-            groupWidgetLeftSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y != 0.0f) groupWidgetLeftSize = size;
         }
         ImGui::EndChild();
         ImGui::SameLine();
@@ -705,7 +752,8 @@ void GuiMenu::DrawConfig() {
                 ImGui::PopItemWidth();
             }
             ImGui::EndGroup();
-            groupWidgetRightSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y != 0.0f) groupWidgetRightSize = size;
         }
         ImGui::EndChild();
     }
@@ -729,7 +777,8 @@ void GuiMenu::DrawConfig() {
                 Draw::InputButton(&config->Settings.modifier3, "Modifier3", TRANSLATE("_EDIT"), TRANSLATE("_MODIFIER3"));
             }
             ImGui::EndGroup();
-            settingsSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y != 0.0f) settingsSize = size;
         }
         ImGui::EndChild();
         ImGui::SameLine();
@@ -802,7 +851,8 @@ void GuiMenu::DrawConfig() {
                 }
             }
             ImGui::EndGroup();
-            guiSize = ImGui::GetItemRectSize();
+            auto size = ImGui::GetItemRectSize();
+            if (size.y != 0.0f) guiSize = size;
         }
         ImGui::EndChild();
     }
