@@ -22,7 +22,7 @@ class Script.WidgetHolder extends MovieClip
 		this[id].createEmptyMovieClip(id, _id);
 		this[id]._x = _xPos;
 		this[id]._y = _yPos;
-		this[id]._alpha = 100;
+		this[id]._alpha = 0;
 		
 		var loader:MovieClipLoader = new MovieClipLoader();
 		var listener:Object = new Object();
@@ -37,9 +37,13 @@ class Script.WidgetHolder extends MovieClip
 			mc._y = 0-(mc._height/2);
 		}
 		
-		this[id]._alpha = 0;
-		AnimHolder[id] = new TimelineLite;
-		AnimHolder[id].to(this[id], 0.25, {_alpha:_nAlpha});
+		//this[id]._alpha = 0;
+		if (AnimHolder[id]) {
+			AnimHolder[id].restart();
+		} else {
+			AnimHolder[id] = new TimelineLite;
+			AnimHolder[id].to(this[id], 0.25, {_alpha:_nAlpha});
+		}
 	}
 	
 	public function LoadText(_id:Number, _text:String, _font:String, _xPos:Number, _yPos:Number, _align:Number, _size:Number, _nAlpha:Number, _shadow:Boolean) : Void
@@ -76,6 +80,7 @@ class Script.WidgetHolder extends MovieClip
 		var id = to_string(_id);
 		this[id].swapDepths(0);
     	this[id].removeMovieClip();
+		AnimHolder[id].kill();
 		delete AnimHolder[id];
 	}
 	
@@ -84,22 +89,6 @@ class Script.WidgetHolder extends MovieClip
 		var id = to_string(_id);
 		this[id].swapDepths(0);
     	this[id].removeMovieClip();
-	}
-	
-	public function Animate(_previd:Number, _nextid:Number) : Void
-	{
-		var previd = to_string(_previd);
-		var nextid = to_string(_nextid);
-		
-		if (previd != nextid) {			
-			AnimHolder[previd].to(this[previd], 0.125, {_alpha:0, overwrite:true});
-			AnimHolder[nextid].to(this[nextid], 0.125, {_alpha:100, delay: 0.25, overwrite:true});
-		} else {
-			AnimHolder[previd].kill();
-			AnimHolder[previd] = new TimelineLite;
-			AnimHolder[previd].to(this[previd], 0.125, {_alpha:0});
-			AnimHolder[previd].to(this[previd], 0.125, {_alpha:100, onComplete:play, onCompleteScope:this[previd]});
-		}
 	}
 	
 	public function SetText(_id:Number, _text:String) : Void
@@ -112,6 +101,7 @@ class Script.WidgetHolder extends MovieClip
 	public function SetMenuAlpha(_nAlpha:Number) : Void
 	{
 		MenuAnim.kill();
+		delete MenuAnim;
 		MenuAnim = new TimelineLite;
 		this._alpha = _nAlpha;
 	}
@@ -119,15 +109,25 @@ class Script.WidgetHolder extends MovieClip
 	public function MenuFadeIn() : Void
 	{
 		MenuAnim.kill();
-		MenuAnim = new TimelineLite;
-		MenuAnim.to(this, 0.5, {_alpha:100});
+		delete MenuAnim;
+		if (MenuAnim) {
+			MenuAnim.restart();
+		} else {
+			MenuAnim = new TimelineLite;
+			MenuAnim.to(this, 0.5, {_alpha:100});
+		}
 	}
 	
 	public function MenuFadeOut() : Void
 	{
 		MenuAnim.kill();
-		MenuAnim = new TimelineLite;
-		MenuAnim.to(this, 0.5, {_alpha:0});
+		delete MenuAnim;
+		if (MenuAnim) {
+			MenuAnim.restart();
+		} else {
+			MenuAnim = new TimelineLite;
+			MenuAnim.to(this, 0.5, {_alpha:0});
+		}
 	}
 	
 	function to_string(_id:Number) : String
