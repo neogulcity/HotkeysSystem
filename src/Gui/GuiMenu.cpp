@@ -115,11 +115,13 @@ void GuiMenu::DrawMain() {
         dataHandler->Init();
     }
 
-    ImGui::ShowDemoWindow();
+    auto viewport = ImGui::GetMainViewport();
+    if (!viewport) return;
 
-    ImGui::SetNextWindowSize({620, 575}, ImGuiCond_Once);
+    ImGui::SetNextWindowPos({0, 0}, ImGuiCond_Once);
+    ImGui::SetNextWindowSize({viewport->Size.x / 3, viewport->Size.y}, ImGuiCond_Once);
     if (ImGui::Begin(fmt::format("UI-Integrated Hotkeys System {}", SKSE::PluginDeclaration::GetSingleton()->GetVersion().string()).c_str(),
-                     &show,
+                     nullptr,
                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar)) {
 
         if (ImGui::BeginMenuBar()) {
@@ -217,7 +219,7 @@ void GuiMenu::DrawMain() {
                         drawHelper->NotifyReload(true);
                         ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_OPEN_NORMAL"));
                     }
-                    ImGui::SetNextWindowSize({540, 590}, ImGuiCond_Once);
+                    ImGui::SetNextWindowSize({viewport->Size.x / 3, viewport->Size.y / 5 * 3}, ImGuiCond_Once);
                     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
                     if (ImGui::BeginPopupModal(C_TRANSLATE("_SELECT_NEW_OPEN_NORMAL"), NULL)) {
                         shouldClose = Draw::CreateNormal();
@@ -228,7 +230,7 @@ void GuiMenu::DrawMain() {
                         drawHelper->NotifyReload(true);
                         ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_OPEN_POTION"));
                     }
-                    ImGui::SetNextWindowSize({540, 590}, ImGuiCond_Once);
+                    ImGui::SetNextWindowSize({viewport->Size.x / 3, viewport->Size.y / 5 * 3}, ImGuiCond_Once);
                     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
                     if (ImGui::BeginPopupModal(C_TRANSLATE("_SELECT_NEW_OPEN_POTION"), NULL)) {
                         shouldClose = Draw::CreatePotion();
@@ -239,7 +241,7 @@ void GuiMenu::DrawMain() {
                         drawHelper->NotifyReload(true);
                         ImGui::OpenPopup(C_TRANSLATE("_SELECT_NEW_OPEN_CYCLE"));
                     }
-                    ImGui::SetNextWindowSize({540, 590}, ImGuiCond_Once);
+                    ImGui::SetNextWindowSize({viewport->Size.x / 3, viewport->Size.y / 5 * 3}, ImGuiCond_Once);
                     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
                     if (ImGui::BeginPopupModal(C_TRANSLATE("_SELECT_NEW_OPEN_CYCLE"), NULL)) {
                         shouldClose = Draw::CreateCycle();

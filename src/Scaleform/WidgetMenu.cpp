@@ -104,15 +104,6 @@ namespace Scaleform {
         _widget.Invoke("UnloadText", nullptr, args, 1);
     }
 
-    void WidgetMenu::Animate(uint32_t _previd, uint32_t _nextid) {
-        if (!uiMovie) return;
-
-        RE::GFxValue args[2];
-        args[0].SetNumber(_previd);
-        args[1].SetNumber(_nextid);
-        _widget.Invoke("Animate", nullptr, args, 2);
-    }
-
     void WidgetMenu::SetText(uint32_t _id, std::string _text) {
         if (!uiMovie) return;
 

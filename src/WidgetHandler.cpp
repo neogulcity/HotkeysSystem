@@ -69,12 +69,6 @@ void WidgetHandler::UnloadText(uint32_t _id) {
     });
 }
 
-void WidgetHandler::Animate(uint32_t _previd, uint32_t _nextid) {
-    AddWidgetMenuTask([_previd, _nextid](WidgetMenu& a_menu) {
-        a_menu.Animate(_previd, _nextid);
-    });
-}
-
 void WidgetHandler::SetText(uint32_t _id, std::string _text) {
     AddWidgetMenuTask([_id, _text](WidgetMenu& a_menu) {
         a_menu.SetText(_id, _text);

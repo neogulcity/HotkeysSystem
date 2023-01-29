@@ -247,6 +247,24 @@ void EquipsetManager::CalculateKeydown(const uint32_t& _code, bool _modifier1, b
     auto gui = GuiMenu::GetSingleton();
     if (!gui) return;
 
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) return;
+
+    auto intfcStr = RE::InterfaceStrings::GetSingleton();
+    if (!intfcStr) return;
+
+    if (UI->GameIsPaused() ||
+        UI->IsMenuOpen(intfcStr->mapMenu) ||
+        UI->IsMenuOpen(intfcStr->inventoryMenu) ||
+        UI->IsMenuOpen(intfcStr->magicMenu) ||
+        UI->IsMenuOpen(intfcStr->tweenMenu) ||
+        UI->IsMenuOpen(intfcStr->dialogueMenu) ||
+        UI->IsMenuOpen(intfcStr->barterMenu) ||
+        UI->IsMenuOpen(intfcStr->craftingMenu) ||
+        UI->IsMenuOpen(intfcStr->containerMenu) ||
+        UI->IsMenuOpen(intfcStr->console) ||
+        UI->IsMenuOpen("LootMenu")) return;
+
     if (gui->isShow()) return;
 
     for (auto equipset : equipsetVec) {

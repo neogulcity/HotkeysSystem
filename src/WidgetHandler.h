@@ -27,7 +27,6 @@ public:
     void LoadText(uint32_t _id, std::string _text, std::string _font, int32_t _x, int32_t _y, int32_t _align,
                   int32_t _size, int32_t _alpha, bool _shadow);
     void UnloadText(uint32_t _id);
-    void Animate(uint32_t _previd, uint32_t _nextid);
     void SetText(uint32_t _id, std::string _text);
     void SetMenuAlpha(uint32_t _alpha);
     void MenuFadeIn();

@@ -119,7 +119,8 @@ namespace Shared::Cycle {
             if (ImGui::BeginPopupModal(C_TRANSLATE("_ITEM_ADDPOPUP"), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
                 std::vector<std::string> items;
                 for (auto elem : manager->equipsetVec) {
-                    if (elem->type == Equipset::TYPE::CYCLE) continue;
+                    if (elem->type == Equipset::TYPE::CYCLE ||
+                        elem->type == Equipset::TYPE::POTION) continue;
                     items.push_back(elem->name);
                 }
 
