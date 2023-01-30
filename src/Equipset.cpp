@@ -515,7 +515,13 @@ bool CycleSet::ResetFunc() {
     if (!shouldCloseReset.load()) {
         this->cycleIndex = 0;
         this->isCycleInit = false;
-        this->Equip();
+
+        auto task = SKSE::GetTaskInterface();
+        if (!task) logger::error("Failed to get task interface.");
+
+        task->AddTask([this]() {
+            this->Equip();
+        });
     }
     shouldCloseReset.store(false);
     cycleResetProgress.store(0.0f);
