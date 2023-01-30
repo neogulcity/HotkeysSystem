@@ -25,7 +25,7 @@ void GuiMenu::DisableInput(bool _status) {
     auto control = RE::ControlMap::GetSingleton();
     if (!control) return;
 
-    control->ignoreKeyboardMouse = _status;
+    control->ToggleControls(RE::ControlMap::UEFlag::kAll, !_status);
 }
 
 void GuiMenu::Toggle(std::optional<bool> enabled = std::nullopt) {
