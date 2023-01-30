@@ -44,7 +44,7 @@ DataWeapon DataWeapon::Unpack(const std::string& _packed) {
     result.enchName = dataVec[3];
     result.tempVal = std::stof(dataVec[4]);
 
-    RE::FormID id = std::stoi(dataVec[5]);
+    RE::FormID id = std::stoll(dataVec[5]);
     auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
     result.form = form;
 
@@ -80,7 +80,7 @@ DataShout DataShout::Unpack(const std::string& _packed) {
     result.type = static_cast<Data::DATATYPE>(std::stoi(dataVec[0]));
     result.name = dataVec[1];
 
-    RE::FormID id = std::stoi(dataVec[2]);
+    RE::FormID id = std::stoll(dataVec[2]);
     auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
     result.form = form;
 
@@ -122,7 +122,7 @@ DataArmor DataArmor::Unpack(const std::string& _packed) {
     result.enchName = dataVec[3];
     result.tempVal = std::stof(dataVec[4]);
 
-    RE::FormID id = std::stoi(dataVec[5]);
+    RE::FormID id = std::stoll(dataVec[5]);
     auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
     result.form = form;
 
@@ -158,7 +158,7 @@ DataPotion DataPotion::Unpack(const std::string& _packed) {
     result.type = static_cast<Data::DATATYPE>(std::stoi(dataVec[0]));
     result.name = dataVec[1];
 
-    RE::FormID id = std::stoi(dataVec[2]);
+    RE::FormID id = std::stoll(dataVec[2]);
     auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
     result.form = form;
 
