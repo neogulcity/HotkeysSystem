@@ -20,12 +20,17 @@ DataWeapon::DataWeapon() {
 std::string DataWeapon::Pack() {
     std::string result;
 
+    auto file = form ? form->GetFile() : nullptr;
+    auto modname = file ? file->GetFilename() : ""sv;
+
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
     result += name + Utility::delimiter;
     result += std::to_string(enchNum) + Utility::delimiter;
     result += enchName + Utility::delimiter;
     result += std::to_string(tempVal) + Utility::delimiter;
-    result += form ? std::to_string(form->GetFormID()) : "0";
+    result += form ? std::to_string(form->GetLocalFormID()) : "0";
+    result += Utility::delimiter;
+    result += modname;
     result += Utility::delimiter;
 
     return result;
@@ -35,7 +40,7 @@ std::string DataWeapon::Pack() {
 DataWeapon DataWeapon::Unpack(const std::string& _packed) {
     std::vector<std::string> dataVec = Utility::Split(_packed, Utility::delimiter);
 
-    assert(dataVec.size() == 6);
+    assert(dataVec.size() == 7);
 
     DataWeapon result;
     result.type = static_cast<Data::DATATYPE>(std::stoi(dataVec[0]));
@@ -45,7 +50,9 @@ DataWeapon DataWeapon::Unpack(const std::string& _packed) {
     result.tempVal = std::stof(dataVec[4]);
 
     RE::FormID id = std::stoll(dataVec[5]);
-    auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
+    auto modname = dataVec[6];
+    auto TESDataHandler = RE::TESDataHandler::GetSingleton();
+    auto form = TESDataHandler ? TESDataHandler->LookupForm(id, modname) : nullptr;
     result.form = form;
 
     return result;
@@ -63,9 +70,14 @@ DataShout::DataShout() {
 std::string DataShout::Pack() {
     std::string result;
 
+    auto file = form ? form->GetFile() : nullptr;
+    auto modname = file ? file->GetFilename() : ""sv;
+
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
     result += name + Utility::delimiter;
-    result += form ? std::to_string(form->GetFormID()) : "0";
+    result += form ? std::to_string(form->GetLocalFormID()) : "0";
+    result += Utility::delimiter;
+    result += modname;
     result += Utility::delimiter;
 
     return result;
@@ -74,14 +86,16 @@ std::string DataShout::Pack() {
 DataShout DataShout::Unpack(const std::string& _packed) {
     std::vector<std::string> dataVec = Utility::Split(_packed, Utility::delimiter);
 
-    assert(dataVec.size() == 3);
+    assert(dataVec.size() == 4);
 
     DataShout result;
     result.type = static_cast<Data::DATATYPE>(std::stoi(dataVec[0]));
     result.name = dataVec[1];
 
     RE::FormID id = std::stoll(dataVec[2]);
-    auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
+    auto modname = dataVec[3];
+    auto TESDataHandler = RE::TESDataHandler::GetSingleton();
+    auto form = TESDataHandler ? TESDataHandler->LookupForm(id, modname) : nullptr;
     result.form = form;
 
     return result;
@@ -99,12 +113,17 @@ DataArmor::DataArmor() {
 std::string DataArmor::Pack() {
     std::string result;
 
+    auto file = form ? form->GetFile() : nullptr;
+    auto modname = file ? file->GetFilename() : ""sv;
+
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
     result += name + Utility::delimiter;
     result += std::to_string(enchNum) + Utility::delimiter;
     result += enchName + Utility::delimiter;
     result += std::to_string(tempVal) + Utility::delimiter;
-    result += form ? std::to_string(form->GetFormID()) : "0";
+    result += form ? std::to_string(form->GetLocalFormID()) : "0";
+    result += Utility::delimiter;
+    result += modname;
     result += Utility::delimiter;
 
     return result;
@@ -113,7 +132,7 @@ std::string DataArmor::Pack() {
 DataArmor DataArmor::Unpack(const std::string& _packed) {
     std::vector<std::string> dataVec = Utility::Split(_packed, Utility::delimiter);
 
-    assert(dataVec.size() == 6);
+    assert(dataVec.size() == 7);
 
     DataArmor result;
     result.type = static_cast<Data::DATATYPE>(std::stoi(dataVec[0]));
@@ -123,7 +142,9 @@ DataArmor DataArmor::Unpack(const std::string& _packed) {
     result.tempVal = std::stof(dataVec[4]);
 
     RE::FormID id = std::stoll(dataVec[5]);
-    auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
+    auto modname = dataVec[6];
+    auto TESDataHandler = RE::TESDataHandler::GetSingleton();
+    auto form = TESDataHandler ? TESDataHandler->LookupForm(id, modname) : nullptr;
     result.form = form;
 
     return result;
@@ -141,9 +162,14 @@ DataPotion::DataPotion() {
 std::string DataPotion::Pack() {
     std::string result;
 
+    auto file = form ? form->GetFile() : nullptr;
+    auto modname = file ? file->GetFilename() : ""sv;
+
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
     result += name + Utility::delimiter;
-    result += form ? std::to_string(form->GetFormID()) : "0";
+    result += form ? std::to_string(form->GetLocalFormID()) : "0";
+    result += Utility::delimiter;
+    result += modname;
     result += Utility::delimiter;
 
     return result;
@@ -152,14 +178,16 @@ std::string DataPotion::Pack() {
 DataPotion DataPotion::Unpack(const std::string& _packed) {
     std::vector<std::string> dataVec = Utility::Split(_packed, Utility::delimiter);
 
-    assert(dataVec.size() == 3);
+    assert(dataVec.size() == 4);
 
     DataPotion result;
     result.type = static_cast<Data::DATATYPE>(std::stoi(dataVec[0]));
     result.name = dataVec[1];
 
     RE::FormID id = std::stoll(dataVec[2]);
-    auto form = RE::TESForm::LookupByID<RE::TESForm>(id);
+    auto modname = dataVec[3];
+    auto TESDataHandler = RE::TESDataHandler::GetSingleton();
+    auto form = TESDataHandler ? TESDataHandler->LookupForm(id, modname) : nullptr;
     result.form = form;
 
     return result;
