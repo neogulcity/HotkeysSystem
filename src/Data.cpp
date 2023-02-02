@@ -167,11 +167,8 @@ std::string DataPotion::Pack() {
 
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
     result += name + Utility::delimiter;
-    if (form) {
-        result += form->IsDynamicForm() ? std::to_string(form->GetFormID()) : std::to_string(form->GetLocalFormID());
-    } else {
-        result += "0";
-    }
+    if (form) result += form->IsDynamicForm() ? std::to_string(form->GetFormID()) : std::to_string(form->GetLocalFormID());
+    else result += "0";
     result += Utility::delimiter;
     result += modname;
     result += Utility::delimiter;
