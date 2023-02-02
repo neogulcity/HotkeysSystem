@@ -11,4 +11,3 @@ SKSE64 Plugin made for equip multiple items by hotkey or with modifier key.
 	* Add the environment variable `VCPKG_ROOT` with the value as the path to the folder containing vcpkg
 * [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
 	* Desktop development with C++
-* [Jsoncpp](https://github.com/open-source-parsers/jsoncpp)
