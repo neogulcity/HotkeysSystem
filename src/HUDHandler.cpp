@@ -30,6 +30,9 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
     auto config = ConfigHandler::GetSingleton();
     if (!config) return EventResult::kContinue;
 
+    auto UI = RE::UI::GetSingleton();
+    if (!UI) return EventResult::kContinue;
+
     if (_event->menuName == intfcStr->loadingMenu && !(_event->opening)) {
         auto task = SKSE::GetTaskInterface();
         if (!task) return EventResult::kContinue;
@@ -56,27 +59,6 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
                 equipset->CreateAllWidget();
             }
         });
-        //auto equipment = EquipmentManager::GetSingleton();
-        //if (!equipment) return EventResult::kContinue;
-
-        //auto equipset = EquipsetManager::GetSingleton();
-        //if (!equipset) return EventResult::kContinue;
-
-        //widgetHandler->OpenWidgetMenu();
-        //
-        //if (config->Widget.General.animDelay != 0.0f &&
-        //    config->Widget.General.displayMode == (uint32_t)Config::DisplayType::INCOMBAT) {
-        //    widgetHandler->SetMenuAlpha(0);
-        //}
-
-        //equipment->RemoveAllArmorWidget();
-        //equipment->RemoveAllWeaponWidget();
-        //equipment->RemoveAllShoutWidget();
-        //equipset->RemoveAllWidget();
-        //equipment->CreateAllArmorWidget();
-        //equipment->CreateAllWeaponWidget();
-        //equipment->CreateAllShoutWidget();
-        //equipset->CreateAllWidget();
     }
 
     if (_event->menuName == intfcStr->mapMenu || _event->menuName == intfcStr->inventoryMenu ||
@@ -86,6 +68,13 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
         if (_event->opening) {
             widgetHandler->SetMenuVisible(false);
         } else {
+            if (UI->IsMenuOpen(intfcStr->mapMenu) || UI->IsMenuOpen(intfcStr->inventoryMenu) ||
+                UI->IsMenuOpen(intfcStr->magicMenu) || UI->IsMenuOpen(intfcStr->tweenMenu) ||
+                UI->IsMenuOpen(intfcStr->dialogueMenu) || UI->IsMenuOpen(intfcStr->barterMenu) ||
+                UI->IsMenuOpen(intfcStr->craftingMenu) || UI->IsMenuOpen(intfcStr->containerMenu)) {
+                return EventResult::kContinue;
+            }
+
             widgetHandler->SetMenuVisible(true);
         }
     }
