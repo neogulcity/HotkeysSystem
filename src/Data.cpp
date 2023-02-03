@@ -20,7 +20,7 @@ DataWeapon::DataWeapon() {
 std::string DataWeapon::Pack() {
     std::string result;
 
-    auto file = form ? form->GetFile() : nullptr;
+    auto file = form ? form->GetFile(0) : nullptr;
     auto modname = file ? file->GetFilename() : ""sv;
 
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
@@ -70,7 +70,7 @@ DataShout::DataShout() {
 std::string DataShout::Pack() {
     std::string result;
 
-    auto file = form ? form->GetFile() : nullptr;
+    auto file = form ? form->GetFile(0) : nullptr;
     auto modname = file ? file->GetFilename() : ""sv;
 
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
@@ -113,7 +113,7 @@ DataArmor::DataArmor() {
 std::string DataArmor::Pack() {
     std::string result;
 
-    auto file = form ? form->GetFile() : nullptr;
+    auto file = form ? form->GetFile(0) : nullptr;
     auto modname = file ? file->GetFilename() : ""sv;
 
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
@@ -162,7 +162,7 @@ DataPotion::DataPotion() {
 std::string DataPotion::Pack() {
     std::string result;
 
-    auto file = form ? form->GetFile() : nullptr;
+    auto file = form ? form->GetFile(0) : nullptr;
     auto modname = file ? file->GetFilename() : ""sv;
 
     result += std::to_string(static_cast<uint32_t>(type)) + Utility::delimiter;
