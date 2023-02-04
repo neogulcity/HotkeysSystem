@@ -64,14 +64,16 @@ HUDHandler::EventResult HUDHandler::ProcessEvent(const RE::MenuOpenCloseEvent* _
     if (_event->menuName == intfcStr->mapMenu || _event->menuName == intfcStr->inventoryMenu ||
         _event->menuName == intfcStr->magicMenu || _event->menuName == intfcStr->tweenMenu ||
         _event->menuName == intfcStr->dialogueMenu || _event->menuName == intfcStr->barterMenu ||
-        _event->menuName == intfcStr->craftingMenu || _event->menuName == intfcStr->containerMenu) {
+        _event->menuName == intfcStr->craftingMenu || _event->menuName == intfcStr->containerMenu ||
+        _event->menuName == intfcStr->sleepWaitMenu) {
         if (_event->opening) {
             widgetHandler->SetMenuVisible(false);
         } else {
             if (UI->IsMenuOpen(intfcStr->mapMenu) || UI->IsMenuOpen(intfcStr->inventoryMenu) ||
                 UI->IsMenuOpen(intfcStr->magicMenu) || UI->IsMenuOpen(intfcStr->tweenMenu) ||
                 UI->IsMenuOpen(intfcStr->dialogueMenu) || UI->IsMenuOpen(intfcStr->barterMenu) ||
-                UI->IsMenuOpen(intfcStr->craftingMenu) || UI->IsMenuOpen(intfcStr->containerMenu)) {
+                UI->IsMenuOpen(intfcStr->craftingMenu) || UI->IsMenuOpen(intfcStr->containerMenu) ||
+                UI->IsMenuOpen(intfcStr->sleepWaitMenu)) {
                 return EventResult::kContinue;
             }
 
