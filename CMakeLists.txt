@@ -4,7 +4,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 # Define project
 project(
         HotkeysSystem
-        VERSION 2.0.0
+        VERSION 2.0.1
         DESCRIPTION "A SKSE plugin built with CommonLibSSE."
         LANGUAGES CXX)
 
