@@ -51,6 +51,14 @@ void GuiMenu::Toggle(std::optional<bool> enabled = std::nullopt) {
         drawHelper->NotifyReload(true);
         dataHandler->Clear();
         widgetHandler->ProcessFadeOut();
+
+        auto config = ConfigHandler::GetSingleton();
+        if (!config) return;
+        config->SaveConfig();
+
+        auto equipment = EquipmentManager::GetSingleton();
+        if (!equipment) return;
+        equipment->Save();
     }
 }
 
