@@ -94,7 +94,7 @@ public:
     } Settings;
 
     struct config_gui {
-        std::string fontPath{"NotoSans-Medium.ttf"};
+        std::string fontPath{"NotoSans-Medium.otf"};
         float fontSize{13.0f};
         float fontScaling{1.0f};
         ImGuiKey hotkey{ImGuiKey_F6};
