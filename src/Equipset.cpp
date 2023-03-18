@@ -1,14 +1,14 @@
 #include "Equipset.h"
 
-#include "EquipsetManager.h"
-#include "Actor.h"
-#include "Offset.h"
-#include "Data.h"
-#include "WidgetHandler.h"
-#include "Config.h"
-#include "ExtraData.h"
-
 #include <future>
+
+#include "Actor.h"
+#include "Config.h"
+#include "Data.h"
+#include "EquipsetManager.h"
+#include "ExtraData.h"
+#include "Offset.h"
+#include "WidgetHandler.h"
 
 static void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, RE::ExtraDataList* _xList,
                       bool _queue = true, bool _force = false) {
@@ -29,14 +29,14 @@ static void EquipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound, 
             }
         }
 
-    // Shout
+        // Shout
     } else if (_form->Is(RE::FormType::Shout)) {
         RE::TESShout* shout = _form->As<RE::TESShout>();
         if (shout && Actor::HasShout(player, shout)) {
             equipManager->EquipShout(player, shout);
         }
 
-    // Items
+        // Items
     } else {
         if (_form->Is(RE::FormType::Light, RE::FormType::AlchemyItem)) {
             if (Actor::HasItem(player, _form)) {
@@ -82,18 +82,25 @@ static void UnequipItem(RE::TESForm* _form, RE::BGSEquipSlot* _slot, bool _sound
     }
 }
 
+static bool isTwoHandedWeapon(RE::TESObjectWEAP* obj) {
+    if (obj->IsTwoHandedAxe() || obj->IsTwoHandedSword() || obj->IsBow() || obj->IsCrossbow()) {
+        return true;
+    }
+    return false;
+}
+
 void NormalSet::Equip() {
     auto player = RE::PlayerCharacter::GetSingleton();
     if (!player) return;
 
-	auto equipset = this;
-	
+    auto equipset = this;
+
     bool unequipLeft = false, unequipRight = false, unequipShout = false;
     bool equipLeft = false, equipRight = false, equipShout = false;
-    
+
     std::vector<bool> unequipItems(equipset->items.size(), false);
     std::vector<bool> equipItems(equipset->items.size(), false);
-    
+
     unequipLeft = equipset->lefthand.type == Data::DATATYPE::UNEQUIP ? true : unequipLeft;
     unequipRight = equipset->righthand.type == Data::DATATYPE::UNEQUIP ? true : unequipRight;
     unequipShout = equipset->shout.type == Data::DATATYPE::UNEQUIP ? true : unequipShout;
@@ -102,10 +109,9 @@ void NormalSet::Equip() {
     RE::TESForm* equippedRight = player->GetEquippedObject(false);
     RE::TESForm* equippedShout = Actor::GetEquippedShout(player);
 
-    // Toggle equip/unequip option Off & Re equip option On    
+    // Toggle equip/unequip option Off & Re equip option On
     if (!equipset->toggleEquip && equipset->reEquip) {
-        if (equipset->lefthand.type != Data::DATATYPE::NOTHING &&
-            equipset->lefthand.type != Data::DATATYPE::UNEQUIP) {
+        if (equipset->lefthand.type != Data::DATATYPE::NOTHING && equipset->lefthand.type != Data::DATATYPE::UNEQUIP) {
             unequipLeft = true;
             equipLeft = true;
         }
@@ -116,8 +122,7 @@ void NormalSet::Equip() {
             equipRight = true;
         }
 
-        if (equipset->shout.type != Data::DATATYPE::NOTHING &&
-            equipset->shout.type != Data::DATATYPE::UNEQUIP) {
+        if (equipset->shout.type != Data::DATATYPE::NOTHING && equipset->shout.type != Data::DATATYPE::UNEQUIP) {
             unequipShout = true;
             equipShout = true;
         }
@@ -128,8 +133,7 @@ void NormalSet::Equip() {
         }
     } else {
         // Toggle equip/unequip option Off & Re equip option Off
-        if (equipset->lefthand.type != Data::DATATYPE::NOTHING &&
-            equipset->lefthand.type != Data::DATATYPE::UNEQUIP) {
+        if (equipset->lefthand.type != Data::DATATYPE::NOTHING && equipset->lefthand.type != Data::DATATYPE::UNEQUIP) {
             if (!equippedLeft) {
                 equipLeft = true;
             } else if (equippedLeft->GetName() != equipset->lefthand.name) {
@@ -144,8 +148,7 @@ void NormalSet::Equip() {
                 equipRight = true;
             }
         }
-        if (equipset->shout.type != Data::DATATYPE::NOTHING &&
-            equipset->shout.type != Data::DATATYPE::UNEQUIP) {
+        if (equipset->shout.type != Data::DATATYPE::NOTHING && equipset->shout.type != Data::DATATYPE::UNEQUIP) {
             if (!equippedShout) {
                 equipShout = true;
             } else if (equippedShout->GetName() != equipset->shout.name) {
@@ -209,6 +212,13 @@ void NormalSet::Equip() {
         }
     }
 
+    // pervent unequip two hand weapon multi time cause enchant charge deplete
+    if (equippedLeft->RTTI.address() == RE::RTTI_TESObjectWEAP.address() &&
+        isTwoHandedWeapon(static_cast<RE::TESObjectWEAP*>(equippedLeft)) && unequipLeft && unequipRight) {
+        unequipLeft = true;
+        unequipRight = false;
+    }
+
     auto DummyDagger = GetDummyDagger();
     // auto DummyShout = GetDummyShout();
 
@@ -241,22 +251,19 @@ void NormalSet::Equip() {
         }
     }
 
-    if (equipLeft && equipset->lefthand.form &&
-        equipset->lefthand.type != Data::DATATYPE::NOTHING &&
-        equipset->lefthand.type != Data::DATATYPE::UNEQUIP) {
-        auto& weapon = equipset->lefthand;
-        auto xList = Extra::SearchExtraDataList(weapon.name, weapon.enchNum, weapon.enchName, weapon.tempVal);
-        EquipItem(equipset->lefthand.form, GetLeftHandSlot(), equipset->equipSound, xList);
-    }
-    if (equipRight && equipset->righthand.form &&
-        equipset->righthand.type != Data::DATATYPE::NOTHING &&
+    if (equipRight && equipset->righthand.form && equipset->righthand.type != Data::DATATYPE::NOTHING &&
         equipset->righthand.type != Data::DATATYPE::UNEQUIP) {
         auto& weapon = equipset->righthand;
         auto xList = Extra::SearchExtraDataList(weapon.name, weapon.enchNum, weapon.enchName, weapon.tempVal);
         EquipItem(equipset->righthand.form, GetRightHandSlot(), equipset->equipSound, xList);
     }
-    if (equipShout && equipset->shout.form &&
-        equipset->shout.type != Data::DATATYPE::NOTHING &&
+    if (equipLeft && equipset->lefthand.form && equipset->lefthand.type != Data::DATATYPE::NOTHING &&
+        equipset->lefthand.type != Data::DATATYPE::UNEQUIP) {
+        auto& weapon = equipset->lefthand;
+        auto xList = Extra::SearchExtraDataList(weapon.name, weapon.enchNum, weapon.enchName, weapon.tempVal);
+        EquipItem(equipset->lefthand.form, GetLeftHandSlot(), equipset->equipSound, xList);
+    }
+    if (equipShout && equipset->shout.form && equipset->shout.type != Data::DATATYPE::NOTHING &&
         equipset->shout.type != Data::DATATYPE::UNEQUIP) {
         EquipItem(equipset->shout.form, nullptr, equipset->equipSound, nullptr);
     }
@@ -291,14 +298,12 @@ void PotionSet::Equip() {
         }
     }
     if (equipset->magicka.type != TYPE::NOTHING) {
-        if (equipset->magicka.form &&
-            equipset->magicka.form != equipset->health.form) {
+        if (equipset->magicka.form && equipset->magicka.form != equipset->health.form) {
             EquipItem(equipset->magicka.form, nullptr, equipset->equipSound, nullptr);
         }
     }
     if (equipset->stamina.type != TYPE::NOTHING) {
-        if (equipset->stamina.form &&
-            equipset->stamina.form != equipset->health.form &&
+        if (equipset->stamina.form && equipset->stamina.form != equipset->health.form &&
             equipset->stamina.form != equipset->magicka.form) {
             EquipItem(equipset->stamina.form, nullptr, equipset->equipSound, nullptr);
         }
@@ -326,7 +331,7 @@ void PotionSet::Equip() {
 
 void CycleSet::Equip() {
     bool test = false;
-    if(this->cycleIndex == 1) {
+    if (this->cycleIndex == 1) {
         test = true;
     }
 
@@ -373,8 +378,7 @@ void CycleSet::Equip() {
             }
 
             if (prevNormalset->righthand.type != Data::DATATYPE::NOTHING &&
-                prevNormalset->righthand.type != Data::DATATYPE::UNEQUIP &&
-                !IsChanged) {
+                prevNormalset->righthand.type != Data::DATATYPE::UNEQUIP && !IsChanged) {
                 RE::TESForm* form = player->GetEquippedObject(false);
                 auto right = prevNormalset->righthand.form;
 
@@ -388,8 +392,7 @@ void CycleSet::Equip() {
             }
 
             if (prevNormalset->shout.type != Data::DATATYPE::NOTHING &&
-                prevNormalset->shout.type != Data::DATATYPE::UNEQUIP &&
-                !IsChanged) {
+                prevNormalset->shout.type != Data::DATATYPE::UNEQUIP && !IsChanged) {
                 RE::TESForm* form = Actor::GetEquippedShout(player);
                 auto shout = prevNormalset->shout.form;
 
@@ -456,9 +459,7 @@ void CycleSet::Equip() {
     }
 }
 
-void CycleSet::SetExpireProgress(const float& _amount) {
-    cycleExpireProgress.store(_amount);
-}
+void CycleSet::SetExpireProgress(const float& _amount) { cycleExpireProgress.store(_amount); }
 
 void CycleSet::StartExpireTimer() {
     if (cycleExpireProgress.load() != 0.0f && cycleExpireProgress.load() < cycleExpire) return;
@@ -468,7 +469,7 @@ void CycleSet::StartExpireTimer() {
 }
 
 void CycleSet::CloseExpireTimer() {
-    if(cycleExpireProgress.load() == 0.0f) return;
+    if (cycleExpireProgress.load() == 0.0f) return;
 
     shouldCloseExpire.store(true);
 }
@@ -489,9 +490,7 @@ bool CycleSet::ExpireFunc() {
     return true;
 }
 
-void CycleSet::SetResetProgress(const float& _amount) {
-    cycleResetProgress.store(_amount);
-}
+void CycleSet::SetResetProgress(const float& _amount) { cycleResetProgress.store(_amount); }
 
 void CycleSet::StartResetTimer() {
     if (cycleResetProgress.load() != 0.0f && cycleResetProgress.load() < cycleReset) return;
@@ -502,7 +501,7 @@ void CycleSet::StartResetTimer() {
 
 void CycleSet::CloseResetTimer() {
     if (cycleResetProgress.load() == 0.0f) return;
-    
+
     shouldCloseReset.store(true);
 }
 
@@ -519,9 +518,7 @@ bool CycleSet::ResetFunc() {
         auto task = SKSE::GetTaskInterface();
         if (!task) logger::error("Failed to get task interface.");
 
-        task->AddTask([this]() {
-            this->Equip();
-        });
+        task->AddTask([this]() { this->Equip(); });
     }
     shouldCloseReset.store(false);
     cycleResetProgress.store(0.0f);
@@ -548,7 +545,7 @@ void Equipset::CreateWidgetBackground() {
             auto width = 1.3f * (float)config->Widget.Equipset.Normal.bgSize;
             auto height = 1.3f * (float)config->Widget.Equipset.Normal.bgSize;
             auto alpha = config->Widget.Equipset.Normal.bgAlpha;
-            
+
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, alpha);
         }
     } else if (this->type == Equipset::TYPE::POTION) {
@@ -578,7 +575,7 @@ void Equipset::CreateWidgetBackground() {
             auto width = 1.3f * (float)config->Widget.Equipset.Cycle.bgSize;
             auto height = 1.3f * (float)config->Widget.Equipset.Cycle.bgSize;
             auto alpha = config->Widget.Equipset.Cycle.bgAlpha;
-            
+
             widgetHandler->LoadWidget(id, path, offsetX, offsetY, width, height, alpha);
         }
     }
