@@ -725,7 +725,7 @@ void Equipset::CreateWidgetText2() {
 
         if (equipset->widgetIcon.enable && equipset->widgetHotkey.enable) {
             auto id = equipset->widgetID.text2;
-            auto text = ImGui::GetKeyName(equipset->hotkey);
+            auto text = ImGui::GetKeyName(static_cast<ImGuiKey>(equipset->hotkey));
             auto font = config->fontVec[config->Widget.General.font];
             auto offsetX = equipset->widgetHotkey.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetHotkey.offsetY + equipset->widgetIcon.offsetY;
@@ -757,7 +757,7 @@ void Equipset::CreateWidgetText2() {
 
         if (equipset->widgetIcon.enable && equipset->widgetHotkey.enable) {
             auto id = equipset->widgetID.text2;
-            auto text = ImGui::GetKeyName(equipset->hotkey);
+            auto text = ImGui::GetKeyName(static_cast<ImGuiKey>(equipset->hotkey));
             auto font = config->fontVec[config->Widget.General.font];
             auto offsetX = equipset->widgetHotkey.offsetX + equipset->widgetIcon.offsetX;
             auto offsetY = equipset->widgetHotkey.offsetY + equipset->widgetIcon.offsetY;

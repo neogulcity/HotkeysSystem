@@ -48,7 +48,7 @@ namespace Draw {
         auto buttonMsg = _button + "##" + _id;
         auto popupID = TRANSLATE("_WAITINPUT") + "##" + _id;
         auto popupMsg = "  " + TRANSLATE("_WAITINPUTMSG") + "  ";
-        auto labelMsg = _label + ImGui::GetKeyName(*_key);
+        auto labelMsg = _label + ImGui::GetKeyName(static_cast<ImGuiKey>(*_key));
 
         auto buttonSize = ImGui::CalcTextSize(_button.c_str());
         if (ImGui::Button(buttonMsg.c_str(), ImVec2(buttonSize.x + 30.0f, 0.0f))) {
@@ -75,7 +75,7 @@ namespace Draw {
             }
 
             for (uint32_t key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; ++key) {
-                if (ImGui::IsKeyPressed(key)) {
+                if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(key))) {
                     if (key == ImGuiKey_Escape) {
                         *_key = ImGuiKey_None;
                     } else {

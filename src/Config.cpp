@@ -60,16 +60,16 @@ void ConfigHandler::LoadConfig() {
         this->Widget.Equipment.Shout.fontSize = tbl["Widget"]["shout_font_size"].value_or<uint32_t>(100);
         this->Widget.Equipment.Shout.fontShadow = tbl["Widget"]["shout_font_shadow"].value_or<bool>(false);
 
-        this->Settings.modifier1 = tbl["Settings"]["modifier1"].value_or<ImGuiKey>(ImGuiKey_ModCtrl);
-        this->Settings.modifier2 = tbl["Settings"]["modifier2"].value_or<ImGuiKey>(ImGuiKey_ModShift);
-        this->Settings.modifier3 = tbl["Settings"]["modifier3"].value_or<ImGuiKey>(ImGuiKey_ModAlt);
+        this->Settings.modifier1 = tbl["Settings"]["modifier1"].value_or<uint32_t>(ImGuiKey_ModCtrl);
+        this->Settings.modifier2 = tbl["Settings"]["modifier2"].value_or<uint32_t>(ImGuiKey_ModShift);
+        this->Settings.modifier3 = tbl["Settings"]["modifier3"].value_or<uint32_t>(ImGuiKey_ModAlt);
         this->Settings.sort = tbl["Settings"]["sort_order"].value_or<uint32_t>(0);
         this->Settings.favorOnly = tbl["Settings"]["favor_only"].value_or<bool>(false);
 
         this->Gui.fontPath = tbl["Gui"]["font_path"].value_or<std::string>("NotoSans-Medium.otf");
         this->Gui.fontSize = tbl["Gui"]["font_size"].value_or<float>(13.0f);
         this->Gui.language = tbl["Gui"]["language"].value_or<uint32_t>((uint32_t)Config::LangType::ENGLISH);
-        this->Gui.hotkey = tbl["Gui"]["hotkey"].value_or<ImGuiKey>(ImGuiKey_F6);
+        this->Gui.hotkey = static_cast<ImGuiKey>(tbl["Gui"]["hotkey"].value_or<uint32_t>(ImGuiKey_F6));
         this->Gui.style = tbl["Gui"]["style"].value_or<uint32_t>((uint32_t)Config::GuiStyle::DARK);
         this->Gui.rounding = tbl["Gui"]["rounding"].value_or<float>(0.0f);
         this->Gui.windowBorder = tbl["Gui"]["window_border"].value_or<bool>(true);
@@ -234,7 +234,7 @@ void ConfigHandler::SaveConfig() {
                 {"font_path", this->Gui.fontPath},
                 {"font_size", this->Gui.fontSize},
                 {"language", this->Gui.language},
-                {"hotkey", this->Gui.hotkey},
+                {"hotkey", static_cast<uint32_t>(this->Gui.hotkey)},
                 {"style", this->Gui.style},
                 {"rounding", this->Gui.rounding},
                 {"window_border", this->Gui.windowBorder},

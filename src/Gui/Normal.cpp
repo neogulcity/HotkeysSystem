@@ -72,9 +72,9 @@ namespace Shared::Normal {
 
         Draw::InputButton(_hotkey, "EquipsetHotkey", TRANSLATE("_EDIT"), TRANSLATE("_EDIT_HOTKEYLABEL"));
 
-        auto msg1 = fmt::format("+ {}", ImGui::GetKeyName(config->Settings.modifier1));
-        auto msg2 = fmt::format("+ {}", ImGui::GetKeyName(config->Settings.modifier2));
-        auto msg3 = fmt::format("+ {}", ImGui::GetKeyName(config->Settings.modifier3));
+        auto msg1 = fmt::format("+ {}", ImGui::GetKeyName(static_cast<ImGuiKey>(config->Settings.modifier1)));
+        auto msg2 = fmt::format("+ {}", ImGui::GetKeyName(static_cast<ImGuiKey>(config->Settings.modifier2)));
+        auto msg3 = fmt::format("+ {}", ImGui::GetKeyName(static_cast<ImGuiKey>(config->Settings.modifier3)));
         ImGui::Checkbox(msg1.c_str(), _modifier1);
         ImGui::Checkbox(msg2.c_str(), _modifier2);
         ImGui::Checkbox(msg3.c_str(), _modifier3);

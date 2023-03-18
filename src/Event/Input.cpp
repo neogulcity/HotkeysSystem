@@ -180,7 +180,7 @@ InputHandler::EventResult InputHandler::ProcessEvent(RE::InputEvent* const* _eve
 
                 case RE::INPUT_DEVICE::kKeyboard:
                 case RE::INPUT_DEVICE::kGamepad:
-                    io.AddKeyEvent(imgui_key, button->IsPressed());
+                    io.AddKeyEvent(static_cast<ImGuiKey>(imgui_key), button->IsPressed());
                     break;
 
                 default:
